@@ -3,6 +3,7 @@ import { SECTIONS, getScoreGrade, EVALUATOR_COLORS } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 import Link from "next/link"
 import { Users, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { RowActionsMenu } from "@/components/dashboard/row-actions"
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
@@ -247,26 +248,13 @@ export default async function DashboardPage() {
                       <div className="md:hidden shrink-0">{scoreEl}</div>
                     </div>
 
-                    {/* Row 2: dots + (mobile) grade & buttons */}
+                    {/* Row 2: dots + (mobile) grade & 3-dot menu */}
                     <div className="flex items-center justify-between gap-2 mt-2">
                       {dotsEl}
-                      {/* Grade + actions — mobile only */}
+                      {/* Grade + 3-dot actions — mobile only */}
                       <div className="md:hidden flex items-center gap-1.5">
                         {gradeEl}
-                        <Link
-                          href={`/teachers/${t.id}`}
-                          className="px-2.5 py-1.5 text-xs font-semibold text-white rounded-lg"
-                          style={{ backgroundColor: "#5C3D11" }}
-                        >
-                          Detail
-                        </Link>
-                        <Link
-                          href={`/form?teacherId=${t.id}`}
-                          className="px-2.5 py-1.5 text-xs font-semibold rounded-lg"
-                          style={{ backgroundColor: "#C4972A", color: "#1C1409" }}
-                        >
-                          Nilai
-                        </Link>
+                        <RowActionsMenu teacherId={t.id} grade={t.grade ?? null} />
                       </div>
                     </div>
                   </div>

@@ -52,6 +52,25 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     criteria: s.criteria.map((c) => ({ id: c.id, label: c.label })),
   }))
 
+  const orgSettingsRaw = await prisma.orgSettings.upsert({
+    where: { id: "default" },
+    create: { id: "default" },
+    update: {},
+  })
+
+  const org = {
+    yayasanName: orgSettingsRaw.yayasanName,
+    schoolName: orgSettingsRaw.schoolName,
+    address: orgSettingsRaw.address,
+    phone: orgSettingsRaw.phone,
+    city: orgSettingsRaw.city,
+    periodLabel: orgSettingsRaw.periodLabel,
+    kepalaSekolah: orgSettingsRaw.kepalaSekolah,
+    ketuaName: orgSettingsRaw.ketuaName,
+    ketuaTitle: orgSettingsRaw.ketuaTitle,
+    logoBase64: orgSettingsRaw.logoBase64 ?? null,
+  }
+
   const reportData: ReportData = {
     teacher: { name: teacher.name },
     evaluators: allEvaluators,
@@ -60,6 +79,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     avgTotal,
     grade,
     generatedAt: new Date(),
+    org,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

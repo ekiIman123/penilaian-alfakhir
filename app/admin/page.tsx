@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { ManageList } from "@/components/admin/manage-list"
+import { AdminTabs } from "@/components/admin/admin-tabs"
 import { Database, Users, UserCheck } from "lucide-react"
 
 export default async function AdminPage() {
@@ -112,18 +112,8 @@ export default async function AdminPage() {
         <div style={{ height: "2px", background: "linear-gradient(90deg, #C4972A, #E8B84B, #C4972A)" }} />
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Guru column */}
-        <div className="card p-5">
-          <ManageList people={guruData} type="guru" />
-        </div>
-
-        {/* Penilai column */}
-        <div className="card p-5">
-          <ManageList people={penilaiData} type="penilai" />
-        </div>
-      </div>
+      {/* Responsive layout: tabs on mobile, two-column grid on desktop */}
+      <AdminTabs guruData={guruData} penilaiData={penilaiData} />
     </div>
   )
 }

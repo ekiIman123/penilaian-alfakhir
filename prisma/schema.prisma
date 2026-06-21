@@ -34,3 +34,18 @@ model Evaluation {
 
   @@unique([evaluatorId, teacherId])
 }
+
+model OrgSettings {
+  id            String   @id @default("default")
+  yayasanName   String   @default("YAYASAN AL FAKHIR")
+  schoolName    String   @default("SMP AL FAKHIR JAKARTA SELATAN")
+  address       String   @default("Jl. Ciledug Raya, Jakarta Selatan")
+  phone         String   @default("")
+  city          String   @default("Jakarta")
+  periodLabel   String   @default("Semester Ganjil 2025/2026")
+  kepalaSekolah String   @default("")
+  ketuaName     String   @default("")
+  ketuaTitle    String   @default("Ketua Balitbang SDM")
+  logoBase64    String?
+  updatedAt     DateTime @updatedAt
+}

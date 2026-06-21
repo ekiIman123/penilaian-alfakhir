@@ -4,9 +4,23 @@ import {
   Text,
   View,
   StyleSheet,
+  Image,
 } from "@react-pdf/renderer"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface OrgSettings {
+  yayasanName: string
+  schoolName: string
+  address: string
+  phone: string
+  city: string
+  periodLabel: string
+  kepalaSekolah: string
+  ketuaName: string
+  ketuaTitle: string
+  logoBase64: string | null
+}
 
 export interface ReportData {
   teacher: { name: string }
@@ -28,6 +42,7 @@ export interface ReportData {
   avgTotal: number | null
   grade: { label: string; color: string; bg: string } | null
   generatedAt: Date
+  org: OrgSettings
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -277,13 +292,50 @@ const styles = StyleSheet.create({
     backgroundColor: LIGHT_BG,
   },
 
+  // Compact versions for page 2 detail tables
+  tableHeaderRowSm: {
+    flexDirection: "row",
+    backgroundColor: HEADER_BG,
+    height: 18,
+    alignItems: "center",
+  },
+  tableRowSm: {
+    flexDirection: "row",
+    height: 14,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: BORDER_COLOR,
+  },
+  tableRowAltSm: {
+    flexDirection: "row",
+    height: 14,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: BORDER_COLOR,
+    backgroundColor: GRAY_LIGHT,
+  },
+  totalRowSm: {
+    flexDirection: "row",
+    height: 16,
+    alignItems: "center",
+    borderTopWidth: 2,
+    borderTopColor: ACCENT,
+    backgroundColor: LIGHT_BG,
+  },
+  detailSectionHeaderSm: {
+    flexDirection: "row",
+    height: 16,
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+
   gradeBox: {
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 8,
     borderWidth: 2,
     borderColor: ACCENT,
     borderRadius: 6,
-    padding: 14,
+    padding: 10,
     alignItems: "center",
   },
   gradeLabel: {
@@ -381,7 +433,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: GRAY_TEXT,
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 4,
   },
   signatureLine: {
     width: "100%",
@@ -399,12 +451,25 @@ const styles = StyleSheet.create({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function KopSurat() {
+function KopSurat({ org }: { org: OrgSettings }) {
   return (
     <View style={styles.kop}>
-      <Text style={styles.kopSchool}>YAYASAN AL FAKHIR</Text>
-      <Text style={styles.kopSub}>SMP AL FAKHIR JAKARTA SELATAN</Text>
-      <Text style={styles.kopAddress}>Jl. Ciledug Raya, Jakarta Selatan · (021) XXXX-XXXX</Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {org.logoBase64 ? (
+          <Image src={org.logoBase64} style={{ width: 46, height: 46, marginRight: 10 }} />
+        ) : null}
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Text style={styles.kopSchool}>{org.yayasanName}</Text>
+          <Text style={styles.kopSub}>{org.schoolName}</Text>
+          <Text style={styles.kopAddress}>
+            {org.address}{org.phone ? ` · ${org.phone}` : ""}
+          </Text>
+        </View>
+        {/* Mirror spacer so text stays centered when logo present */}
+        {org.logoBase64 ? (
+          <View style={{ width: 46, height: 46, marginLeft: 10 }} />
+        ) : null}
+      </View>
     </View>
   )
 }
@@ -423,9 +488,8 @@ function PageFooter({ current, total }: { current: number; total: number }) {
 // ─── Main Document ────────────────────────────────────────────────────────────
 
 export function ReportDocument({ data }: { data: ReportData }) {
-  const { teacher, evaluators, evaluations, sections, avgTotal, grade, generatedAt } = data
+  const { teacher, evaluators, evaluations, sections, avgTotal, grade, generatedAt, org } = data
 
-  const totalPages = 2
   const evCount = evaluations.length
   const W = getColWidths(evCount)
 
@@ -469,12 +533,12 @@ export function ReportDocument({ data }: { data: ReportData }) {
     >
       {/* ══ PAGE 1 ══════════════════════════════════════════════════════════ */}
       <Page size="A4" style={styles.page}>
-        <KopSurat />
+        <KopSurat org={org} />
         <View style={styles.rule} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.titleMain}>LAPORAN PENILAIAN KINERJA GURU</Text>
-          <Text style={styles.titleSub}>Tahun Pelajaran 2025/2026</Text>
+          <Text style={styles.titleSub}>{org.periodLabel}</Text>
         </View>
         <View style={styles.ruleThin} />
 
@@ -486,7 +550,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
           </View>
           <View style={styles.identityRow}>
             <Text style={styles.identityLabel}>Periode Penilaian</Text>
-            <Text style={styles.identityValue}>Semester Ganjil 2025/2026</Text>
+            <Text style={styles.identityValue}>{org.periodLabel}</Text>
           </View>
           <View style={styles.identityRow}>
             <Text style={styles.identityLabel}>Tanggal Laporan</Text>
@@ -596,29 +660,53 @@ export function ReportDocument({ data }: { data: ReportData }) {
           )}
         </View>
 
-        <PageFooter current={1} total={totalPages} />
+        {/* Signature block */}
+        <View style={styles.signatureBlock}>
+          {/* Kepala Sekolah */}
+          <View style={styles.signatureCol}>
+            <Text style={styles.signatureLabel}>Mengetahui,{"\n"}Kepala Sekolah</Text>
+            <View style={{ height: 30 }} />
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureName}>{org.kepalaSekolah || "_______________"}</Text>
+          </View>
+          {/* Guru yang dinilai */}
+          <View style={styles.signatureCol}>
+            <Text style={styles.signatureLabel}>{org.city || "Jakarta"}, {formatDateId(generatedAt)}</Text>
+            <View style={{ height: 30 }} />
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureName}>{teacher.name}</Text>
+          </View>
+          {/* Ketua */}
+          <View style={styles.signatureCol}>
+            <Text style={styles.signatureLabel}>Mengetahui,{"\n"}{org.ketuaTitle || "Ketua Balitbang SDM"}</Text>
+            <View style={{ height: 30 }} />
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureName}>{org.ketuaName || "_______________"}</Text>
+          </View>
+        </View>
+
+        <PageFooter current={1} total={2} />
       </Page>
 
       {/* ══ PAGE 2 ══════════════════════════════════════════════════════════ */}
       <Page size="A4" style={styles.page}>
-        <KopSurat />
+        <KopSurat org={org} />
         <View style={styles.rule} />
-        <View style={[styles.titleBlock, { paddingVertical: 6 }]}>
-          <Text style={[styles.titleMain, { fontSize: 13 }]}>DETAIL PENILAIAN PER KRITERIA</Text>
+        <View style={[styles.titleBlock, { paddingVertical: 3 }]}>
+          <Text style={[styles.titleMain, { fontSize: 12 }]}>DETAIL PENILAIAN PER KRITERIA</Text>
         </View>
-        <View style={styles.ruleThin} />
 
         {sections.map((sec) => (
           // wrap={false} keeps the entire section (header + all rows + subtotal) together —
           // if it doesn't fit on the current page it moves as a unit to the next page
-          <View key={sec.id} style={{ marginBottom: 6 }} wrap={false}>
-            <View style={[styles.detailSectionHeader, { backgroundColor: sec.color }]}>
+          <View key={sec.id} style={{ marginBottom: 4 }} wrap={false}>
+            <View style={[styles.detailSectionHeaderSm, { backgroundColor: sec.color }]}>
               <Text style={styles.detailSectionHeaderText}>
                 ASPEK: {sec.label}  (Maks. {sec.maxScore} poin)
               </Text>
             </View>
 
-            <View style={[styles.tableHeaderRow, { backgroundColor: HEADER_BG }]}>
+            <View style={styles.tableHeaderRowSm}>
               <Text style={[styles.tableCellHeader, { width: W.d_crit, textAlign: "left" }]}>
                 Kriteria
               </Text>
@@ -641,7 +729,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
               return (
                 <View
                   key={c.id}
-                  style={ci % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+                  style={ci % 2 === 0 ? styles.tableRowSm : styles.tableRowAltSm}
                 >
                   <Text style={[styles.tableCell, { width: W.d_crit }]}>{c.label}</Text>
                   {evaluations.map((ev) => (
@@ -656,7 +744,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
               )
             })}
 
-            <View style={[styles.totalRow, { height: 18 }]}>
+            <View style={styles.totalRowSm}>
               <Text style={[styles.tableCellBold, { width: W.d_crit }]}>
                 Subtotal {sec.label.split(" ")[0]}
               </Text>
@@ -672,33 +760,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
           </View>
         ))}
 
-        {/* Signature block */}
-        <View style={styles.signatureBlock}>
-          <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Mengetahui,{"\n"}Kepala Sekolah</Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureName}>_______________</Text>
-          </View>
-          <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Jakarta, {formatDateId(generatedAt)}</Text>
-            <View style={{ height: 30 }} />
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureName}>Guru yang Dinilai</Text>
-            <Text style={[styles.signatureName, { fontFamily: "Helvetica", fontSize: 7, marginTop: 1 }]}>
-              {teacher.name}
-            </Text>
-          </View>
-          <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Penilai</Text>
-            <View style={{ height: 30 }} />
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureName}>
-              {evaluations[0]?.evaluator.name ?? "_______________"}
-            </Text>
-          </View>
-        </View>
-
-        <PageFooter current={2} total={totalPages} />
+        <PageFooter current={2} total={2} />
       </Page>
     </Document>
   )
