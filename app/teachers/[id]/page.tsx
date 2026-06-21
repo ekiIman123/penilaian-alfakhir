@@ -5,7 +5,8 @@ import { SECTIONS, getScoreGrade, EVALUATOR_COLORS } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 import { TeacherRadarChart } from "@/components/teacher-radar-chart"
 import Link from "next/link"
-import { ChevronLeft, Edit, FileDown } from "lucide-react"
+import { ChevronLeft, Edit } from "lucide-react"
+import { PdfDownloadButton } from "@/components/pdf-download-button"
 import { DeleteEvaluationButton } from "@/components/delete-evaluation-button"
 
 interface Props {
@@ -102,17 +103,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                   </p>
                   <h1 className="text-xl font-black leading-snug">{teacher.name}</h1>
                   <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.55)" }}>SMP Al Fakhir · TA 2025/2026</p>
-                  <a
-                    href={`/api/reports/${teacher.id}/pdf`}
-                    download
-                    className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:bg-white/10"
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      color: "rgba(255,255,255,0.9)",
-                    }}
-                  >
-                    <FileDown size={14} /> Unduh Laporan PDF
-                  </a>
+                  <PdfDownloadButton teacherId={teacher.id} teacherName={teacher.name} />
                 </div>
                 {avgTotal != null && grade ? (
                   <div className="shrink-0">
