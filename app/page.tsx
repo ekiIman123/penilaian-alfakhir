@@ -1,18 +1,9 @@
 import { prisma } from "@/lib/prisma"
-import { SECTIONS, getScoreGrade, EVALUATOR_COLORS } from "@/lib/rubrics"
+import { SECTIONS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 import Link from "next/link"
 import { Users, CheckCircle2, Clock, AlertCircle } from "lucide-react"
-import { RowActionsMenu } from "@/components/dashboard/row-actions"
-
-function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
-  return (
-    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#EDE8E1" }}>
-      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-    </div>
-  )
-}
+import { DashboardTeacherList } from "@/components/dashboard/teacher-list"
 
 export default async function DashboardPage() {
   const teachers = await prisma.teacher.findMany({
@@ -44,7 +35,17 @@ export default async function DashboardPage() {
   const partial = ranked.filter((t) => t.ratedByIds.size > 0 && t.ratedByIds.size < evaluators.length).length
   const none = ranked.filter((t) => t.ratedByIds.size === 0).length
 
-  const RANK_MEDALS = ["🥇", "🥈", "🥉"]
+  // Serialize for client component (Set → array, only needed fields)
+  const teacherRows = ranked.map((t) => ({
+    id: t.id,
+    name: t.name,
+    avgTotal: t.avgTotal,
+    grade: t.grade,
+    sectionAvgs: t.sectionAvgs,
+    ratedByEvaluatorIds: Array.from(t.ratedByIds),
+  }))
+
+  const evaluatorInfos = evaluators.map((e) => ({ id: e.id, name: e.name }))
 
   return (
     <div className="space-y-6 animate-in">
@@ -108,224 +109,7 @@ export default async function DashboardPage() {
         <div style={{ height: "2px", background: "linear-gradient(90deg, #C4972A, #E8B84B, #C4972A)" }} />
       </div>
 
-      {/* ── Unified Teacher List ── */}
-      <div className="card">
-        {/* Section header */}
-        <div
-          className="px-5 py-4 flex flex-col gap-3"
-          style={{ borderBottom: "1px solid #E7DDD0" }}
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold text-gray-800">Rekapitulasi Penilaian Guru</h2>
-            <span className="text-xs font-medium" style={{ color: "#9CA3AF" }}>
-              Diurutkan: nilai tertinggi
-            </span>
-          </div>
-
-          {/* Evaluator legend — robust against name changes, keyed by id */}
-          {evaluators.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="text-[10px] font-bold uppercase tracking-widest shrink-0"
-                style={{ color: "#9CA3AF" }}
-              >
-                Penilai:
-              </span>
-              {evaluators.map((e, i) => (
-                <div
-                  key={e.id}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                  style={{
-                    backgroundColor: `${EVALUATOR_COLORS[i % EVALUATOR_COLORS.length]}15`,
-                    color: EVALUATOR_COLORS[i % EVALUATOR_COLORS.length],
-                    border: `1px solid ${EVALUATOR_COLORS[i % EVALUATOR_COLORS.length]}30`,
-                  }}
-                >
-                  <div
-                    className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0"
-                    style={{ backgroundColor: EVALUATOR_COLORS[i % EVALUATOR_COLORS.length] }}
-                  >
-                    {e.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="truncate max-w-[140px]">{e.name.split(",")[0]}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Teacher rows */}
-        <div className="divide-y" style={{ borderColor: "#F3EDE6" }}>
-          {ranked.map((t, i) => {
-            const completionCount = t.ratedByIds.size
-            const isComplete = evaluators.length > 0 && completionCount === evaluators.length
-            const isPartial = completionCount > 0 && !isComplete
-
-            const scoreEl = t.avgTotal != null ? (
-              <div className="text-right">
-                <span className="text-xl font-black leading-none" style={{ color: t.grade?.color }}>
-                  {t.avgTotal.toFixed(2)}
-                </span>
-                <span className="text-[10px] ml-0.5" style={{ color: "#9CA3AF" }}>/4.00</span>
-              </div>
-            ) : (
-              <span className="text-gray-300 text-xs italic">—</span>
-            )
-
-            const gradeEl = t.grade ? (
-              <span
-                className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap"
-                style={{ color: t.grade.color, backgroundColor: t.grade.bg }}
-              >
-                {t.grade.label}
-              </span>
-            ) : (
-              <span className="text-[10px] italic" style={{ color: "#D1D5DB" }}>Belum</span>
-            )
-
-            const dotsEl = (
-              <div className="flex items-center gap-1.5">
-                {evaluators.map((e, ei) => {
-                  const rated = t.ratedByIds.has(e.id)
-                  const color = EVALUATOR_COLORS[ei % EVALUATOR_COLORS.length]
-                  return (
-                    <div
-                      key={e.id}
-                      title={`${e.name.split(",")[0]}: ${rated ? "Sudah dinilai ✓" : "Belum dinilai"}`}
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black"
-                      style={
-                        rated
-                          ? { backgroundColor: color, color: "white" }
-                          : { backgroundColor: "transparent", border: `1.5px dashed ${color}50`, color: `${color}70` }
-                      }
-                    >
-                      {rated ? e.name.charAt(0).toUpperCase() : "·"}
-                    </div>
-                  )
-                })}
-                <span
-                  className="text-[10px] font-semibold"
-                  style={{ color: isComplete ? "#16A34A" : isPartial ? "#D97706" : "#9CA3AF" }}
-                >
-                  {completionCount}/{evaluators.length}
-                </span>
-              </div>
-            )
-
-            return (
-              <div
-                key={t.id}
-                className="px-4 sm:px-5 py-4 hover:bg-amber-50/30 transition-colors"
-              >
-                <div className="flex items-start gap-3 md:items-center md:gap-4">
-
-                  {/* Rank */}
-                  <div className="w-8 shrink-0 text-center pt-0.5 md:pt-0">
-                    {i < 3 ? (
-                      <span className="text-lg" title={`Peringkat ${i + 1}`}>{RANK_MEDALS[i]}</span>
-                    ) : (
-                      <span
-                        className="inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-black"
-                        style={{ backgroundColor: "#F3F4F6", color: "#6B7280" }}
-                      >
-                        {i + 1}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Name + dots + (mobile) score & buttons */}
-                  <div className="flex-1 min-w-0">
-                    {/* Row 1: name + mobile score */}
-                    <div className="flex items-start justify-between gap-3">
-                      <Link
-                        href={`/teachers/${t.id}`}
-                        className="font-semibold text-sm hover:underline leading-snug"
-                        style={{ color: "#1C1917" }}
-                      >
-                        {t.name}
-                      </Link>
-                      {/* Score — mobile only */}
-                      <div className="md:hidden shrink-0">{scoreEl}</div>
-                    </div>
-
-                    {/* Row 2: dots + (mobile) grade & 3-dot menu */}
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      {dotsEl}
-                      {/* Grade + 3-dot actions — mobile only */}
-                      <div className="md:hidden flex items-center gap-1.5">
-                        {gradeEl}
-                        <RowActionsMenu teacherId={t.id} grade={t.grade ?? null} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Mini-bars — lg+ only */}
-                  <div className="hidden lg:flex flex-col gap-1 w-40 shrink-0">
-                    {SECTIONS.map((s, si) => {
-                      const avg = t.sectionAvgs[si]
-                      const norm = avg != null ? (avg * 4) / s.maxScore : null
-                      return (
-                        <div key={s.id} className="flex items-center gap-1.5">
-                          <span className="text-[11px] w-3.5 shrink-0 text-center">{s.icon}</span>
-                          <MiniBar value={norm ?? 0} max={4} color={norm != null ? s.color : "#E5E7EB"} />
-                          <span
-                            className="text-[10px] font-bold w-6 text-right shrink-0"
-                            style={{ color: norm != null ? s.color : "#D1D5DB" }}
-                          >
-                            {norm != null ? norm.toFixed(1) : "—"}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Score — md+ only */}
-                  <div className="hidden md:block w-16 shrink-0 text-center">{scoreEl}</div>
-
-                  {/* Grade + actions — md+ only */}
-                  <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
-                    {gradeEl}
-                    <div className="flex items-center gap-1">
-                      <Link
-                        href={`/teachers/${t.id}`}
-                        className="px-2.5 py-1 text-xs font-semibold text-white rounded-lg transition-colors"
-                        style={{ backgroundColor: "#5C3D11" }}
-                      >
-                        Detail
-                      </Link>
-                      <Link
-                        href={`/form?teacherId=${t.id}`}
-                        className="px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors"
-                        style={{ backgroundColor: "#C4972A", color: "#1C1409" }}
-                      >
-                        Nilai
-                      </Link>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            )
-          })}
-
-          {/* Empty state */}
-          {ranked.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <span className="text-5xl">👨‍🏫</span>
-              <p className="text-sm font-medium" style={{ color: "#78716C" }}>
-                Belum ada data guru
-              </p>
-              <Link
-                href="/admin"
-                className="px-4 py-2 text-sm font-bold rounded-lg text-white"
-                style={{ backgroundColor: "#5C3D11" }}
-              >
-                Kelola Data Master
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
+      <DashboardTeacherList teachers={teacherRows} evaluators={evaluatorInfos} />
     </div>
   )
 }
