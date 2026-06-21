@@ -641,17 +641,19 @@ export function ReportDocument({ data }: { data: ReportData }) {
           )}
         </View>
 
-        {/* Grade box — uses 1–4 scale consistent with app */}
+        {/* Grade box — compact horizontal row */}
         {displayAvg != null && grade && (
-          <View style={[styles.gradeBox, { backgroundColor: gradeBg(grade.label) }]}>
-            <Text style={styles.gradeLabel}>Nilai Akhir (Rata-rata)</Text>
-            <Text style={styles.gradeScore}>
-              {displayAvg.toFixed(2)}
-              <Text style={{ fontSize: 14, color: GRAY_TEXT }}>{" "}/ 4.00</Text>
-            </Text>
-            <View style={[styles.gradeBadge, { backgroundColor: grade.bg }]}>
-              <Text style={[styles.gradeBadgeText, { color: grade.color }]}>{grade.label}</Text>
+          <View style={[styles.gradeBox, { backgroundColor: gradeBg(grade.label), flexDirection: "row", alignItems: "center", padding: 8, marginTop: 6, marginBottom: 6 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.gradeLabel, { fontSize: 8, marginBottom: 3 }]}>NILAI AKHIR (RATA-RATA)</Text>
+              <View style={[styles.gradeBadge, { backgroundColor: grade.bg, alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3 }]}>
+                <Text style={[styles.gradeBadgeText, { color: grade.color, fontSize: 9 }]}>{grade.label}</Text>
+              </View>
             </View>
+            <Text style={[styles.gradeScore, { fontSize: 26 }]}>
+              {displayAvg.toFixed(2)}
+              <Text style={{ fontSize: 13, color: GRAY_TEXT }}>{" "}/ 4.00</Text>
+            </Text>
           </View>
         )}
 
@@ -672,26 +674,33 @@ export function ReportDocument({ data }: { data: ReportData }) {
           )}
         </View>
 
+        {/* Date line — right-aligned, above signature columns */}
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 14 }}>
+          <Text style={{ fontSize: 8, color: GRAY_TEXT }}>
+            {org.city || "Jakarta"}, {formatDateId(generatedAt)}
+          </Text>
+        </View>
+
         {/* Signature block */}
-        <View style={styles.signatureBlock}>
+        <View style={[styles.signatureBlock, { marginTop: 6 }]}>
           {/* Kepala Sekolah */}
           <View style={styles.signatureCol}>
             <Text style={styles.signatureLabel}>Mengetahui,{"\n"}Kepala Sekolah</Text>
-            <View style={{ height: 30 }} />
+            <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{org.kepalaSekolah || "_______________"}</Text>
           </View>
           {/* Guru yang dinilai */}
           <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>{org.city || "Jakarta"}, {formatDateId(generatedAt)}</Text>
-            <View style={{ height: 30 }} />
+            <Text style={styles.signatureLabel}>Guru Mata Pelajaran</Text>
+            <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{teacher.name}</Text>
           </View>
           {/* Ketua */}
           <View style={styles.signatureCol}>
             <Text style={styles.signatureLabel}>Mengetahui,{"\n"}{org.ketuaTitle || "Ketua Balitbang SDM"}</Text>
-            <View style={{ height: 30 }} />
+            <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{org.ketuaName || "_______________"}</Text>
           </View>
