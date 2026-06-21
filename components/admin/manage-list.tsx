@@ -42,6 +42,9 @@ export function ManageList({ people, type }: Props) {
   // Choice modal
   const [choiceOpen, setChoiceOpen] = useState(false)
 
+  // Delete confirm modal
+  const [deleteTarget, setDeleteTarget] = useState<Person | null>(null)
+
   // Bulk add
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkText, setBulkText] = useState("")
@@ -172,10 +175,6 @@ export function ManageList({ people, type }: Props) {
   }
 
   async function handleDelete(person: Person) {
-    const confirmed = window.confirm(
-      `Hapus ${person.name}? Semua penilaian terkait akan ikut terhapus.`
-    )
-    if (!confirmed) return
     try {
       const res = await fetch(`${apiBase}/${person.id}`, { method: "DELETE" })
       if (!res.ok) {
@@ -187,6 +186,8 @@ export function ManageList({ people, type }: Props) {
       }
     } catch {
       toast.error("Terjadi kesalahan jaringan")
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -294,6 +295,77 @@ export function ManageList({ people, type }: Props) {
             >
               Batal
             </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Delete confirm modal (portal) ── */}
+      {mounted && deleteTarget && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="rounded-2xl p-6 flex flex-col gap-4 mx-4"
+            style={{
+              width: 340,
+              backgroundColor: "#FFFFFF",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon + heading */}
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(239,68,68,0.10)" }}
+              >
+                <Trash2 size={18} style={{ color: "#EF4444" }} />
+              </div>
+              <div>
+                <p className="font-black text-base" style={{ color: "#1C1917" }}>
+                  Hapus {label}?
+                </p>
+                <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#78716C" }}>
+                  <span className="font-semibold" style={{ color: "#1C1917" }}>
+                    {deleteTarget.name}
+                  </span>{" "}
+                  akan dihapus secara permanen.
+                  {deleteTarget.evaluationCount > 0 && (
+                    <span style={{ color: "#EF4444" }}>
+                      {" "}Termasuk {deleteTarget.evaluationCount} penilaian terkait.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2.5 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{
+                  backgroundColor: "#F3F4F6",
+                  color: "#374151",
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleDelete(deleteTarget)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                style={{
+                  backgroundColor: "#EF4444",
+                  color: "#FFFFFF",
+                  boxShadow: "0 2px 8px rgba(239,68,68,0.30)",
+                }}
+              >
+                Ya, Hapus
+              </button>
+            </div>
           </div>
         </div>,
         document.body
@@ -580,7 +652,7 @@ export function ManageList({ people, type }: Props) {
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => handleDelete(person)}
+                      onClick={() => setDeleteTarget(person)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
                       style={{ color: "#EF4444" }}
                       title="Hapus"
