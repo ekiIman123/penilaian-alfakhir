@@ -681,25 +681,31 @@ export function ReportDocument({ data }: { data: ReportData }) {
           </Text>
         </View>
 
-        {/* Signature block */}
-        <View style={[styles.signatureBlock, { marginTop: 6 }]}>
+        {/* Signature block — label area fixed height so all 3 lines start the spacer at the same Y */}
+        <View style={[styles.signatureBlock, { marginTop: 16 }]}>
           {/* Kepala Sekolah */}
           <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Mengetahui,{"\n"}Kepala Sekolah</Text>
+            <View style={{ height: 30, justifyContent: "flex-start" }}>
+              <Text style={styles.signatureLabel}>Mengetahui,{"\n"}Kepala Sekolah</Text>
+            </View>
             <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{org.kepalaSekolah || "_______________"}</Text>
           </View>
           {/* Guru yang dinilai */}
           <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Guru Mata Pelajaran</Text>
+            <View style={{ height: 30, justifyContent: "flex-start" }}>
+              <Text style={styles.signatureLabel}>Guru Mata Pelajaran</Text>
+            </View>
             <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{teacher.name}</Text>
           </View>
           {/* Ketua */}
           <View style={styles.signatureCol}>
-            <Text style={styles.signatureLabel}>Mengetahui,{"\n"}{org.ketuaTitle || "Ketua Balitbang SDM"}</Text>
+            <View style={{ height: 30, justifyContent: "flex-start" }}>
+              <Text style={styles.signatureLabel}>Mengetahui,{"\n"}{org.ketuaTitle || "Ketua Balitbang SDM"}</Text>
+            </View>
             <View style={{ height: 50 }} />
             <View style={styles.signatureLine} />
             <Text style={styles.signatureName}>{org.ketuaName || "_______________"}</Text>
