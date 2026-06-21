@@ -25,8 +25,8 @@ model Evaluation {
   id          String    @id @default(cuid())
   evaluatorId String
   teacherId   String
-  evaluator   Evaluator @relation(fields: [evaluatorId], references: [id])
-  teacher     Teacher   @relation(fields: [teacherId], references: [id])
+  evaluator   Evaluator @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
+  teacher     Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   scores      String    // JSON string: { criterionId: 1-4 }
   catatan     String?
   createdAt   DateTime  @default(now())
