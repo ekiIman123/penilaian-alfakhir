@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Pencil, Trash2, Plus, Check, X, GraduationCap, UserCheck, UserPlus, Users } from "lucide-react"
@@ -46,6 +47,8 @@ export function ManageList({ people, type }: Props) {
   const [bulkText, setBulkText] = useState("")
   const [bulkLoading, setBulkLoading] = useState(false)
 
+  const [mounted, setMounted] = useState(false)
+
   const addInputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
   const bulkRef = useRef<HTMLTextAreaElement>(null)
@@ -53,6 +56,8 @@ export function ManageList({ people, type }: Props) {
   const apiBase = type === "guru" ? "/api/teachers" : "/api/evaluators"
   const label = type === "guru" ? "Guru" : "Penilai"
   const Icon = type === "guru" ? GraduationCap : UserCheck
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (addingNew && addInputRef.current) addInputRef.current.focus()
@@ -211,8 +216,8 @@ export function ManageList({ people, type }: Props) {
 
   return (
     <>
-      {/* ── Choice modal ── */}
-      {choiceOpen && (
+      {/* ── Choice modal (portal → escapes any parent overflow/transform) ── */}
+      {mounted && choiceOpen && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
@@ -290,7 +295,8 @@ export function ManageList({ people, type }: Props) {
               Batal
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="flex flex-col gap-3">
