@@ -72,8 +72,7 @@ export default async function TeacherDetailPage({ params }: Props) {
   const missingEvaluators = allEvaluators.filter((e) => !ratedByIds.has(e.id))
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: "#F5EFE6" }}>
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
 
         {/* ── Hero card ── */}
         <div>
@@ -207,45 +206,45 @@ export default async function TeacherDetailPage({ params }: Props) {
                       borderBottom: idx < parsedEvals.length - 1 ? "1px solid #F3EDE6" : "none",
                     }}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        {/* Evaluator avatar */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      {/* Left: avatar + name + date */}
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div
                           className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-black shrink-0"
-                          style={{
-                            backgroundColor: color,
-                            boxShadow: `0 2px 8px ${color}50`,
-                          }}
+                          style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}50` }}
                         >
                           {e.evaluator.name.charAt(0)}
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-800 text-sm">{e.evaluator.name}</div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-800 text-sm leading-snug">{e.evaluator.name}</div>
                           <div className="text-xs text-gray-400">
                             {new Date(e.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
+                      {/* Right: score (top) + grade & actions (bottom) */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div>
                           <span className="text-lg font-black" style={{ color: g.color }}>{total.toFixed(2)}</span>
                           <span className="text-xs text-gray-400">/4.00</span>
                         </div>
-                        <span
-                          className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold"
-                          style={{ color: g.color, backgroundColor: g.bg }}
-                        >
-                          {g.label}
-                        </span>
-                        <Link
-                          href={`/form?teacherId=${teacher.id}&evaluatorId=${e.evaluatorId}`}
-                          className="p-1.5 rounded-lg border transition-colors"
-                          style={{ borderColor: "#E5E7EB", color: "#9CA3AF" }}
-                          title="Edit penilaian"
-                        >
-                          <Edit size={13} />
-                        </Link>
-                        <DeleteEvaluationButton evaluationId={e.id} teacherId={teacher.id} />
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap"
+                            style={{ color: g.color, backgroundColor: g.bg }}
+                          >
+                            {g.label}
+                          </span>
+                          <Link
+                            href={`/form?teacherId=${teacher.id}&evaluatorId=${e.evaluatorId}`}
+                            className="p-1.5 rounded-lg border transition-colors"
+                            style={{ borderColor: "#E5E7EB", color: "#9CA3AF" }}
+                            title="Edit penilaian"
+                          >
+                            <Edit size={13} />
+                          </Link>
+                          <DeleteEvaluationButton evaluationId={e.id} teacherId={teacher.id} />
+                        </div>
                       </div>
                     </div>
 
@@ -394,7 +393,6 @@ export default async function TeacherDetailPage({ params }: Props) {
           </div>
         </div>
 
-      </div>
     </div>
   )
 }

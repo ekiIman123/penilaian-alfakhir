@@ -1,13 +1,12 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, ClipboardPen, Database, Menu, X } from "lucide-react"
+import { BarChart3, Database, Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
 
 const NAV_ITEMS = [
-  { href: "/",      label: "Dashboard",   icon: BarChart3,    exact: true,  accent: false },
-  { href: "/form",  label: "+ Nilai",     icon: ClipboardPen, exact: false, accent: true  },
-  { href: "/admin", label: "Kelola Data", icon: Database,     exact: false, accent: false },
+  { href: "/",      label: "Dashboard",   icon: BarChart3, exact: true,  accent: false },
+  { href: "/admin", label: "Kelola Data", icon: Database,  exact: false, accent: false },
 ] as const
 
 function active(pathname: string, href: string, exact: boolean) {
