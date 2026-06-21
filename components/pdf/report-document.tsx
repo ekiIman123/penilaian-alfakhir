@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -30,
     marginTop: -24,
     paddingHorizontal: 30,
-    paddingVertical: 14,
+    paddingVertical: 10,
     backgroundColor: PRIMARY,
     flexDirection: "column",
     alignItems: "center",
@@ -452,23 +452,35 @@ const styles = StyleSheet.create({
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function KopSurat({ org }: { org: OrgSettings }) {
+  const logoSize = 52
+
   return (
     <View style={styles.kop}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        {org.logoBase64 ? (
-          <Image src={org.logoBase64} style={{ width: 46, height: 46, marginRight: 10 }} />
-        ) : null}
-        <View style={{ flex: 1, alignItems: "center" }}>
+      {/*
+        width:"100%" is critical — without it, alignItems:"center" on the parent
+        shrinks this row to its minimum content width, causing text to wrap per-character.
+      */}
+      <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
+
+        {/* Left slot — logo if available, otherwise equal-width blank */}
+        <View style={{ width: logoSize, alignItems: "center", justifyContent: "center" }}>
+          {org.logoBase64 ? (
+            <Image src={org.logoBase64} style={{ width: logoSize, height: logoSize, objectFit: "contain" }} />
+          ) : null}
+        </View>
+
+        {/* Centre — all text, always centred */}
+        <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 8 }}>
           <Text style={styles.kopSchool}>{org.yayasanName}</Text>
           <Text style={styles.kopSub}>{org.schoolName}</Text>
-          <Text style={styles.kopAddress}>
-            {org.address}{org.phone ? ` · ${org.phone}` : ""}
-          </Text>
+          <Text style={styles.kopAddress}>{org.address}</Text>
+          {org.phone ? (
+            <Text style={styles.kopAddress}>{org.phone}</Text>
+          ) : null}
         </View>
-        {/* Mirror spacer so text stays centered when logo present */}
-        {org.logoBase64 ? (
-          <View style={{ width: 46, height: 46, marginLeft: 10 }} />
-        ) : null}
+
+        {/* Right mirror spacer — keeps text visually centred */}
+        <View style={{ width: logoSize }} />
       </View>
     </View>
   )

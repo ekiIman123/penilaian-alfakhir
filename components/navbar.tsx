@@ -17,6 +17,7 @@ function active(pathname: string, href: string, exact: boolean) {
 export function Navbar() {
   const path = usePathname()
   const [open, setOpen] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
 
   // Close menu on route change
   useEffect(() => { setOpen(false) }, [path])
@@ -33,16 +34,26 @@ export function Navbar() {
 
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0"
-            style={{
-              background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-              color: "#1C1409",
-              boxShadow: "0 0 0 2px #2C1A08, 0 0 0 3.5px #C4972A, 0 0 12px rgba(196,151,42,0.35)",
-            }}
-          >
-            AF
-          </div>
+          {!logoFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/api/logo"
+              alt="Logo"
+              className="h-10 w-auto shrink-0"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
+                color: "#1C1409",
+                boxShadow: "0 0 0 2px #2C1A08, 0 0 0 3.5px #C4972A, 0 0 12px rgba(196,151,42,0.35)",
+              }}
+            >
+              AF
+            </div>
+          )}
           <div className="leading-tight">
             <div className="font-bold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.92)" }}>
               Al Fakhir
