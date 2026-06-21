@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Link from "next/link"
-import { ArrowUpDown, SlidersHorizontal } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { SECTIONS, EVALUATOR_COLORS } from "@/lib/rubrics"
 import { RowActionsMenu } from "@/components/dashboard/row-actions"
 
@@ -55,13 +55,6 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "name-desc",  label: "Nama Z–A" },
 ]
 
-const GRADE_COLORS: Record<string, { color: string; bg: string }> = {
-  "Sangat Baik": { color: "#16A34A", bg: "#DCFCE7" },
-  "Baik":        { color: "#2563EB", bg: "#DBEAFE" },
-  "Cukup":       { color: "#D97706", bg: "#FEF3C7" },
-  "Kurang":      { color: "#EA580C", bg: "#FFEDD5" },
-}
-
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -73,34 +66,74 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
   )
 }
 
-function PillGroup<T extends string>({
+function FilterDropdown<T extends string>({
+  label,
   options,
   value,
+  defaultValue,
   onChange,
 }: {
+  label: string
   options: { value: T; label: string }[]
   value: T
+  defaultValue: T
   onChange: (v: T) => void
 }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const isActive = value !== defaultValue
+  const current = options.find((o) => o.value === value)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
+
   return (
-    <div className="flex items-center gap-1.5">
-      {options.map((opt) => {
-        const active = opt.value === value
-        return (
-          <button
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap"
-            style={
-              active
-                ? { backgroundColor: "#2C1A08", color: "#FFFFFF" }
-                : { backgroundColor: "#F3EDE6", color: "#78716C" }
-            }
-          >
-            {opt.label}
-          </button>
-        )
-      })}
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors"
+        style={{
+          backgroundColor: isActive ? "#2C1A08" : "#F3EDE6",
+          color: isActive ? "#FFFFFF" : "#78716C",
+          border: isActive ? "1px solid transparent" : "1px solid #E7DDD0",
+        }}
+      >
+        <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">{label}</span>
+        <span>{current?.label}</span>
+        <ChevronDown size={11} style={{ opacity: 0.7, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full mt-1.5 z-30 rounded-xl py-1.5"
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E7DDD0",
+            minWidth: "100%",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          }}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false) }}
+              className="w-full text-left px-4 py-2 text-xs font-semibold transition-colors whitespace-nowrap"
+              style={{
+                color: value === opt.value ? "#C4972A" : "#374151",
+                backgroundColor: value === opt.value ? "#FEF3C7" : "transparent",
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -111,7 +144,6 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [gradeFilter, setGradeFilter]   = useState<GradeFilter>("all")
   const [sortBy, setSortBy]             = useState<SortBy>("score-desc")
-  const [sortOpen, setSortOpen]         = useState(false)
 
   const totalEv = evaluators.length
 
@@ -159,84 +191,41 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
     <div className="card">
       {/* ── Header ── */}
       <div className="px-5 py-4 flex flex-col gap-3" style={{ borderBottom: "1px solid #E7DDD0" }}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={15} style={{ color: "#9CA3AF" }} />
-            <h2 className="font-bold text-gray-800">Rekapitulasi Penilaian Guru</h2>
+
+        {/* Title + filter dropdowns */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <h2 className="font-bold text-gray-800 shrink-0">Rekapitulasi Penilaian Guru</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <FilterDropdown
+              label="Status"
+              options={STATUS_OPTIONS}
+              value={statusFilter}
+              defaultValue="all"
+              onChange={setStatusFilter}
+            />
+            <FilterDropdown
+              label="Grade"
+              options={GRADE_OPTIONS}
+              value={gradeFilter}
+              defaultValue="all"
+              onChange={setGradeFilter}
+            />
+            <FilterDropdown
+              label="Urutan"
+              options={SORT_OPTIONS}
+              value={sortBy}
+              defaultValue="score-desc"
+              onChange={setSortBy}
+            />
             {activeFilterCount > 0 && (
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: "#C4972A", color: "#FFFFFF" }}
+              <button
+                onClick={() => { setStatusFilter("all"); setGradeFilter("all") }}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg transition-colors"
+                style={{ backgroundColor: "#FEE2E2", color: "#DC2626" }}
               >
-                {activeFilterCount} filter aktif
-              </span>
+                Reset
+              </button>
             )}
-          </div>
-
-          {/* Sort dropdown */}
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setSortOpen((o) => !o)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-              style={{
-                backgroundColor: sortBy !== "score-desc" ? "#2C1A08" : "#F3EDE6",
-                color: sortBy !== "score-desc" ? "#FFFFFF" : "#78716C",
-              }}
-            >
-              <ArrowUpDown size={12} />
-              <span className="hidden sm:inline">
-                {SORT_OPTIONS.find((s) => s.value === sortBy)?.label}
-              </span>
-              <span className="sm:hidden">Urut</span>
-            </button>
-            {sortOpen && (
-              <div
-                className="absolute right-0 top-full mt-1 z-20 rounded-xl py-1.5 shadow-lg"
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E7DDD0",
-                  minWidth: 140,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                }}
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
-                    className="w-full text-left px-4 py-2 text-xs font-semibold transition-colors"
-                    style={{
-                      color: sortBy === opt.value ? "#C4972A" : "#374151",
-                      backgroundColor: sortBy === opt.value ? "#FEF3C7" : "transparent",
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Filter pills — scrollable on mobile */}
-        <div className="flex flex-col gap-2">
-          {/* Status */}
-          <div className="overflow-x-auto pb-0.5 -mb-0.5">
-            <div className="flex items-center gap-2 min-w-max">
-              <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: "#9CA3AF" }}>
-                Status
-              </span>
-              <PillGroup options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter} />
-            </div>
-          </div>
-
-          {/* Grade */}
-          <div className="overflow-x-auto pb-0.5 -mb-0.5">
-            <div className="flex items-center gap-2 min-w-max">
-              <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: "#9CA3AF" }}>
-                Grade
-              </span>
-              <PillGroup options={GRADE_OPTIONS} value={gradeFilter} onChange={setGradeFilter} />
-            </div>
           </div>
         </div>
 
