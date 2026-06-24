@@ -490,82 +490,79 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
           </button>
         </div>
 
-        {/* ── Table ── */}
-        {activeTeachers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
-              <GraduationCap size={22} style={{ color: "#94A3B8" }} />
-            </div>
-            <p className="text-sm font-medium text-slate-500">
-              {activeTab === "guru" ? "Belum ada data guru" : "Belum ada data staf"}
-            </p>
-            <Link href="/admin" className="px-4 py-2 text-sm font-medium rounded-lg text-white" style={{ backgroundColor: "#1E3A5F" }}>
-              Kelola Data Master
-            </Link>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
-              <Search size={18} style={{ color: "#94A3B8" }} />
-            </div>
-            <p className="text-sm font-medium text-slate-500">
-              {activeTab === "guru" ? "Tidak ada guru yang sesuai filter" : "Tidak ada staf yang sesuai filter"}
-            </p>
-            <button
-              onClick={() => { setStatusFilter("all"); setGradeFilter("all") }}
-              className="px-4 py-1.5 text-xs font-medium rounded-lg"
-              style={{ backgroundColor: "#EDF0F5", color: "#1E3A5F" }}
-            >
-              Reset Filter
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "680px" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "2px solid #DDE3EC" }}>
-                  {/* chevron + rank */}
-                  <th style={{ width: "1.75rem" }} />
+        {/* ── Table — always rendered ── */}
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "680px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "2px solid #DDE3EC" }}>
+                <th style={{ width: "1.75rem" }} />
+                <th
+                  className="py-2.5 text-[10px] font-bold uppercase tracking-widest text-center"
+                  style={{ color: "#6B7280", width: "2rem" }}
+                >#</th>
+                <th
+                  className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "#6B7280" }}
+                >{activeTab === "guru" ? "Nama Guru" : "Nama Staf"}</th>
+                {activeSections.map((s) => (
                   <th
-                    className="py-2.5 text-[10px] font-bold uppercase tracking-widest text-center"
-                    style={{ color: "#94A3B8", width: "2rem" }}
-                  >#</th>
-                  {/* name */}
-                  <th
-                    className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest"
-                    style={{ color: "#94A3B8" }}
-                  >{activeTab === "guru" ? "Nama Guru" : "Nama Staf"}</th>
-                  {/* 5 section columns */}
-                  {activeSections.map((s) => (
-                    <th
-                      key={s.id}
-                      className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: s.color, width: "5.5rem" }}
-                    >
-                      {s.label === "AL FAKHIR'S CORE VALUES"
-                        ? "Core Values"
-                        : s.label.charAt(0) + s.label.slice(1).toLowerCase()}
-                    </th>
-                  ))}
-                  {/* penilai dots */}
-                  <th
-                    className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest"
-                    style={{ color: "#94A3B8", width: "5rem" }}
-                  >Penilai</th>
-                  {/* nilai */}
-                  <th
-                    className="px-3 py-2.5 text-right text-[10px] font-bold uppercase tracking-widest"
-                    style={{ color: "#94A3B8", width: "7.5rem" }}
-                  >Nilai</th>
-                  {/* action */}
-                  <th style={{ width: "4.5rem" }} />
+                    key={s.id}
+                    className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: "#6B7280", width: "5.5rem" }}
+                  >
+                    {s.label === "AL FAKHIR'S CORE VALUES"
+                      ? "Core Values"
+                      : s.label.charAt(0) + s.label.slice(1).toLowerCase()}
+                  </th>
+                ))}
+                <th
+                  className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "#6B7280", width: "5rem" }}
+                >Penilai</th>
+                <th
+                  className="px-3 py-2.5 text-right text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "#6B7280", width: "7.5rem" }}
+                >Nilai</th>
+                <th style={{ width: "4.5rem" }} />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-14">
+                    {activeTeachers.length === 0 ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
+                          <GraduationCap size={18} style={{ color: "#94A3B8" }} />
+                        </div>
+                        <p className="text-sm text-slate-400">
+                          {activeTab === "guru" ? "Belum ada data guru" : "Belum ada data staf"}
+                        </p>
+                        <Link href="/admin" className="px-4 py-1.5 text-xs font-medium rounded-lg text-white" style={{ backgroundColor: "#1E3A5F" }}>
+                          Kelola Data Master
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
+                          <Search size={18} style={{ color: "#94A3B8" }} />
+                        </div>
+                        <p className="text-sm text-slate-400">Tidak ada data yang sesuai filter</p>
+                        <button
+                          onClick={() => { setStatusFilter("all"); setGradeFilter("all") }}
+                          className="px-4 py-1.5 text-xs font-medium rounded-lg"
+                          style={{ backgroundColor: "#EDF0F5", color: "#374151" }}
+                        >
+                          Reset Filter
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t, i) => {
+              ) : (
+                filtered.map((t, i) => {
                   const ratedSet = new Set(t.ratedByEvaluatorIds)
                   const isExpanded = expandedIds.has(t.id)
-                  // colspan = chevron + rank + name + 5 sections + penilai + nilai + action = 10
                   const COLSPAN = 10
 
                   return (
@@ -581,13 +578,13 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                           <ChevronDown
                             size={13}
                             className="transition-transform duration-200 inline-block"
-                            style={{ color: "#94A3B8", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+                            style={{ color: "#9CA3AF", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
                           />
                         </td>
 
                         {/* Rank */}
                         <td className="py-3 text-center">
-                          <span className="text-xs font-medium tabular-nums" style={{ color: "#CBD5E1" }}>{i + 1}</span>
+                          <span className="text-xs font-medium tabular-nums" style={{ color: "#9CA3AF" }}>{i + 1}</span>
                         </td>
 
                         {/* Name */}
@@ -595,7 +592,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                           <Link
                             href={`/teachers/${t.id}`}
                             className="font-semibold text-sm hover:underline"
-                            style={{ color: "#1A2233" }}
+                            style={{ color: "#111827" }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             {t.name}
@@ -610,7 +607,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                             <td key={s.id} className="px-2 py-3 text-center">
                               <span
                                 className="text-xs font-bold tabular-nums"
-                                style={{ color: norm != null ? s.color : "#DDE3EC" }}
+                                style={{ color: norm != null ? "#111827" : "#D1D5DB" }}
                               >
                                 {norm != null ? norm.toFixed(1) : "—"}
                               </span>
@@ -622,7 +619,6 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                         <td className="px-3 py-3">
                           <div className="flex items-center justify-center gap-1">
                             {evaluators.map((ev, ei) => {
-                              const color = EVALUATOR_COLORS[ei % EVALUATOR_COLORS.length]
                               const rated = ratedSet.has(ev.id)
                               return (
                                 <div
@@ -631,8 +627,8 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                   className="w-5 h-5 rounded-full flex items-center justify-center font-bold shrink-0"
                                   style={
                                     rated
-                                      ? { backgroundColor: color, color: "#fff", fontSize: "8px" }
-                                      : { border: `1.5px dashed ${color}80`, color: `${color}80`, fontSize: "8px", backgroundColor: "transparent" }
+                                      ? { backgroundColor: "#1E3A5F", color: "#fff", fontSize: "8px" }
+                                      : { border: "1.5px dashed #CBD5E1", color: "#CBD5E1", fontSize: "8px", backgroundColor: "transparent" }
                                   }
                                 >
                                   {ev.name.charAt(0).toUpperCase()}
@@ -642,11 +638,11 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                           </div>
                         </td>
 
-                        {/* Score + grade */}
+                        {/* Score + grade badge */}
                         <td className="px-3 py-3 text-right">
                           {t.avgTotal != null ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <span className="text-base font-bold tabular-nums leading-none" style={{ color: t.grade?.color }}>
+                              <span className="text-base font-bold tabular-nums leading-none" style={{ color: "#111827" }}>
                                 {t.avgTotal.toFixed(2)}
                               </span>
                               {t.grade && (
@@ -659,7 +655,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs" style={{ color: "#CBD5E1" }}>Belum dinilai</span>
+                            <span className="text-xs" style={{ color: "#D1D5DB" }}>Belum dinilai</span>
                           )}
                         </td>
 
@@ -684,13 +680,13 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
                                 <thead>
                                   <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "1px solid #DDE3EC" }}>
-                                    <th className="text-left pl-3 pr-2 py-2 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#94A3B8", width: "7rem" }}>Penilai</th>
+                                    <th className="text-left pl-3 pr-2 py-2 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#6B7280", width: "7rem" }}>Penilai</th>
                                     {activeSections.map((s) => (
-                                      <th key={s.id} className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: s.color }}>
+                                      <th key={s.id} className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
                                         {s.label === "AL FAKHIR'S CORE VALUES" ? "Core Values" : s.label.charAt(0) + s.label.slice(1).toLowerCase()}
                                       </th>
                                     ))}
-                                    <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8", width: "5.5rem" }}>Total</th>
+                                    <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280", width: "5.5rem" }}>Total</th>
                                     <th style={{ width: "4.5rem" }} />
                                   </tr>
                                 </thead>
@@ -708,13 +704,13 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                             >
                                               {ev.name.charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="text-xs text-slate-500 whitespace-nowrap">{ev.name.split(",")[0].split(" ")[0]}</span>
+                                            <span className="text-xs whitespace-nowrap" style={{ color: "#374151" }}>{ev.name.split(",")[0].split(" ")[0]}</span>
                                           </div>
                                         </td>
                                         {summary ? (
                                           activeSections.map((s, si) => (
                                             <td key={s.id} className="px-2 py-2 text-center">
-                                              <span className="text-xs font-semibold tabular-nums" style={{ color: s.color }}>
+                                              <span className="text-xs font-semibold tabular-nums" style={{ color: "#111827" }}>
                                                 {summary.sectionNorms[si].toFixed(1)}
                                               </span>
                                             </td>
@@ -722,14 +718,14 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                         ) : (
                                           activeSections.map((s) => (
                                             <td key={s.id} className="px-2 py-2 text-center">
-                                              <span className="text-xs" style={{ color: "#DDE3EC" }}>—</span>
+                                              <span className="text-xs" style={{ color: "#D1D5DB" }}>—</span>
                                             </td>
                                           ))
                                         )}
                                         <td className="px-2 py-2 text-center">
                                           {summary ? (
                                             <div className="flex items-center justify-center gap-1">
-                                              <span className="text-sm font-bold tabular-nums" style={{ color: summary.grade.color }}>
+                                              <span className="text-sm font-bold tabular-nums" style={{ color: "#111827" }}>
                                                 {summary.total.toFixed(2)}
                                               </span>
                                               <span
@@ -740,7 +736,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                               </span>
                                             </div>
                                           ) : (
-                                            <span className="text-xs" style={{ color: "#DDE3EC" }}>—</span>
+                                            <span className="text-xs" style={{ color: "#D1D5DB" }}>—</span>
                                           )}
                                         </td>
                                         <td className="pr-3 py-2 text-center">
@@ -764,14 +760,14 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                   {t.evaluationSummaries.length > 0 && (
                                     <tr style={{ borderTop: "2px solid #DDE3EC", backgroundColor: "#F8FAFC" }}>
                                       <td className="pl-3 pr-2 py-2">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#94A3B8" }}>Rata-rata</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#6B7280" }}>Rata-rata</span>
                                       </td>
                                       {activeSections.map((s, si) => {
                                         const avg = t.sectionAvgs[si]
                                         const norm = avg != null ? avg * 4 / s.maxScore : null
                                         return (
                                           <td key={s.id} className="px-2 py-2 text-center">
-                                            <span className="text-xs font-bold tabular-nums" style={{ color: norm != null ? s.color : "#DDE3EC" }}>
+                                            <span className="text-xs font-bold tabular-nums" style={{ color: norm != null ? "#111827" : "#D1D5DB" }}>
                                               {norm != null ? norm.toFixed(1) : "—"}
                                             </span>
                                           </td>
@@ -780,7 +776,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                       <td className="px-2 py-2 text-center">
                                         {t.avgTotal != null && t.grade ? (
                                           <div className="flex items-center justify-center gap-1">
-                                            <span className="text-sm font-bold tabular-nums" style={{ color: t.grade.color }}>
+                                            <span className="text-sm font-bold tabular-nums" style={{ color: "#111827" }}>
                                               {t.avgTotal.toFixed(2)}
                                             </span>
                                             <span
@@ -791,7 +787,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                             </span>
                                           </div>
                                         ) : (
-                                          <span className="text-xs" style={{ color: "#DDE3EC" }}>—</span>
+                                          <span className="text-xs" style={{ color: "#D1D5DB" }}>—</span>
                                         )}
                                       </td>
                                       <td />
@@ -805,11 +801,11 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                       )}
                     </Fragment>
                   )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </>
   )
