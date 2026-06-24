@@ -675,18 +675,18 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                       {/* ── Expanded nested table row ── */}
                       {isExpanded && (
                         <tr style={{ borderBottom: "1px solid #EDF0F5" }}>
-                          <td colSpan={COLSPAN} style={{ padding: "0 1rem 1rem 2.5rem", backgroundColor: "#FAFBFD" }}>
+                          <td colSpan={COLSPAN} style={{ padding: "0 1rem 1rem 3.75rem", backgroundColor: "#FAFBFD" }}>
                             <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid #DDE3EC" }}>
                               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
                                 <thead>
                                   <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "1px solid #DDE3EC" }}>
-                                    <th className="text-left pl-3 pr-2 py-2 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#6B7280", width: "7rem" }}>Penilai</th>
+                                    <th className="text-left pl-3 pr-2 py-2 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#6B7280" }}>Penilai</th>
                                     {activeSections.map((s) => (
-                                      <th key={s.id} className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>
+                                      <th key={s.id} className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280", width: "5.5rem" }}>
                                         {s.label === "AL FAKHIR'S CORE VALUES" ? "Core Values" : s.label.charAt(0) + s.label.slice(1).toLowerCase()}
                                       </th>
                                     ))}
-                                    <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280", width: "5.5rem" }}>Total</th>
+                                    <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#6B7280", width: "11.5rem" }}>Total</th>
                                     <th style={{ width: "4.5rem" }} />
                                   </tr>
                                 </thead>

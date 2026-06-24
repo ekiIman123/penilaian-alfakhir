@@ -16,10 +16,12 @@ model Evaluator {
 
 model Teacher {
   id          String       @id @default(cuid())
-  name        String       @unique
+  name        String
   role        String       @default("guru")   // "guru" | "staff"
   evaluations Evaluation[]
   createdAt   DateTime     @default(now())
+
+  @@unique([name, role])
 }
 
 model Evaluation {
