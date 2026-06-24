@@ -359,22 +359,18 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [gradeFilter,  setGradeFilter]  = useState<GradeFilter>("all")
   const [sortBy,       setSortBy]       = useState<SortBy>("score-desc")
-  const [editTarget,   setEditTarget]   = useState<EditTarget | null>(null)
-  const [expandedIds,  setExpandedIds]  = useState<Set<string>>(new Set())
+  const [editTarget,  setEditTarget]  = useState<EditTarget | null>(null)
+  const [expandedId,  setExpandedId]  = useState<string | null>(null)
 
   function switchTab(tab: "guru" | "staff") {
     setActiveTab(tab)
-    setExpandedIds(new Set())
+    setExpandedId(null)
     setStatusFilter("all")
     setGradeFilter("all")
   }
 
   function toggleExpand(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+    setExpandedId((prev) => (prev === id ? null : id))
   }
 
   const activeSections = activeTab === "guru" ? SECTIONS : STAFF_SECTIONS
@@ -562,7 +558,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
               ) : (
                 filtered.map((t, i) => {
                   const ratedSet = new Set(t.ratedByEvaluatorIds)
-                  const isExpanded = expandedIds.has(t.id)
+                  const isExpanded = expandedId === t.id
                   const COLSPAN = 10
 
                   return (
@@ -570,7 +566,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                       {/* ── Main row ── */}
                       <tr
                         onClick={() => toggleExpand(t.id)}
-                        className="hover:bg-slate-100/60 transition-colors"
+                        className="tr-hover"
                         style={{ borderBottom: isExpanded ? "none" : "1px solid #EDF0F5", cursor: "pointer" }}
                       >
                         {/* Chevron */}
@@ -695,7 +691,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                     const color = EVALUATOR_COLORS[ei % EVALUATOR_COLORS.length]
                                     const summary = t.evaluationSummaries.find((s) => s.evaluatorId === ev.id)
                                     return (
-                                      <tr key={ev.id} className="hover:bg-slate-100/50 transition-colors" style={{ borderTop: "1px solid #EDF0F5" }}>
+                                      <tr key={ev.id} className="tr-hover" style={{ borderTop: "1px solid #EDF0F5" }}>
                                         <td className="pl-3 pr-2 py-2">
                                           <div className="flex items-center gap-1.5">
                                             <div

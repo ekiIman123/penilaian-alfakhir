@@ -378,7 +378,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                     return (
                       <tr
                         key={c.id}
-                        className="hover:bg-slate-100/60 transition-colors"
+                        className="tr-hover"
                         style={{ borderBottom: "1px solid #EDF0F5" }}
                       >
                         <td className="px-5 py-2.5 text-slate-600">{c.label}</td>
