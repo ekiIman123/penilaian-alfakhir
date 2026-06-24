@@ -570,7 +570,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                       {/* ── Main row ── */}
                       <tr
                         onClick={() => toggleExpand(t.id)}
-                        className="hover:bg-slate-50/70 transition-colors"
+                        className="hover:bg-slate-100/60 transition-colors"
                         style={{ borderBottom: isExpanded ? "none" : "1px solid #EDF0F5", cursor: "pointer" }}
                       >
                         {/* Chevron */}
@@ -695,7 +695,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                                     const color = EVALUATOR_COLORS[ei % EVALUATOR_COLORS.length]
                                     const summary = t.evaluationSummaries.find((s) => s.evaluatorId === ev.id)
                                     return (
-                                      <tr key={ev.id} style={{ borderTop: "1px solid #EDF0F5", backgroundColor: "#FFFFFF" }}>
+                                      <tr key={ev.id} className="hover:bg-slate-100/50 transition-colors" style={{ borderTop: "1px solid #EDF0F5" }}>
                                         <td className="pl-3 pr-2 py-2">
                                           <div className="flex items-center gap-1.5">
                                             <div
