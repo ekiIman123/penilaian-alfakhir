@@ -214,7 +214,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         <div>
-                          <span className="text-lg font-bold" style={{ color: g.color }}>{total.toFixed(2)}</span>
+                          <span className="text-lg font-bold" style={{ color: "#111827" }}>{total.toFixed(2)}</span>
                           <span className="text-xs text-slate-400">/4.00</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -245,13 +245,13 @@ export default async function TeacherDetailPage({ params }: Props) {
                         const pct = Math.round((raw / s.maxScore) * 100)
                         return (
                           <div key={s.id} className="text-center">
-                            <div className="text-[9px] font-semibold uppercase tracking-wide mb-0.5 truncate leading-none" style={{ color: `${s.color}B0` }}>
+                            <div className="text-[9px] font-semibold uppercase tracking-wide mb-0.5 truncate leading-none" style={{ color: "#9CA3AF" }}>
                               {s.label === "AL FAKHIR'S CORE VALUES" ? "Core V." : s.label.split(" ")[0].charAt(0) + s.label.split(" ")[0].slice(1).toLowerCase()}
                             </div>
                             <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ backgroundColor: "#E2E8F0" }}>
                               <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
                             </div>
-                            <div className="text-xs font-bold tabular-nums leading-none" style={{ color: s.color }}>
+                            <div className="text-xs font-bold tabular-nums leading-none" style={{ color: "#111827" }}>
                               {norm.toFixed(1)}
                             </div>
                           </div>
@@ -264,7 +264,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                         className="mt-3 p-3 rounded-lg text-xs"
                         style={{ backgroundColor: "#F0F4F9", borderLeft: "3px solid #C4972A" }}
                       >
-                        <p className="font-semibold mb-0.5" style={{ color: "#1E3A5F" }}>Catatan</p>
+                        <p className="font-semibold mb-0.5" style={{ color: "#111827" }}>Catatan</p>
                         <p className="text-slate-600 leading-relaxed">{e.catatan}</p>
                       </div>
                     )}
@@ -350,7 +350,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                 {parsedEvals.map((e) => {
                   const evColor = EVALUATOR_COLORS[allEvaluators.findIndex((ev) => ev.id === e.evaluatorId) % EVALUATOR_COLORS.length]
                   return (
-                    <th key={e.id} className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: evColor }}>
+                    <th key={e.id} className="text-center px-4 py-2.5 font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: "#6B7280" }}>
                       {e.evaluator.name.split(",")[0]}
                     </th>
                   )
@@ -367,7 +367,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                     <td
                       colSpan={parsedEvals.length + (parsedEvals.length > 1 ? 2 : 1)}
                       className="px-5 py-2 font-semibold text-xs uppercase tracking-wide"
-                      style={{ color: s.color }}
+                      style={{ color: "#374151" }}
                     >
                       {s.label}
                     </td>
@@ -390,7 +390,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                               {score ? (
                                 <span
                                   className="inline-flex w-6 h-6 rounded-full items-center justify-center font-semibold text-white text-xs"
-                                  style={{ backgroundColor: evColor }}
+                                  style={{ backgroundColor: "#1E3A5F" }}
                                 >
                                   {score}
                                 </span>
@@ -401,7 +401,7 @@ export default async function TeacherDetailPage({ params }: Props) {
                           )
                         })}
                         {parsedEvals.length > 1 && (
-                          <td className="text-center px-4 py-2.5 font-semibold tabular-nums" style={{ color: s.color }}>
+                          <td className="text-center px-4 py-2.5 font-semibold tabular-nums" style={{ color: "#111827" }}>
                             {avg != null ? avg.toFixed(1) : "—"}
                           </td>
                         )}
