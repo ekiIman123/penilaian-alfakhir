@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronDown, GraduationCap, Search, X, Save, Loader2 } from "lucide-react"
-import { SECTIONS, EVALUATOR_COLORS, getScoreGrade } from "@/lib/rubrics"
+import { SECTIONS, STAFF_SECTIONS, getSectionsForRole, EVALUATOR_COLORS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw } from "@/lib/calculations"
 import { toast } from "sonner"
 
@@ -22,6 +22,7 @@ export type EvalSummary = {
 export type TeacherRow = {
   id: string
   name: string
+  role: string
   avgTotal: number | null
   grade: { label: string; color: string; bg: string } | null
   sectionAvgs: (number | null)[]
@@ -35,7 +36,8 @@ export type EvaluatorInfo = {
 }
 
 interface Props {
-  teachers: TeacherRow[]
+  guruTeachers: TeacherRow[]
+  staffTeachers: TeacherRow[]
   evaluators: EvaluatorInfo[]
 }
 
@@ -133,6 +135,7 @@ function FilterDropdown<T extends string>({
 type EditTarget = {
   teacherId: string
   teacherName: string
+  role: string
   evaluatorId: string
   evaluatorName: string
   evaluatorColor: string
@@ -150,6 +153,8 @@ function QuickEditModal({
   const [catatan, setCatatan] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const sections = getSectionsForRole(target.role)
 
   useEffect(() => {
     setMounted(true)
@@ -174,8 +179,9 @@ function QuickEditModal({
     return () => document.removeEventListener("keydown", handler)
   }, [onClose])
 
-  const filledCount = SECTIONS.flatMap((s) => s.criteria).filter((c) => (scores[c.id] ?? 0) > 0).length
-  const total = filledCount === 25 ? calcTotal(scores) : null
+  const allCriteria = sections.flatMap((s) => s.criteria)
+  const filledCount = allCriteria.filter((c) => (scores[c.id] ?? 0) > 0).length
+  const total = filledCount === allCriteria.length ? calcTotal(scores, sections) : null
   const grade = total != null ? getScoreGrade(total) : null
 
   const handleSave = async () => {
@@ -258,8 +264,8 @@ function QuickEditModal({
               <Loader2 size={20} className="animate-spin" style={{ color: "#94A3B8" }} />
             </div>
           ) : (
-            SECTIONS.map((section) => {
-              const raw  = calcSectionRaw(scores, section.id)
+            sections.map((section) => {
+              const raw  = calcSectionRaw(scores, section.id, sections)
               const norm = raw * 4 / section.maxScore
               return (
                 <div key={section.id}>
@@ -316,7 +322,7 @@ function QuickEditModal({
           style={{ borderTop: "1px solid #DDE3EC", backgroundColor: "#F8FAFC" }}
         >
           <span className="text-[11px]" style={{ color: "#94A3B8" }}>
-            {filledCount}/25 kriteria diisi
+            {filledCount}/{allCriteria.length} kriteria diisi
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -347,13 +353,21 @@ function QuickEditModal({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function DashboardTeacherList({ teachers, evaluators }: Props) {
+export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }: Props) {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<"guru" | "staff">("guru")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [gradeFilter,  setGradeFilter]  = useState<GradeFilter>("all")
   const [sortBy,       setSortBy]       = useState<SortBy>("score-desc")
   const [editTarget,   setEditTarget]   = useState<EditTarget | null>(null)
   const [expandedIds,  setExpandedIds]  = useState<Set<string>>(new Set())
+
+  function switchTab(tab: "guru" | "staff") {
+    setActiveTab(tab)
+    setExpandedIds(new Set())
+    setStatusFilter("all")
+    setGradeFilter("all")
+  }
 
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
@@ -363,10 +377,12 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
     })
   }
 
+  const activeSections = activeTab === "guru" ? SECTIONS : STAFF_SECTIONS
+  const activeTeachers = activeTab === "guru" ? guruTeachers : staffTeachers
   const totalEv = evaluators.length
 
   const filtered = useMemo(() => {
-    let list = [...teachers]
+    let list = [...activeTeachers]
 
     if (statusFilter === "complete") {
       list = list.filter((t) => totalEv > 0 && t.ratedByEvaluatorIds.length === totalEv)
@@ -396,16 +412,17 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
     })
 
     return list
-  }, [teachers, statusFilter, gradeFilter, sortBy, totalEv])
+  }, [activeTeachers, statusFilter, gradeFilter, sortBy, totalEv])
 
   const activeFilterCount = (statusFilter !== "all" ? 1 : 0) + (gradeFilter !== "all" ? 1 : 0)
 
-  function openEdit(teacherId: string, teacherName: string, evaluatorId: string, evaluatorIdx: number) {
+  function openEdit(teacherId: string, teacherName: string, role: string, evaluatorId: string, evaluatorIdx: number) {
     const ev = evaluators.find((e) => e.id === evaluatorId)
     if (!ev) return
     setEditTarget({
       teacherId,
       teacherName,
+      role,
       evaluatorId,
       evaluatorName: ev.name,
       evaluatorColor: EVALUATOR_COLORS[evaluatorIdx % EVALUATOR_COLORS.length],
@@ -430,7 +447,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
       <div className="card">
         {/* ── Header ── */}
         <div className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5" style={{ borderBottom: "1px solid #DDE3EC" }}>
-          <h2 className="font-semibold text-slate-800 shrink-0 text-sm">Rekapitulasi Penilaian Guru</h2>
+          <h2 className="font-semibold text-slate-800 shrink-0 text-sm">Rekapitulasi Penilaian</h2>
           <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
             <FilterDropdown label="Status"  options={STATUS_OPTIONS} value={statusFilter} defaultValue="all"        onChange={setStatusFilter} />
             <FilterDropdown label="Grade"   options={GRADE_OPTIONS}  value={gradeFilter}  defaultValue="all"        onChange={setGradeFilter}  />
@@ -447,13 +464,41 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
           </div>
         </div>
 
+        {/* ── Tabs ── */}
+        <div className="px-5 pt-3 pb-0 flex items-center gap-2">
+          <button
+            onClick={() => switchTab("guru")}
+            className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+            style={
+              activeTab === "guru"
+                ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                : { backgroundColor: "#EDF0F5", color: "#64748B" }
+            }
+          >
+            Guru ({guruTeachers.length})
+          </button>
+          <button
+            onClick={() => switchTab("staff")}
+            className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+            style={
+              activeTab === "staff"
+                ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                : { backgroundColor: "#EDF0F5", color: "#64748B" }
+            }
+          >
+            Staf ({staffTeachers.length})
+          </button>
+        </div>
+
         {/* ── Table ── */}
-        {teachers.length === 0 ? (
+        {activeTeachers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
               <GraduationCap size={22} style={{ color: "#94A3B8" }} />
             </div>
-            <p className="text-sm font-medium text-slate-500">Belum ada data guru</p>
+            <p className="text-sm font-medium text-slate-500">
+              {activeTab === "guru" ? "Belum ada data guru" : "Belum ada data staf"}
+            </p>
             <Link href="/admin" className="px-4 py-2 text-sm font-medium rounded-lg text-white" style={{ backgroundColor: "#1E3A5F" }}>
               Kelola Data Master
             </Link>
@@ -463,7 +508,9 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDF0F5" }}>
               <Search size={18} style={{ color: "#94A3B8" }} />
             </div>
-            <p className="text-sm font-medium text-slate-500">Tidak ada guru yang sesuai filter</p>
+            <p className="text-sm font-medium text-slate-500">
+              {activeTab === "guru" ? "Tidak ada guru yang sesuai filter" : "Tidak ada staf yang sesuai filter"}
+            </p>
             <button
               onClick={() => { setStatusFilter("all"); setGradeFilter("all") }}
               className="px-4 py-1.5 text-xs font-medium rounded-lg"
@@ -487,9 +534,9 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                   <th
                     className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest"
                     style={{ color: "#94A3B8" }}
-                  >Nama Guru</th>
+                  >{activeTab === "guru" ? "Nama Guru" : "Nama Staf"}</th>
                   {/* 5 section columns */}
-                  {SECTIONS.map((s) => (
+                  {activeSections.map((s) => (
                     <th
                       key={s.id}
                       className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest"
@@ -556,7 +603,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                         </td>
 
                         {/* 5 section avg columns */}
-                        {SECTIONS.map((s, si) => {
+                        {activeSections.map((s, si) => {
                           const avg = t.sectionAvgs[si]
                           const norm = avg != null ? (avg * 4) / s.maxScore : null
                           return (
@@ -638,7 +685,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                                 <thead>
                                   <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "1px solid #DDE3EC" }}>
                                     <th className="text-left pl-3 pr-2 py-2 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#94A3B8", width: "7rem" }}>Penilai</th>
-                                    {SECTIONS.map((s) => (
+                                    {activeSections.map((s) => (
                                       <th key={s.id} className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: s.color }}>
                                         {s.label === "AL FAKHIR'S CORE VALUES" ? "Core Values" : s.label.charAt(0) + s.label.slice(1).toLowerCase()}
                                       </th>
@@ -665,7 +712,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                                           </div>
                                         </td>
                                         {summary ? (
-                                          SECTIONS.map((s, si) => (
+                                          activeSections.map((s, si) => (
                                             <td key={s.id} className="px-2 py-2 text-center">
                                               <span className="text-xs font-semibold tabular-nums" style={{ color: s.color }}>
                                                 {summary.sectionNorms[si].toFixed(1)}
@@ -673,7 +720,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                                             </td>
                                           ))
                                         ) : (
-                                          SECTIONS.map((s) => (
+                                          activeSections.map((s) => (
                                             <td key={s.id} className="px-2 py-2 text-center">
                                               <span className="text-xs" style={{ color: "#DDE3EC" }}>—</span>
                                             </td>
@@ -698,7 +745,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                                         </td>
                                         <td className="pr-3 py-2 text-center">
                                           <button
-                                            onClick={() => openEdit(t.id, t.name, ev.id, ei)}
+                                            onClick={() => openEdit(t.id, t.name, t.role, ev.id, ei)}
                                             className="text-[10px] font-semibold px-2 py-1 rounded-md transition-opacity hover:opacity-80 whitespace-nowrap"
                                             style={
                                               summary
@@ -719,7 +766,7 @@ export function DashboardTeacherList({ teachers, evaluators }: Props) {
                                       <td className="pl-3 pr-2 py-2">
                                         <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#94A3B8" }}>Rata-rata</span>
                                       </td>
-                                      {SECTIONS.map((s, si) => {
+                                      {activeSections.map((s, si) => {
                                         const avg = t.sectionAvgs[si]
                                         const norm = avg != null ? avg * 4 / s.maxScore : null
                                         return (

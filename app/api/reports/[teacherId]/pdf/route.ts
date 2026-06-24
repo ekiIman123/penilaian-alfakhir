@@ -37,7 +37,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   }))
 
   const scoreSets = evaluations.map((e) => e.scores)
-  const totals = scoreSets.map(calcTotal)
+  const totals = scoreSets.map((s) => calcTotal(s))
   const avgTotal =
     totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null
 

@@ -352,6 +352,60 @@ export function getSectionById(id: string): Section | undefined {
   return SECTIONS.find((s) => s.id === id)
 }
 
+export const STAFF_SECTIONS: Section[] = [
+  SECTIONS[0], // prestasi — same
+  SECTIONS[1], // core_values — same
+  {
+    id: "potensi",
+    label: "POTENSI",
+    icon: "💡",
+    color: "#15803D",
+    lightBg: "#F0FDF4",
+    textColor: "#166534",
+    maxScore: 12,
+    criteria: [
+      SECTIONS[2].criteria[3], // pemecahan_masalah
+      SECTIONS[2].criteria[4], // pengembangan_profesionalisme
+      SECTIONS[2].criteria[5], // kemampuan_manajerial
+    ],
+  },
+  {
+    id: "nilai",
+    label: "NILAI",
+    icon: "💎",
+    color: "#6D28D9",
+    lightBg: "#F5F3FF",
+    textColor: "#5B21B6",
+    maxScore: 32,
+    criteria: [
+      {
+        id: "nilai_disiplin",
+        label: "Disiplin",
+        options: [
+          { score: 4, text: "Selalu hadir di sekolah dan tempat kerja tepat waktu serta mengenakan pakaian kerja sesuai peraturan" },
+          { score: 3, text: "Sering hadir di sekolah dan tempat kerja tepat waktu serta mengenakan pakaian kerja sesuai peraturan" },
+          { score: 2, text: "Jarang hadir di sekolah dan tempat kerja tepat waktu serta mengenakan pakaian kerja sesuai peraturan" },
+          { score: 1, text: "Tidak hadir di sekolah dan tempat kerja tepat waktu serta mengenakan pakaian kerja sesuai peraturan" },
+        ],
+      },
+      ...SECTIONS[3].criteria, // kemampuan_sosialisasi, empati, toleransi, kejujuran, tanggung_jawab, rasa_hormat, sopan_santun
+    ],
+  },
+  SECTIONS[4], // spiritual — same
+]
+
+export function getSectionsForRole(role: string): Section[] {
+  return role === "staff" ? STAFF_SECTIONS : SECTIONS
+}
+
+export function getAllCriteriaIdsForRole(role: string): string[] {
+  return getSectionsForRole(role).flatMap((s) => s.criteria.map((c) => c.id))
+}
+
+export function getAllStaffCriteriaIds(): string[] {
+  return STAFF_SECTIONS.flatMap((s) => s.criteria.map((c) => c.id))
+}
+
 export const EVALUATOR_COLORS = ["#3B82F6", "#F59E0B", "#10B981"] as const
 
 // avg = rata-rata per kriteria dalam skala 1.0–4.0

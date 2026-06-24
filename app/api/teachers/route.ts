@@ -25,7 +25,7 @@ export async function GET() {
 
   const result = teachers.map((t) => {
     const scoreSets = t.evaluations.map((e) => parseScores(e.scores))
-    const totals = scoreSets.map(calcTotal)
+    const totals = scoreSets.map((s) => calcTotal(s))
     const avgTotal = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null
     const grade = avgTotal != null ? getScoreGrade(avgTotal) : null
 

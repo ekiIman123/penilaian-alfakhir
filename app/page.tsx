@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { SECTIONS, getScoreGrade } from "@/lib/rubrics"
+import { SECTIONS, getSectionsForRole, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 import Link from "next/link"
 import { Users, CheckCircle2, Clock, AlertCircle, PenLine } from "lucide-react"
@@ -13,59 +13,79 @@ export default async function DashboardPage() {
   const evaluators = await prisma.evaluator.findMany({ orderBy: { name: "asc" } })
   const totalEvaluations = await prisma.evaluation.count()
 
-  const ranked = teachers.map((t) => {
-    const scoreSets = t.evaluations.map((e) => parseScores(e.scores))
-    const totals = scoreSets.map(calcTotal)
-    const avgTotal = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null
-    const grade = avgTotal != null ? getScoreGrade(avgTotal) : null
-    const sectionAvgs = SECTIONS.map((s) => {
-      const vals = scoreSets.map((sc) => calcSectionRaw(sc, s.id))
-      return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null
-    })
-    const ratedByIds = new Set(t.evaluations.map((e) => e.evaluatorId))
-    return { ...t, avgTotal, grade, sectionAvgs, ratedByIds }
-  }).sort((a, b) => {
-    if (a.avgTotal == null && b.avgTotal == null) return 0
-    if (a.avgTotal == null) return 1
-    if (b.avgTotal == null) return -1
-    return b.avgTotal - a.avgTotal
-  })
-
-  const complete = ranked.filter((t) => t.ratedByIds.size === evaluators.length && evaluators.length > 0).length
-  const partial  = ranked.filter((t) => t.ratedByIds.size > 0 && t.ratedByIds.size < evaluators.length).length
-  const none     = ranked.filter((t) => t.ratedByIds.size === 0).length
-
-  const teacherRows = ranked.map((t) => ({
-    id: t.id,
-    name: t.name,
-    avgTotal: t.avgTotal,
-    grade: t.grade,
-    sectionAvgs: t.sectionAvgs,
-    ratedByEvaluatorIds: Array.from(t.ratedByIds),
-    // Per-evaluator breakdown for inline display & edit
-    evaluationSummaries: t.evaluations.map((e) => {
-      const parsed = parseScores(e.scores)
-      const total  = calcTotal(parsed)
-      const evGrade = getScoreGrade(total)
-      const sectionNorms = SECTIONS.map((s) => {
-        const raw = calcSectionRaw(parsed, s.id)
-        return raw * 4 / s.maxScore
+  function buildRanked(list: typeof teachers) {
+    return list.map((t) => {
+      const sections = getSectionsForRole(t.role)
+      const scoreSets = t.evaluations.map((e) => parseScores(e.scores))
+      const totals = scoreSets.map((sc) => calcTotal(sc, sections))
+      const avgTotal = totals.length > 0 ? totals.reduce((a, b) => a + b, 0) / totals.length : null
+      const grade = avgTotal != null ? getScoreGrade(avgTotal) : null
+      const sectionAvgs = sections.map((s) => {
+        const vals = scoreSets.map((sc) => calcSectionRaw(sc, s.id, sections))
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null
       })
+      const ratedByIds = new Set(t.evaluations.map((e) => e.evaluatorId))
+      return { ...t, avgTotal, grade, sectionAvgs, ratedByIds }
+    }).sort((a, b) => {
+      if (a.avgTotal == null && b.avgTotal == null) return 0
+      if (a.avgTotal == null) return 1
+      if (b.avgTotal == null) return -1
+      return b.avgTotal - a.avgTotal
+    })
+  }
+
+  const guruTeachers = teachers.filter((t) => t.role !== "staff")
+  const staffTeachers = teachers.filter((t) => t.role === "staff")
+
+  const rankedGuru = buildRanked(guruTeachers)
+  const rankedStaff = buildRanked(staffTeachers)
+
+  const allRanked = [...rankedGuru, ...rankedStaff]
+
+  const complete = allRanked.filter((t) => t.ratedByIds.size === evaluators.length && evaluators.length > 0).length
+  const partial  = allRanked.filter((t) => t.ratedByIds.size > 0 && t.ratedByIds.size < evaluators.length).length
+  const none     = allRanked.filter((t) => t.ratedByIds.size === 0).length
+
+  function buildRows(ranked: typeof rankedGuru) {
+    return ranked.map((t) => {
+      const sections = getSectionsForRole(t.role)
       return {
-        evaluatorId:   e.evaluatorId,
-        evaluatorName: e.evaluator.name,
-        total,
-        grade:         evGrade,
-        sectionNorms,
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        avgTotal: t.avgTotal,
+        grade: t.grade,
+        sectionAvgs: t.sectionAvgs,
+        ratedByEvaluatorIds: Array.from(t.ratedByIds),
+        // Per-evaluator breakdown for inline display & edit
+        evaluationSummaries: t.evaluations.map((e) => {
+          const parsed = parseScores(e.scores)
+          const total  = calcTotal(parsed, sections)
+          const evGrade = getScoreGrade(total)
+          const sectionNorms = sections.map((s) => {
+            const raw = calcSectionRaw(parsed, s.id, sections)
+            return raw * 4 / s.maxScore
+          })
+          return {
+            evaluatorId:   e.evaluatorId,
+            evaluatorName: e.evaluator.name,
+            total,
+            grade:         evGrade,
+            sectionNorms,
+          }
+        }),
       }
-    }),
-  }))
+    })
+  }
+
+  const guruRows = buildRows(rankedGuru)
+  const staffRows = buildRows(rankedStaff)
 
   const evaluatorInfos = evaluators.map((e) => ({ id: e.id, name: e.name }))
 
   const stats = [
     { label: "Total Penilaian",  value: totalEvaluations, icon: Users,        color: "#C4972A" },
-    { label: "Guru Selesai",     value: complete,          icon: CheckCircle2, color: "#16A34A" },
+    { label: "Selesai Dinilai",  value: complete,          icon: CheckCircle2, color: "#16A34A" },
     { label: "Sebagian Dinilai", value: partial,           icon: Clock,        color: "#D97706" },
     { label: "Belum Dinilai",    value: none,              icon: AlertCircle,  color: "#DC2626" },
   ]
@@ -86,7 +106,7 @@ export default async function DashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(196,151,42,0.85)" }}>
                 SMP Al Fakhir · TA 2025/2026
               </p>
-              <h1 className="text-xl font-bold text-white leading-tight">Performance Appraisal Guru</h1>
+              <h1 className="text-xl font-bold text-white leading-tight">Performance Appraisal</h1>
               <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.50)" }}>
                 Penilaian kinerja komprehensif · 5 aspek · Skala 1–4
               </p>
@@ -126,7 +146,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <DashboardTeacherList teachers={teacherRows} evaluators={evaluatorInfos} />
+      <DashboardTeacherList guruTeachers={guruRows} staffTeachers={staffRows} evaluators={evaluatorInfos} />
     </div>
   )
 }
