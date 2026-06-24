@@ -5,10 +5,12 @@ import { calcTotal, calcSectionRaw, calcSectionPct, parseScores } from "@/lib/ca
 
 export async function PUT(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
   const { id } = await ctx.params
-  const { name } = await _req.json()
+  const { name, role } = await _req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
+  const data: Record<string, string> = { name: name.trim() }
+  if (role === "guru" || role === "staff") data.role = role
   try {
-    const teacher = await prisma.teacher.update({ where: { id }, data: { name: name.trim() } })
+    const teacher = await prisma.teacher.update({ where: { id }, data })
     return NextResponse.json(teacher)
   } catch {
     return NextResponse.json({ error: "Not found or duplicate name" }, { status: 404 })

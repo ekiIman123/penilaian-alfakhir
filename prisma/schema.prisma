@@ -17,6 +17,7 @@ model Evaluator {
 model Teacher {
   id          String       @id @default(cuid())
   name        String       @unique
+  role        String       @default("guru")   // "guru" | "staff"
   evaluations Evaluation[]
   createdAt   DateTime     @default(now())
 }

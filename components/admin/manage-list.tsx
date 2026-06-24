@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus, Check, X, GraduationCap, UserCheck, UserPlus, Users } from "lucide-react"
+import { Pencil, Trash2, Plus, Check, X, GraduationCap, UserCheck, UserPlus, Users, User } from "lucide-react"
 
 interface Person {
   id: string
   name: string
+  role?: string
   evaluationCount: number
 }
 
@@ -37,17 +38,15 @@ export function ManageList({ people, type }: Props) {
   const [addingNew, setAddingNew] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState("")
+  const [roleValue, setRoleValue] = useState<"guru" | "staff">("guru")
   const [loading, setLoading] = useState(false)
 
-  // Choice modal
   const [choiceOpen, setChoiceOpen] = useState(false)
-
-  // Delete confirm modal
   const [deleteTarget, setDeleteTarget] = useState<Person | null>(null)
 
-  // Bulk add
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkText, setBulkText] = useState("")
+  const [bulkRole, setBulkRole] = useState<"guru" | "staff">("guru")
   const [bulkLoading, setBulkLoading] = useState(false)
 
   const [mounted, setMounted] = useState(false)
@@ -74,15 +73,8 @@ export function ManageList({ people, type }: Props) {
     if (bulkMode && bulkRef.current) bulkRef.current.focus()
   }, [bulkMode])
 
-  function openChoice() {
-    setChoiceOpen(true)
-  }
-
-  function chooseSingle() {
-    setChoiceOpen(false)
-    startAdd()
-  }
-
+  function openChoice() { setChoiceOpen(true) }
+  function chooseSingle() { setChoiceOpen(false); startAdd() }
   function chooseBulk() {
     setChoiceOpen(false)
     setBulkMode(true)
@@ -90,11 +82,7 @@ export function ManageList({ people, type }: Props) {
     setAddingNew(false)
     setEditingId(null)
   }
-
-  function cancelBulk() {
-    setBulkMode(false)
-    setBulkText("")
-  }
+  function cancelBulk() { setBulkMode(false); setBulkText("") }
 
   const bulkLines = bulkText.split("\n").map((l) => l.trim()).filter(Boolean)
 
@@ -105,7 +93,7 @@ export function ManageList({ people, type }: Props) {
       const res = await fetch(apiBase, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: inputValue.trim() }),
+        body: JSON.stringify({ name: inputValue.trim(), role: type === "guru" ? roleValue : undefined }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -133,7 +121,7 @@ export function ManageList({ people, type }: Props) {
         const res = await fetch(apiBase, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, role: type === "guru" ? bulkRole : undefined }),
         })
         if (res.ok) success++
         else fail++
@@ -156,7 +144,7 @@ export function ManageList({ people, type }: Props) {
       const res = await fetch(`${apiBase}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: inputValue.trim() }),
+        body: JSON.stringify({ name: inputValue.trim(), role: type === "guru" ? roleValue : undefined }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -194,14 +182,12 @@ export function ManageList({ people, type }: Props) {
   function startEdit(person: Person) {
     setEditingId(person.id)
     setInputValue(person.name)
+    setRoleValue((person.role === "staff" ? "staff" : "guru") as "guru" | "staff")
     setAddingNew(false)
     setBulkMode(false)
   }
 
-  function cancelEdit() {
-    setEditingId(null)
-    setInputValue("")
-  }
+  function cancelEdit() { setEditingId(null); setInputValue("") }
 
   function startAdd() {
     setAddingNew(true)
@@ -210,56 +196,75 @@ export function ManageList({ people, type }: Props) {
     setBulkMode(false)
   }
 
-  function cancelAdd() {
-    setAddingNew(false)
-    setInputValue("")
+  function cancelAdd() { setAddingNew(false); setInputValue("") }
+
+  function RoleToggle({ value, onChange }: { value: "guru" | "staff"; onChange: (v: "guru" | "staff") => void }) {
+    return (
+      <div className="flex items-center gap-0.5 p-0.5 rounded-md" style={{ backgroundColor: "#E2E8F0" }}>
+        {(["guru", "staff"] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => onChange(r)}
+            className="px-2.5 py-1 rounded text-[11px] font-medium transition-colors"
+            style={
+              value === r
+                ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                : { backgroundColor: "transparent", color: "#64748B" }
+            }
+          >
+            {r === "guru" ? "Guru" : "Staf"}
+          </button>
+        ))}
+      </div>
+    )
   }
 
   return (
     <>
-      {/* ── Choice modal (portal → escapes any parent overflow/transform) ── */}
+      {/* Choice modal */}
       {mounted && choiceOpen && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          style={{ backgroundColor: "rgba(0,0,0,0.40)" }}
           onClick={() => setChoiceOpen(false)}
         >
           <div
-            className="rounded-2xl p-6 flex flex-col gap-4 mx-4"
+            className="rounded-xl p-6 flex flex-col gap-4 mx-4"
             style={{
               width: 320,
               backgroundColor: "#FFFFFF",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <p className="font-black text-base" style={{ color: "#2C1A08" }}>
+              <p className="font-semibold text-base" style={{ color: "#1A2233" }}>
                 Tambah {label}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "#78716C" }}>
+              <p className="text-xs mt-0.5" style={{ color: "#64748B" }}>
                 Pilih mode penambahan data
               </p>
             </div>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               <button
                 onClick={chooseSingle}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors"
                 style={{
-                  backgroundColor: "rgba(196,151,42,0.07)",
-                  border: "1px solid rgba(196,151,42,0.22)",
+                  backgroundColor: "#F8FAFC",
+                  border: "1px solid #DDE3EC",
                 }}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "rgba(196,151,42,0.15)" }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "rgba(196,151,42,0.12)" }}
                 >
-                  <UserPlus size={16} style={{ color: "#C4972A" }} />
+                  <UserPlus size={15} style={{ color: "#C4972A" }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: "#2C1A08" }}>Satu Data</p>
-                  <p className="text-xs" style={{ color: "#78716C" }}>
+                  <p className="text-sm font-medium" style={{ color: "#1A2233" }}>Satu Data</p>
+                  <p className="text-xs" style={{ color: "#64748B" }}>
                     Input satu {label.toLowerCase()} dengan form
                   </p>
                 </div>
@@ -267,21 +272,21 @@ export function ManageList({ people, type }: Props) {
 
               <button
                 onClick={chooseBulk}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors"
                 style={{
-                  backgroundColor: "rgba(196,151,42,0.07)",
-                  border: "1px solid rgba(196,151,42,0.22)",
+                  backgroundColor: "#F8FAFC",
+                  border: "1px solid #DDE3EC",
                 }}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "rgba(196,151,42,0.15)" }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "rgba(196,151,42,0.12)" }}
                 >
-                  <Users size={16} style={{ color: "#C4972A" }} />
+                  <Users size={15} style={{ color: "#C4972A" }} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: "#2C1A08" }}>Banyak Data</p>
-                  <p className="text-xs" style={{ color: "#78716C" }}>
+                  <p className="text-sm font-medium" style={{ color: "#1A2233" }}>Banyak Data</p>
+                  <p className="text-xs" style={{ color: "#64748B" }}>
                     Input beberapa {label.toLowerCase()} sekaligus
                   </p>
                 </div>
@@ -291,7 +296,7 @@ export function ManageList({ people, type }: Props) {
             <button
               onClick={() => setChoiceOpen(false)}
               className="text-xs text-center py-1"
-              style={{ color: "#9CA3AF" }}
+              style={{ color: "#94A3B8" }}
             >
               Batal
             </button>
@@ -300,36 +305,35 @@ export function ManageList({ people, type }: Props) {
         document.body
       )}
 
-      {/* ── Delete confirm modal (portal) ── */}
+      {/* Delete confirm modal */}
       {mounted && deleteTarget && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          style={{ backgroundColor: "rgba(0,0,0,0.40)" }}
           onClick={() => setDeleteTarget(null)}
         >
           <div
-            className="rounded-2xl p-6 flex flex-col gap-4 mx-4"
+            className="rounded-xl p-6 flex flex-col gap-4 mx-4"
             style={{
               width: 340,
               backgroundColor: "#FFFFFF",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Icon + heading */}
             <div className="flex items-start gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(239,68,68,0.10)" }}
+                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(239,68,68,0.08)" }}
               >
                 <Trash2 size={18} style={{ color: "#EF4444" }} />
               </div>
               <div>
-                <p className="font-black text-base" style={{ color: "#1C1917" }}>
+                <p className="font-semibold text-base" style={{ color: "#1A2233" }}>
                   Hapus {label}?
                 </p>
-                <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#78716C" }}>
-                  <span className="font-semibold" style={{ color: "#1C1917" }}>
+                <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#64748B" }}>
+                  <span className="font-medium" style={{ color: "#1A2233" }}>
                     {deleteTarget.name}
                   </span>{" "}
                   akan dihapus secara permanen.
@@ -342,26 +346,18 @@ export function ManageList({ people, type }: Props) {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-2.5 pt-1">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
-                style={{
-                  backgroundColor: "#F3F4F6",
-                  color: "#374151",
-                }}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: "#F1F4F8", color: "#374151" }}
               >
                 Batal
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
-                style={{
-                  backgroundColor: "#EF4444",
-                  color: "#FFFFFF",
-                  boxShadow: "0 2px 8px rgba(239,68,68,0.30)",
-                }}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold"
+                style={{ backgroundColor: "#EF4444", color: "#FFFFFF" }}
               >
                 Ya, Hapus
               </button>
@@ -374,38 +370,35 @@ export function ManageList({ people, type }: Props) {
       <div className="flex flex-col gap-3">
         {/* Header bar */}
         <div
-          className="flex items-center justify-between px-4 py-3 rounded-xl"
+          className="flex items-center justify-between px-4 py-3 rounded-lg"
           style={{
-            background: "linear-gradient(135deg, rgba(44,26,8,0.06) 0%, rgba(196,151,42,0.08) 100%)",
-            border: "1px solid rgba(196,151,42,0.15)",
+            backgroundColor: "#F8FAFC",
+            border: "1px solid #DDE3EC",
           }}
         >
           <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: "rgba(196,151,42,0.12)" }}
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: "rgba(196,151,42,0.10)" }}
             >
-              <Icon size={16} style={{ color: "#C4972A" }} />
+              <Icon size={14} style={{ color: "#C4972A" }} />
             </div>
-            <div>
-              <span className="font-bold text-sm" style={{ color: "#2C1A08" }}>
-                {type === "guru" ? "Data Guru" : "Data Penilai"}
-              </span>
-            </div>
+            <span className="font-medium text-sm" style={{ color: "#1A2233" }}>
+              {type === "guru" ? "Data Guru" : "Data Penilai"}
+            </span>
             <span
-              className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "rgba(196,151,42,0.15)", color: "#C4972A" }}
+              className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(196,151,42,0.12)", color: "#C4972A" }}
             >
               {people.length}
             </span>
           </div>
           <button
             onClick={openChoice}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
             style={{
-              background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-              color: "#1C1409",
-              boxShadow: "0 2px 6px rgba(196,151,42,0.35)",
+              backgroundColor: "#1E3A5F",
+              color: "#FFFFFF",
             }}
           >
             <Plus size={13} />
@@ -416,15 +409,18 @@ export function ManageList({ people, type }: Props) {
         {/* Single add form */}
         {addingNew && (
           <div
-            className="animate-in flex flex-col gap-2 p-3 rounded-xl"
+            className="animate-in flex flex-col gap-2 p-3 rounded-lg"
             style={{
-              backgroundColor: "rgba(196,151,42,0.06)",
-              border: "1px solid rgba(196,151,42,0.25)",
+              backgroundColor: "#F8FAFC",
+              border: "1px solid #DDE3EC",
             }}
           >
-            <p className="text-xs font-semibold" style={{ color: "#5C3D11" }}>
-              Tambah {label} baru
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium" style={{ color: "#1E3A5F" }}>
+                Tambah {label} baru
+              </p>
+              {type === "guru" && <RoleToggle value={roleValue} onChange={setRoleValue} />}
+            </div>
             <input
               ref={addInputRef}
               value={inputValue}
@@ -434,30 +430,27 @@ export function ManageList({ people, type }: Props) {
                 if (e.key === "Escape") cancelAdd()
               }}
               placeholder="Masukkan nama lengkap..."
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none transition-colors"
+              className="w-full px-3 py-2 rounded-md text-sm border outline-none transition-colors"
               style={{
-                borderColor: "rgba(196,151,42,0.35)",
+                borderColor: "#DDE3EC",
                 backgroundColor: "#FFFFFF",
-                color: "#1C1917",
+                color: "#1A2233",
               }}
             />
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAdd}
                 disabled={loading || !inputValue.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50"
-                style={{
-                  background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                  color: "#1C1409",
-                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-opacity disabled:opacity-50"
+                style={{ backgroundColor: "#1E3A5F", color: "#FFFFFF" }}
               >
                 <Check size={13} />
                 Simpan
               </button>
               <button
                 onClick={cancelAdd}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                style={{ backgroundColor: "#F3F4F6", color: "#6B7280" }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                style={{ backgroundColor: "#F1F4F8", color: "#64748B" }}
               >
                 <X size={13} />
                 Batal
@@ -469,59 +462,57 @@ export function ManageList({ people, type }: Props) {
         {/* Bulk add form */}
         {bulkMode && (
           <div
-            className="animate-in flex flex-col gap-2 p-3 rounded-xl"
+            className="animate-in flex flex-col gap-2 p-3 rounded-lg"
             style={{
-              backgroundColor: "rgba(196,151,42,0.06)",
-              border: "1px solid rgba(196,151,42,0.25)",
+              backgroundColor: "#F8FAFC",
+              border: "1px solid #DDE3EC",
             }}
           >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold" style={{ color: "#5C3D11" }}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium" style={{ color: "#1E3A5F" }}>
                 Tambah banyak {label.toLowerCase()} sekaligus
               </p>
-              {bulkLines.length > 0 && (
-                <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: "rgba(196,151,42,0.15)", color: "#C4972A" }}
-                >
-                  {bulkLines.length} data
-                </span>
-              )}
+              {type === "guru" && <RoleToggle value={bulkRole} onChange={setBulkRole} />}
             </div>
+            {bulkLines.length > 0 && (
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full self-start"
+                style={{ backgroundColor: "rgba(196,151,42,0.12)", color: "#C4972A" }}
+              >
+                {bulkLines.length} data
+              </span>
+            )}
             <textarea
               ref={bulkRef}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
               placeholder={`Nama ${label} 1\nNama ${label} 2\nNama ${label} 3\n...`}
               rows={6}
-              className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
+              className="w-full px-3 py-2 rounded-md text-sm border outline-none resize-none"
               style={{
-                borderColor: "rgba(196,151,42,0.35)",
+                borderColor: "#DDE3EC",
                 backgroundColor: "#FFFFFF",
-                color: "#1C1917",
+                color: "#1A2233",
                 lineHeight: "1.7",
               }}
             />
-            <p className="text-[10px]" style={{ color: "#9CA3AF" }}>
+            <p className="text-[10px]" style={{ color: "#94A3B8" }}>
               Satu baris = satu data · Baris kosong diabaikan
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleBulkAdd}
                 disabled={bulkLoading || bulkLines.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50"
-                style={{
-                  background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                  color: "#1C1409",
-                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-opacity disabled:opacity-50"
+                style={{ backgroundColor: "#1E3A5F", color: "#FFFFFF" }}
               >
                 <Check size={13} />
                 {bulkLoading ? "Menyimpan..." : `Simpan ${bulkLines.length > 0 ? bulkLines.length : ""} Data`}
               </button>
               <button
                 onClick={cancelBulk}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                style={{ backgroundColor: "#F3F4F6", color: "#6B7280" }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                style={{ backgroundColor: "#F1F4F8", color: "#64748B" }}
               >
                 <X size={13} />
                 Batal
@@ -533,17 +524,22 @@ export function ManageList({ people, type }: Props) {
         {/* Empty state */}
         {people.length === 0 && !addingNew && !bulkMode && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <span className="text-5xl">{type === "guru" ? "👨‍🏫" : "👤"}</span>
-            <p className="text-sm font-medium" style={{ color: "#78716C" }}>
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "#EDF0F5" }}
+            >
+              {type === "guru"
+                ? <GraduationCap size={22} style={{ color: "#94A3B8" }} />
+                : <User size={22} style={{ color: "#94A3B8" }} />
+              }
+            </div>
+            <p className="text-sm font-medium text-slate-500">
               Belum ada data {label.toLowerCase()}
             </p>
             <button
               onClick={openChoice}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
-              style={{
-                background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                color: "#1C1409",
-              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
+              style={{ backgroundColor: "#1E3A5F" }}
             >
               <Plus size={14} />
               Tambah {label}
@@ -560,18 +556,16 @@ export function ManageList({ people, type }: Props) {
             return (
               <div
                 key={person.id}
-                className="animate-in flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                className="animate-in flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors"
                 style={{
-                  backgroundColor: isEditing ? "rgba(196,151,42,0.06)" : "rgba(255,255,255,0.7)",
-                  border: isEditing
-                    ? "1px solid rgba(196,151,42,0.3)"
-                    : "1px solid rgba(231,221,208,0.7)",
-                  animationDelay: `${idx * 40}ms`,
+                  backgroundColor: isEditing ? "#F8FAFC" : "rgba(255,255,255,0.8)",
+                  border: isEditing ? "1px solid #DDE3EC" : "1px solid rgba(221,227,236,0.6)",
+                  animationDelay: `${idx * 35}ms`,
                 }}
               >
                 {/* Avatar */}
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 text-white"
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 text-white"
                   style={{ backgroundColor: avatarColor }}
                 >
                   {getInitial(person.name)}
@@ -581,6 +575,12 @@ export function ManageList({ people, type }: Props) {
                 <div className="flex-1 min-w-0">
                   {isEditing ? (
                     <div className="flex flex-col gap-1.5">
+                      {type === "guru" && (
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] font-medium" style={{ color: "#1E3A5F" }}>Edit {label}</p>
+                          <RoleToggle value={roleValue} onChange={setRoleValue} />
+                        </div>
+                      )}
                       <input
                         ref={editInputRef}
                         value={inputValue}
@@ -590,30 +590,27 @@ export function ManageList({ people, type }: Props) {
                           if (e.key === "Escape") cancelEdit()
                         }}
                         placeholder="Masukkan nama lengkap..."
-                        className="w-full px-2.5 py-1.5 rounded-lg text-sm border outline-none"
+                        className="w-full px-2.5 py-1.5 rounded-md text-sm border outline-none"
                         style={{
-                          borderColor: "rgba(196,151,42,0.35)",
+                          borderColor: "#DDE3EC",
                           backgroundColor: "#FFFFFF",
-                          color: "#1C1917",
+                          color: "#1A2233",
                         }}
                       />
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleEdit(person.id)}
                           disabled={loading || !inputValue.trim()}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold disabled:opacity-50"
-                          style={{
-                            background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                            color: "#1C1409",
-                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium disabled:opacity-50"
+                          style={{ backgroundColor: "#1E3A5F", color: "#FFFFFF" }}
                         >
                           <Check size={11} />
                           Simpan
                         </button>
                         <button
                           onClick={cancelEdit}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
-                          style={{ backgroundColor: "#F3F4F6", color: "#6B7280" }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium"
+                          style={{ backgroundColor: "#F1F4F8", color: "#64748B" }}
                         >
                           <X size={11} />
                           Batal
@@ -622,10 +619,24 @@ export function ManageList({ people, type }: Props) {
                     </div>
                   ) : (
                     <>
-                      <p className="font-semibold text-sm truncate" style={{ color: "#1C1917" }}>
-                        {person.name}
-                      </p>
-                      <p className="text-xs" style={{ color: "#78716C" }}>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="font-medium text-sm truncate" style={{ color: "#1A2233" }}>
+                          {person.name}
+                        </p>
+                        {type === "guru" && (
+                          <span
+                            className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
+                            style={
+                              person.role === "staff"
+                                ? { backgroundColor: "rgba(59,130,246,0.10)", color: "#3B82F6" }
+                                : { backgroundColor: "rgba(196,151,42,0.10)", color: "#B8860B" }
+                            }
+                          >
+                            {person.role === "staff" ? "Staf" : "Guru"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: "#64748B" }}>
                         {person.evaluationCount > 0
                           ? `${person.evaluationCount} penilaian`
                           : "Belum ada penilaian"}
@@ -639,11 +650,11 @@ export function ManageList({ people, type }: Props) {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => startEdit(person)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                      style={{ color: "#78716C" }}
+                      className="w-8 h-8 rounded-md flex items-center justify-center transition-colors"
+                      style={{ color: "#64748B" }}
                       title="Edit"
                       onMouseEnter={(e) =>
-                        ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(92,61,17,0.08)")
+                        ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(30,58,95,0.07)")
                       }
                       onMouseLeave={(e) =>
                         ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")
@@ -653,7 +664,7 @@ export function ManageList({ people, type }: Props) {
                     </button>
                     <button
                       onClick={() => setDeleteTarget(person)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-md flex items-center justify-center transition-colors"
                       style={{ color: "#EF4444" }}
                       title="Hapus"
                       onMouseEnter={(e) =>

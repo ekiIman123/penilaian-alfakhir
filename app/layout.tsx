@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id" className={geist.variable}>
       <body className="min-h-screen">
         <Navbar />
-        <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
+        <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

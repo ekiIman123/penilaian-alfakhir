@@ -18,10 +18,10 @@ export function StarRating({ criterion, value, onChange, sectionColor }: Props) 
     <div
       className="rounded-2xl bg-white"
       style={{
-        borderLeft: value ? `4px solid ${sectionColor}` : "4px solid #E7DDD0",
+        borderLeft: value ? `4px solid ${sectionColor}` : "4px solid #DDE3EC",
         boxShadow: value
-          ? `0 2px 12px rgba(44,26,8,0.07), 0 0 0 1px ${sectionColor}22`
-          : "0 1px 6px rgba(44,26,8,0.06), 0 0 0 1px #E7DDD0",
+          ? `0 1px 6px rgba(0,0,0,0.06), 0 0 0 1px ${sectionColor}22`
+          : "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px #DDE3EC",
         padding: "1rem 1.1rem 0.9rem 1rem",
       }}
     >

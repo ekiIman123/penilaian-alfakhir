@@ -1,13 +1,13 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Database, Menu, Settings, X } from "lucide-react"
+import { LayoutDashboard, Database, Menu, Settings, X } from "lucide-react"
 import { useState, useEffect } from "react"
 
 const NAV_ITEMS = [
-  { href: "/",         label: "Dashboard",   icon: BarChart3, exact: true,  accent: false },
-  { href: "/admin",    label: "Kelola Data", icon: Database,  exact: false, accent: false },
-  { href: "/settings", label: "Pengaturan",  icon: Settings,  exact: false, accent: false },
+  { href: "/",         label: "Dashboard",   icon: LayoutDashboard, exact: true,  accent: false },
+  { href: "/admin",    label: "Kelola Data", icon: Database,        exact: false, accent: false },
+  { href: "/settings", label: "Pengaturan",  icon: Settings,        exact: false, accent: false },
 ] as const
 
 function active(pathname: string, href: string, exact: boolean) {
@@ -19,15 +19,14 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
 
-  // Close menu on route change
   useEffect(() => { setOpen(false) }, [path])
 
   return (
     <nav
       className="sticky top-0 z-50 text-white"
       style={{
-        backgroundColor: "#2C1A08",
-        boxShadow: "0 2px 0 #C4972A, 0 4px 20px rgba(44,26,8,0.45)",
+        backgroundColor: "#0F2540",
+        boxShadow: "0 2px 0 #C4972A, 0 4px 20px rgba(15,37,64,0.35)",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -39,146 +38,109 @@ export function Navbar() {
             <img
               src="/api/logo"
               alt="Logo"
-              className="h-10 w-auto shrink-0"
+              className="h-9 w-auto shrink-0"
               onError={() => setLogoFailed(true)}
             />
           ) : (
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0"
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
               style={{
                 background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                color: "#1C1409",
-                boxShadow: "0 0 0 2px #2C1A08, 0 0 0 3.5px #C4972A, 0 0 12px rgba(196,151,42,0.35)",
+                color: "#0F2540",
               }}
             >
               AF
             </div>
           )}
           <div className="leading-tight">
-            <div className="font-bold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.92)" }}>
+            <div className="font-semibold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.95)" }}>
               Al Fakhir
             </div>
             <div
               className="text-[10px] tracking-widest uppercase hidden sm:block"
-              style={{ color: "rgba(255,255,255,0.48)" }}
+              style={{ color: "rgba(255,255,255,0.45)" }}
             >
               Performance Appraisal
             </div>
           </div>
         </Link>
 
-        {/* ── Desktop nav pill group ── */}
+        {/* Desktop nav */}
         <div
-          className="hidden md:flex items-center gap-0.5 rounded-xl p-1"
-          style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}
+          className="hidden md:flex items-center gap-0.5 rounded-lg p-1"
+          style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
           {NAV_ITEMS.map((item) => {
             const isActive = active(path, item.href, item.exact)
             const Icon = item.icon
 
-            if (item.accent) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold"
-                  style={{
-                    background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                    color: "#1C1409",
-                    boxShadow: "0 2px 8px rgba(196,151,42,0.40)",
-                  }}
-                >
-                  <Icon size={15} />
-                  {item.label}
-                </Link>
-              )
-            }
-
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-colors"
                 style={{
                   color: isActive ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
-                  backgroundColor: isActive ? "rgba(196,151,42,0.15)" : "transparent",
+                  backgroundColor: isActive ? "rgba(196,151,42,0.12)" : "transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.08)"
+                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.07)"
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"
                 }}
               >
-                <Icon size={15} />
+                <Icon size={14} />
                 {item.label}
               </Link>
             )
           })}
         </div>
 
-        {/* ── Mobile hamburger button ── */}
+        {/* Mobile hamburger */}
         <button
-          className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl transition-colors"
+          className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
           style={{
             color: "rgba(255,255,255,0.80)",
-            backgroundColor: open ? "rgba(196,151,42,0.15)" : "transparent",
+            backgroundColor: open ? "rgba(196,151,42,0.12)" : "transparent",
             border: "1px solid",
-            borderColor: open ? "rgba(196,151,42,0.35)" : "transparent",
+            borderColor: open ? "rgba(196,151,42,0.30)" : "transparent",
           }}
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? "Tutup menu" : "Buka menu"}
           aria-expanded={open}
         >
-          {open ? <X size={20} /> : <Menu size={20} />}
+          {open ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
-      {/* ── Mobile dropdown ── */}
+      {/* Mobile dropdown */}
       {open && (
         <div
           className="md:hidden"
           style={{
-            backgroundColor: "#1C0E04",
-            borderTop: "1px solid rgba(196,151,42,0.20)",
-            borderBottom: "1px solid rgba(196,151,42,0.10)",
+            backgroundColor: "#091526",
+            borderTop: "1px solid rgba(196,151,42,0.15)",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <div className="px-4 py-3 flex flex-col gap-1.5">
+          <div className="px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.map((item) => {
               const isActive = active(path, item.href, item.exact)
               const Icon = item.icon
-
-              if (item.accent) {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold"
-                    style={{
-                      background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                      color: "#1C1409",
-                      boxShadow: "0 2px 10px rgba(196,151,42,0.35)",
-                    }}
-                  >
-                    <Icon size={18} />
-                    {item.label}
-                  </Link>
-                )
-              }
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium"
                   style={{
-                    color: isActive ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.70)",
-                    backgroundColor: isActive ? "rgba(196,151,42,0.12)" : "rgba(255,255,255,0.03)",
+                    color: isActive ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
+                    backgroundColor: isActive ? "rgba(196,151,42,0.10)" : "rgba(255,255,255,0.03)",
                     borderLeft: `3px solid ${isActive ? "#C4972A" : "transparent"}`,
                   }}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   {item.label}
                 </Link>
               )

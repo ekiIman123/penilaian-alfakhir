@@ -28,28 +28,28 @@ export function AdminTabs({ guruData, penilaiData }: Props) {
       {/* Mobile: tab switcher */}
       <div className="md:hidden space-y-3">
         <div
-          className="flex rounded-xl overflow-hidden"
-          style={{ border: "1px solid rgba(196,151,42,0.2)", backgroundColor: "rgba(255,255,255,0.5)" }}
+          className="flex rounded-lg overflow-hidden"
+          style={{ border: "1px solid #DDE3EC", backgroundColor: "#F8FAFC" }}
         >
           {tabs.map((t) => {
-            const active = tab === t.key
+            const isActive = tab === t.key
             return (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors"
                 style={{
-                  backgroundColor: active ? "#2C1A08" : "transparent",
-                  color: active ? "#C4972A" : "#78716C",
+                  backgroundColor: isActive ? "#0F2540" : "transparent",
+                  color: isActive ? "#C4972A" : "#64748B",
                 }}
               >
-                <t.icon size={15} />
+                <t.icon size={14} />
                 {t.label}
                 <span
-                  className="px-1.5 py-0.5 rounded-full text-xs font-black"
+                  className="px-1.5 py-0.5 rounded-full text-xs font-semibold"
                   style={{
-                    backgroundColor: active ? "rgba(196,151,42,0.25)" : "#F3F4F6",
-                    color: active ? "#E8B84B" : "#6B7280",
+                    backgroundColor: isActive ? "rgba(196,151,42,0.20)" : "#E2E8F0",
+                    color: isActive ? "#E8B84B" : "#64748B",
                   }}
                 >
                   {t.count}

@@ -23,7 +23,7 @@ export interface OrgSettings {
 }
 
 export interface ReportData {
-  teacher: { name: string }
+  teacher: { name: string; role?: string }
   evaluators: { id: string; name: string }[]
   evaluations: {
     evaluator: { id: string; name: string }
@@ -559,6 +559,10 @@ export function ReportDocument({ data }: { data: ReportData }) {
           <View style={styles.identityRow}>
             <Text style={styles.identityLabel}>Nama Guru</Text>
             <Text style={styles.identityValue}>{teacher.name}</Text>
+          </View>
+          <View style={styles.identityRow}>
+            <Text style={styles.identityLabel}>Jabatan</Text>
+            <Text style={styles.identityValue}>{teacher.role === "staff" ? "Staf" : "Guru"}</Text>
           </View>
           <View style={styles.identityRow}>
             <Text style={styles.identityLabel}>Periode Penilaian</Text>

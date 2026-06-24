@@ -72,7 +72,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   }
 
   const reportData: ReportData = {
-    teacher: { name: teacher.name },
+    teacher: { name: teacher.name, role: teacher.role },
     evaluators: allEvaluators,
     evaluations,
     sections,

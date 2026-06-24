@@ -66,10 +66,10 @@ function CriterionCard({
     <div
       className="rounded-2xl bg-white"
       style={{
-        borderLeft: `4px solid ${value ? sectionColor : "#E7DDD0"}`,
+        borderLeft: `4px solid ${value ? sectionColor : "#DDE3EC"}`,
         boxShadow: value
-          ? `0 2px 12px rgba(44,26,8,0.06), 0 0 0 1px ${sectionColor}1A`
-          : "0 1px 6px rgba(44,26,8,0.05), 0 0 0 1px #E7DDD0",
+          ? `0 1px 6px rgba(0,0,0,0.06), 0 0 0 1px ${sectionColor}1A`
+          : "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px #DDE3EC",
         padding: "1rem 1.1rem",
       }}
       onMouseEnter={onFocus}
@@ -182,11 +182,11 @@ function RubricPanel({
     return (
       <div
         className="rounded-2xl overflow-hidden"
-        style={{ boxShadow: "0 2px 16px rgba(44,26,8,0.09), 0 0 0 1px rgba(44,26,8,0.06)" }}
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)" }}
       >
         <div
           className="px-4 py-3.5"
-          style={{ background: "linear-gradient(135deg, #2C1A08 0%, #5C3D11 100%)" }}
+          style={{ background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)" }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.85)" }}>
             Rekap Nilai Per Aspek
@@ -199,16 +199,16 @@ function RubricPanel({
             return (
               <div key={s.id}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-600">{s.icon} {s.label.split(" ")[0]}</span>
+                  <span className="text-xs font-semibold text-gray-600">{s.label.split(" ")[0]}</span>
                   <span className="text-xs font-bold" style={{ color: s.color }}>{norm.toFixed(2)}/4</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#EDE8E1" }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8F0" }}>
                   <div className="h-full rounded-full" style={{ width: `${(norm / 4) * 100}%`, backgroundColor: s.color }} />
                 </div>
               </div>
             )
           })}
-          <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#E7DDD0" }}>
+          <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#DDE3EC" }}>
             <span className="text-sm font-bold text-gray-700">Total</span>
             <div className="flex items-center gap-2">
               <span className="text-xl font-black" style={{ color: grade.color }}>{total.toFixed(2)}</span>
@@ -227,7 +227,7 @@ function RubricPanel({
       <div
         className="rounded-2xl p-5"
         style={{
-          background: "linear-gradient(135deg, #1C0E04 0%, #3B2008 100%)",
+          background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)",
           boxShadow: "0 4px 24px rgba(28,14,4,0.3)",
         }}
       >
@@ -267,7 +267,7 @@ function RubricPanel({
     return (
       <div
         className="rounded-2xl overflow-hidden"
-        style={{ boxShadow: "0 4px 24px rgba(44,26,8,0.12), 0 0 0 1px rgba(44,26,8,0.06)" }}
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)" }}
       >
         <div className="px-4 py-3.5" style={{ backgroundColor: section.color }}>
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -275,7 +275,7 @@ function RubricPanel({
           </p>
           <p className="text-sm font-bold text-white mt-0.5 leading-snug">{focused.label}</p>
         </div>
-        <div className="bg-white divide-y" style={{ borderColor: "#F3EDE6" }}>
+        <div className="bg-white divide-y" style={{ borderColor: "#EDF0F5" }}>
           {([4, 3, 2, 1] as const).map((n) => {
             const opt = focused.options.find((o) => o.score === n)
             if (!opt) return null
@@ -318,11 +318,10 @@ function RubricPanel({
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ boxShadow: "0 2px 16px rgba(44,26,8,0.08), 0 0 0 1px rgba(44,26,8,0.05)" }}
+      style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)" }}
     >
       <div className="px-4 py-3.5" style={{ backgroundColor: section.color }}>
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">{section.icon}</span>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
               Ikhtisar Rubrik
@@ -331,7 +330,7 @@ function RubricPanel({
           </div>
         </div>
       </div>
-      <div className="bg-white divide-y" style={{ borderColor: "#F3EDE6" }}>
+      <div className="bg-white divide-y" style={{ borderColor: "#EDF0F5" }}>
         {section.criteria.map((c, ci) => {
           const sc = scores[c.id] ?? null
           return (
@@ -385,8 +384,8 @@ function LeftSidebar({
         <div
           className="rounded-2xl p-4 space-y-3"
           style={{
-            background: "linear-gradient(135deg, #1C0E04 0%, #3B2008 100%)",
-            boxShadow: "0 4px 20px rgba(28,14,4,0.28)",
+            background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)",
+            boxShadow: "0 4px 16px rgba(15,37,64,0.22)",
           }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.75)" }}>
@@ -410,11 +409,11 @@ function LeftSidebar({
       {/* Step navigation */}
       <div
         className="rounded-2xl overflow-hidden"
-        style={{ boxShadow: "0 2px 12px rgba(44,26,8,0.07), 0 0 0 1px rgba(44,26,8,0.05)" }}
+        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)" }}
       >
         <div
           className="px-4 py-2.5"
-          style={{ background: "linear-gradient(135deg, #2C1A08, #5C3D11)" }}
+          style={{ background: "linear-gradient(135deg, #0F2540, #1E3A5F)" }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.85)" }}>
             Langkah {step + 1} / {STEP_META.length}
@@ -450,7 +449,7 @@ function LeftSidebar({
                 }}
                 onMouseEnter={(e) => {
                   if (!isCurrent && canClick)
-                    (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(44,26,8,0.04)"
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(30,58,95,0.05)"
                 }}
                 onMouseLeave={(e) => {
                   if (!isCurrent)
@@ -505,7 +504,7 @@ function LeftSidebar({
           className="rounded-2xl p-4 flex flex-col items-center gap-2"
           style={{
             backgroundColor: "white",
-            boxShadow: "0 2px 12px rgba(44,26,8,0.07), 0 0 0 1px rgba(44,26,8,0.05)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
           }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#9CA3AF" }}>
@@ -642,8 +641,8 @@ export function EvaluationForm({
       <div
         className="lg:hidden mb-5 rounded-2xl p-4"
         style={{
-          background: "linear-gradient(135deg, #1C0E04 0%, #3B2008 100%)",
-          boxShadow: "0 4px 20px rgba(28,14,4,0.25)",
+          background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)",
+          boxShadow: "0 4px 16px rgba(15,37,64,0.22)",
         }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -702,10 +701,9 @@ export function EvaluationForm({
             <div className="card animate-in">
               <div
                 className="px-5 py-5 text-white"
-                style={{ background: "linear-gradient(135deg, #2C1A08 0%, #5C3D11 100%)" }}
+                style={{ background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)" }}
               >
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-2xl">👤</span>
                   <h2 className="font-bold text-xl">Identitas Penilaian</h2>
                 </div>
                 <p className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
@@ -715,7 +713,7 @@ export function EvaluationForm({
               <div className="p-5 space-y-5">
                 <div
                   className="flex items-center gap-2 text-xs font-medium px-3.5 py-2.5 rounded-xl"
-                  style={{ backgroundColor: "rgba(196,151,42,0.08)", color: "#92400E", border: "1px solid rgba(196,151,42,0.22)" }}
+                  style={{ backgroundColor: "#F0F4F9", color: "#1E3A5F", border: "1px solid #DDE3EC" }}
                 >
                   <span style={{ color: "#C4972A", fontSize: "1rem" }}>ⓘ</span>
                   Skala penilaian: <strong>1</strong> (Kurang) &nbsp;—&nbsp; <strong>4</strong> (Sangat Baik)
@@ -757,17 +755,9 @@ export function EvaluationForm({
                 className="px-5 py-4 text-white relative overflow-hidden"
                 style={{ backgroundColor: currentSection.color }}
               >
-                <span
-                  className="absolute right-4 top-1/2 -translate-y-1/2 select-none pointer-events-none"
-                  style={{ fontSize: "5rem", opacity: 0.12, lineHeight: 1 }}
-                  aria-hidden
-                >
-                  {currentSection.icon}
-                </span>
                 <div className="relative flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <span className="text-2xl">{currentSection.icon}</span>
                       <h2 className="font-bold text-xl tracking-wide">{currentSection.label}</h2>
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -804,8 +794,8 @@ export function EvaluationForm({
               <div
                 className="rounded-2xl p-6 flex flex-col items-center gap-3"
                 style={{
-                  background: "linear-gradient(135deg, #1C0E04 0%, #3B2008 60%, #5C3D11 100%)",
-                  boxShadow: "0 4px 32px rgba(28,14,4,0.35)",
+                  background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 65%, #2A4F7A 100%)",
+                  boxShadow: "0 4px 20px rgba(15,37,64,0.25)",
                 }}
               >
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.85)" }}>
@@ -821,7 +811,7 @@ export function EvaluationForm({
               </div>
 
               <div className="card">
-                <div className="px-5 py-3.5 border-b" style={{ borderColor: "#E7DDD0" }}>
+                <div className="px-5 py-3.5 border-b" style={{ borderColor: "#DDE3EC" }}>
                   <h3 className="font-bold text-gray-800">Rekapitulasi Per Aspek</h3>
                 </div>
                 <div className="px-5 py-4 space-y-3">
@@ -830,11 +820,11 @@ export function EvaluationForm({
                     const norm = raw * 4 / s.maxScore
                     return (
                       <div key={s.id} className="flex items-center gap-3">
-                        <span className="text-sm w-7 text-center shrink-0">{s.icon}</span>
+                        <div className="w-3 h-3 rounded-full shrink-0 mx-2" style={{ backgroundColor: s.color }} />
                         <span className="text-sm font-medium text-gray-600 w-28 shrink-0 truncate">
                           {s.label.split(" ")[0]}
                         </span>
-                        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ backgroundColor: "#F3F0EC" }}>
+                        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8F0" }}>
                           <div
                             className="h-full rounded-full"
                             style={{ width: `${(norm / 4) * 100}%`, backgroundColor: s.color, transition: "width 0.7s" }}
@@ -846,7 +836,7 @@ export function EvaluationForm({
                       </div>
                     )
                   })}
-                  <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#E7DDD0" }}>
+                  <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#DDE3EC" }}>
                     <span className="font-bold text-gray-700">Rata-rata</span>
                     <div className="flex items-center gap-2">
                       <span className="text-2xl font-black" style={{ color: grade.color }}>{total.toFixed(2)}</span>
@@ -857,7 +847,7 @@ export function EvaluationForm({
               </div>
 
               <div className="card">
-                <div className="px-5 py-3.5 border-b" style={{ borderColor: "#E7DDD0" }}>
+                <div className="px-5 py-3.5 border-b" style={{ borderColor: "#DDE3EC" }}>
                   <h3 className="font-bold text-gray-800">Catatan Khusus</h3>
                   <p className="text-xs text-gray-400 mt-0.5">Opsional — catatan untuk guru ini</p>
                 </div>
@@ -896,8 +886,8 @@ export function EvaluationForm({
                 disabled={submitting}
                 className="flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-black text-white disabled:opacity-60"
                 style={{
-                  background: "linear-gradient(135deg, #3B2008 0%, #5C3D11 100%)",
-                  boxShadow: "0 3px 14px rgba(44,26,8,0.38)",
+                  backgroundColor: "#1E3A5F",
+                  boxShadow: "0 3px 12px rgba(15,37,64,0.30)",
                 }}
               >
                 <Check size={16} />

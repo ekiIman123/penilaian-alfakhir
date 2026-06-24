@@ -4,10 +4,11 @@ import { SECTIONS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 
 export async function POST(req: Request) {
-  const { name } = await req.json()
+  const { name, role } = await req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
+  const validRole = role === "staff" ? "staff" : "guru"
   try {
-    const teacher = await prisma.teacher.create({ data: { name: name.trim() } })
+    const teacher = await prisma.teacher.create({ data: { name: name.trim(), role: validRole } })
     return NextResponse.json(teacher, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Name already exists" }, { status: 409 })

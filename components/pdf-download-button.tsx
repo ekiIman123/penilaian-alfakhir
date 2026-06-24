@@ -66,36 +66,36 @@ export function PdfDownloadButton({ teacherId, teacherName }: Props) {
       {loading && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5"
-          style={{ backgroundColor: "rgba(28,14,4,0.72)", backdropFilter: "blur(4px)" }}
+          style={{ backgroundColor: "rgba(15,37,64,0.65)", backdropFilter: "blur(4px)" }}
         >
           <div
-            className="flex flex-col items-center gap-4 rounded-2xl px-10 py-8"
+            className="flex flex-col items-center gap-4 rounded-xl px-10 py-8"
             style={{
               backgroundColor: "#FFFFFF",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.28)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.20)",
               minWidth: 280,
             }}
           >
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)" }}
+              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: "#1E3A5F" }}
             >
-              <FileDown size={26} style={{ color: "#1C1409" }} />
+              <FileDown size={26} style={{ color: "#C4972A" }} />
             </div>
             <div className="text-center">
-              <p className="font-black text-base" style={{ color: "#1C1917" }}>
+              <p className="font-semibold text-base" style={{ color: "#1A2233" }}>
                 Menyiapkan Laporan
               </p>
-              <p className="text-xs mt-1" style={{ color: "#78716C" }}>
+              <p className="text-xs mt-1" style={{ color: "#64748B" }}>
                 Sedang membuat PDF untuk
               </p>
-              <p className="text-xs font-semibold mt-0.5" style={{ color: "#2C1A08" }}>
+              <p className="text-xs font-medium mt-0.5" style={{ color: "#1E3A5F" }}>
                 {teacherName}
               </p>
             </div>
-            <div className="flex items-center gap-2" style={{ color: "#C4972A" }}>
-              <Loader2 size={16} className="animate-spin" />
-              <span className="text-xs font-medium" style={{ color: "#78716C" }}>
+            <div className="flex items-center gap-2">
+              <Loader2 size={16} className="animate-spin" style={{ color: "#C4972A" }} />
+              <span className="text-xs font-medium" style={{ color: "#64748B" }}>
                 Mohon tunggu sebentar…
               </span>
             </div>

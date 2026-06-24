@@ -18,24 +18,24 @@ interface OrgSettingsForm {
 }
 
 const FIELD_STYLE = {
-  borderColor: "rgba(196,151,42,0.35)",
+  borderColor: "#DDE3EC",
   backgroundColor: "#FFFFFF",
-  color: "#1C1917",
+  color: "#1A2233",
 }
 
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div
-      className="flex items-center gap-2.5 px-4 py-3 rounded-xl mb-4"
+      className="flex items-center gap-2.5 px-4 py-3 rounded-lg mb-4"
       style={{
-        background: "linear-gradient(135deg, rgba(44,26,8,0.06) 0%, rgba(196,151,42,0.08) 100%)",
-        border: "1px solid rgba(196,151,42,0.15)",
+        backgroundColor: "#F8FAFC",
+        border: "1px solid #DDE3EC",
       }}
     >
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "rgba(196,151,42,0.12)" }}>
-        <Icon size={15} style={{ color: "#C4972A" }} />
+      <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: "rgba(196,151,42,0.12)" }}>
+        <Icon size={14} style={{ color: "#C4972A" }} />
       </div>
-      <span className="font-bold text-sm" style={{ color: "#2C1A08" }}>{title}</span>
+      <span className="font-semibold text-sm" style={{ color: "#1A2233" }}>{title}</span>
     </div>
   )
 }
@@ -43,7 +43,7 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold" style={{ color: "#5C3D11" }}>{label}</label>
+      <label className="text-xs font-medium" style={{ color: "#64748B" }}>{label}</label>
       {children}
     </div>
   )
@@ -136,7 +136,7 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
           <Field label="Label Periode">
             <Input value={form.periodLabel} onChange={(v) => set("periodLabel", v)} placeholder="Semester Ganjil 2025/2026" />
           </Field>
-          <p className="mt-2 text-xs" style={{ color: "#9CA3AF" }}>
+          <p className="mt-2 text-xs" style={{ color: "#94A3B8" }}>
             Ditampilkan pada kop surat dan identitas laporan PDF.
           </p>
         </div>
@@ -156,7 +156,7 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
             <Input value={form.ketuaTitle} onChange={(v) => set("ketuaTitle", v)} placeholder="Ketua Balitbang SDM" />
           </Field>
         </div>
-        <p className="mt-3 text-xs" style={{ color: "#9CA3AF" }}>
+        <p className="mt-3 text-xs" style={{ color: "#94A3B8" }}>
           Ketiga pihak ini akan muncul pada bagian tanda tangan di laporan PDF.
         </p>
       </div>
@@ -165,39 +165,34 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
       <div className="card p-5">
         <SectionHeader icon={ImageIcon} title="Logo Lembaga" />
         <div className="flex flex-col sm:flex-row items-start gap-6">
-          {/* Preview */}
           <div
-            className="w-28 h-28 rounded-xl flex items-center justify-center shrink-0"
-            style={{ border: "2px dashed rgba(196,151,42,0.35)", backgroundColor: "rgba(196,151,42,0.04)" }}
+            className="w-28 h-28 rounded-lg flex items-center justify-center shrink-0"
+            style={{ border: "2px dashed #DDE3EC", backgroundColor: "#F8FAFC" }}
           >
             {form.logoBase64 ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.logoBase64} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+              <img src={form.logoBase64} alt="Logo" className="w-full h-full object-contain rounded-lg p-1" />
             ) : (
               <div className="flex flex-col items-center gap-1">
-                <ImageIcon size={24} style={{ color: "rgba(196,151,42,0.4)" }} />
-                <span className="text-[10px] text-center" style={{ color: "#9CA3AF" }}>Belum ada logo</span>
+                <ImageIcon size={22} style={{ color: "#CBD5E1" }} />
+                <span className="text-[10px] text-center" style={{ color: "#94A3B8" }}>Belum ada logo</span>
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="text-sm" style={{ color: "#5C3D11" }}>
+            <p className="text-sm" style={{ color: "#1E3A5F" }}>
               Upload logo lembaga (PNG, JPG, SVG) · Maks. 500 KB
             </p>
-            <p className="text-xs" style={{ color: "#9CA3AF" }}>
+            <p className="text-xs" style={{ color: "#94A3B8" }}>
               Logo akan ditampilkan di sisi kiri kop surat pada laporan PDF.
             </p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold"
-                style={{
-                  background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                  color: "#1C1409",
-                  boxShadow: "0 2px 6px rgba(196,151,42,0.35)",
-                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                style={{ backgroundColor: "#1E3A5F" }}
               >
                 <Upload size={14} />
                 Pilih Gambar
@@ -233,11 +228,10 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
         <button
           onClick={handleSave}
           disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-opacity disabled:opacity-60"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-60 text-white"
           style={{
-            background: "linear-gradient(135deg, #2C1A08 0%, #5C3D11 100%)",
-            color: "#C4972A",
-            boxShadow: "0 2px 10px rgba(44,26,8,0.35)",
+            backgroundColor: "#1E3A5F",
+            boxShadow: "0 2px 8px rgba(15,37,64,0.22)",
           }}
         >
           <Save size={15} />

@@ -1,36 +1,35 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #5C3D11;
-  --color-primary-dark: #2C1A08;
-  --color-primary-light: #7B5A1E;
+  --color-primary: #1E3A5F;
+  --color-primary-dark: #0F2540;
+  --color-primary-light: #2A4F7A;
   --color-gold: #C4972A;
   --color-gold-light: #E8B84B;
-  --color-gold-muted: #F5D78A;
-  --color-bg: #F5EFE6;
-  --color-background: #F5EFE6;
+  --color-gold-muted: #F5E4A0;
+  --color-bg: #F1F4F8;
+  --color-background: #F1F4F8;
   --color-card: #FFFFFF;
-  --color-foreground: #1C1917;
-  --color-muted: #78716C;
-  --color-border: #E7DDD0;
+  --color-foreground: #1A2233;
+  --color-muted: #64748B;
+  --color-border: #DDE3EC;
   --font-sans: var(--font-geist-sans);
 }
 
 body {
-  background-color: #F5EFE6;
-  color: #1C1917;
+  background-color: #F1F4F8;
+  color: #1A2233;
   font-family: var(--font-geist-sans, "Segoe UI", system-ui, -apple-system, sans-serif);
 }
 
-/* Premium scrollbar */
-::-webkit-scrollbar { width: 7px; height: 7px; }
-::-webkit-scrollbar-track { background: #F5EFE6; }
+/* Clean scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F1F4F8; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #C4972A 0%, #E8B84B 100%);
-  border-radius: 4px;
-  border: 1px solid #F5EFE6;
+  background: #C1CBD8;
+  border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: #C4972A; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
 /* Focus ring */
 *:focus-visible {
@@ -41,17 +40,17 @@ body {
 
 /* ─── Animations ─────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.92); }
+  from { opacity: 0; transform: scale(0.94); }
   to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(24px); }
+  from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
@@ -61,22 +60,22 @@ body {
   100% { transform: scale(1.5); opacity: 0; }
 }
 
-.animate-in    { animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-scale { animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slide { animation: slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-in    { animation: fadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-scale { animation: scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide { animation: slideInRight 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-pulse-ring { animation: pulseRing 1.8s ease-out infinite; will-change: transform, opacity; }
 
 /* Stagger children */
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 60ms; }
-.stagger > *:nth-child(3) { animation-delay: 120ms; }
-.stagger > *:nth-child(4) { animation-delay: 180ms; }
-.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
 
 /* ─── Card component ────────────────────────────── */
 .card {
   background: #FFFFFF;
-  border-radius: 1rem;
-  box-shadow: 0 1px 4px rgba(44, 26, 8, 0.08), 0 0 0 1px rgba(196, 151, 42, 0.07);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }

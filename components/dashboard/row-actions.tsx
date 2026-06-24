@@ -33,10 +33,10 @@ export function RowActionsMenu({
     <div className="relative shrink-0" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+        className="w-7 h-7 rounded-md flex items-center justify-center transition-colors"
         style={{
-          backgroundColor: open ? "rgba(92,61,17,0.12)" : "rgba(0,0,0,0.05)",
-          color: "#5C3D11",
+          backgroundColor: open ? "rgba(30,58,95,0.10)" : "rgba(0,0,0,0.05)",
+          color: "#1E3A5F",
         }}
         aria-label="Aksi"
       >
@@ -45,18 +45,18 @@ export function RowActionsMenu({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden flex flex-col"
+          className="absolute right-0 top-full mt-1 z-50 rounded-lg overflow-hidden flex flex-col"
           style={{
             minWidth: 120,
             backgroundColor: "#FFFFFF",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.13)",
-            border: "1px solid rgba(231,221,208,0.8)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+            border: "1px solid #DDE3EC",
           }}
         >
           {grade && (
-            <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3EDE6" }}>
+            <div className="px-3 py-2" style={{ borderBottom: "1px solid #EDF0F5" }}>
               <span
-                className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap"
+                className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap"
                 style={{ color: grade.color, backgroundColor: grade.bg }}
               >
                 {grade.label}
@@ -66,8 +66,8 @@ export function RowActionsMenu({
           <Link
             href={`/teachers/${teacherId}`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold transition-colors hover:bg-stone-50"
-            style={{ color: "#1C1917" }}
+            className="flex items-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors hover:bg-slate-50"
+            style={{ color: "#1A2233" }}
           >
             <Eye size={13} />
             Detail
@@ -75,8 +75,8 @@ export function RowActionsMenu({
           <Link
             href={`/form?teacherId=${teacherId}`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold"
-            style={{ backgroundColor: "#C4972A", color: "#1C1409" }}
+            className="flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-white"
+            style={{ backgroundColor: "#1E3A5F" }}
           >
             <ClipboardEdit size={13} />
             Nilai
