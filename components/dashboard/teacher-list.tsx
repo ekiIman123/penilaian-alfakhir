@@ -264,55 +264,82 @@ function QuickEditModal({
               <Loader2 size={20} className="animate-spin" style={{ color: "#94A3B8" }} />
             </div>
           ) : (
-            sections.map((section) => {
-              const raw  = calcSectionRaw(scores, section.id, sections)
-              const norm = raw * 4 / section.maxScore
-              return (
-                <div key={section.id}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: section.color }} />
-                      <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: section.color }}>
-                        {section.label}
+            <>
+              {sections.map((section) => {
+                const raw  = calcSectionRaw(scores, section.id, sections)
+                const norm = raw * 4 / section.maxScore
+                return (
+                  <div key={section.id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: section.color }} />
+                        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: section.color }}>
+                          {section.label}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold tabular-nums" style={{ color: section.color }}>
+                        {norm.toFixed(1)}<span className="font-normal opacity-50"> / 4</span>
                       </span>
                     </div>
-                    <span className="text-xs font-bold tabular-nums" style={{ color: section.color }}>
-                      {norm.toFixed(1)}<span className="font-normal opacity-50"> / 4</span>
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {section.criteria.map((criterion) => {
-                      const cur = scores[criterion.id] ?? 0
-                      return (
-                        <div
-                          key={criterion.id}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                          style={{ backgroundColor: "#F8FAFC", border: "1px solid #EDF0F5" }}
-                        >
-                          <span className="text-xs text-slate-600 flex-1 leading-snug">{criterion.label}</span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {([1, 2, 3, 4] as const).map((score) => (
-                              <button
-                                key={score}
-                                onClick={() => setScores((prev) => ({ ...prev, [criterion.id]: score }))}
-                                className="w-7 h-7 rounded-md text-xs font-bold transition-all"
-                                style={
-                                  cur === score
-                                    ? { backgroundColor: section.color, color: "#fff" }
-                                    : { backgroundColor: "#EDF0F5", color: "#94A3B8" }
-                                }
-                              >
-                                {score}
-                              </button>
-                            ))}
+                    <div className="space-y-1.5">
+                      {section.criteria.map((criterion) => {
+                        const cur = scores[criterion.id] ?? 0
+                        return (
+                          <div
+                            key={criterion.id}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                            style={{ backgroundColor: "#F8FAFC", border: "1px solid #EDF0F5" }}
+                          >
+                            <span className="text-xs text-slate-600 flex-1 leading-snug">{criterion.label}</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {([1, 2, 3, 4] as const).map((score) => (
+                                <button
+                                  key={score}
+                                  onClick={() => setScores((prev) => ({ ...prev, [criterion.id]: score }))}
+                                  className="w-7 h-7 rounded-md text-xs font-bold transition-all"
+                                  style={
+                                    cur === score
+                                      ? { backgroundColor: section.color, color: "#fff" }
+                                      : { backgroundColor: "#EDF0F5", color: "#94A3B8" }
+                                  }
+                                >
+                                  {score}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
+                )
+              })}
+
+              {/* Catatan */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#94A3B8" }} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>
+                    Catatan
+                  </span>
                 </div>
-              )
-            })
+                <textarea
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  placeholder="Tambahkan catatan evaluasi (opsional)…"
+                  rows={3}
+                  className="w-full text-xs rounded-lg px-3 py-2 resize-none outline-none transition-colors"
+                  style={{
+                    backgroundColor: "#F8FAFC",
+                    border: "1px solid #DDE3EC",
+                    color: "#374151",
+                    lineHeight: "1.6",
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "#1E3A5F")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#DDE3EC")}
+                />
+              </div>
+            </>
           )}
         </div>
 
