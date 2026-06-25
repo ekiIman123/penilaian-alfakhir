@@ -6,6 +6,7 @@ import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
 import { TeacherRadarChart } from "@/components/teacher-radar-chart"
 import { TeacherSwitcher } from "@/components/teacher-switcher"
 import { TeacherDetailEvaluators } from "@/components/teacher-detail-evaluators"
+import { CatatanFinalEditor } from "@/components/catatan-final-editor"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { PdfDownloadButton } from "@/components/pdf-download-button"
@@ -72,6 +73,11 @@ export default async function TeacherDetailPage({ params }: Props) {
     catatan: e.catatan,
     updatedAt: e.updatedAt.toISOString(),
   }))
+
+  const fallbackCatatan = parsedEvals
+    .filter((e) => e.catatan)
+    .map((e) => `${e.evaluator.name.split(",")[0]}: ${e.catatan}`)
+    .join(" | ")
 
   const radarData = sections.map((s) => {
     const entry: { subject: string; maxScore: number; [k: string]: number | string } = {
@@ -214,6 +220,13 @@ export default async function TeacherDetailPage({ params }: Props) {
               <div className="p-10 text-center text-slate-400 text-sm">Belum ada data untuk ditampilkan</div>
             </div>
           )}
+
+          {/* Catatan Final */}
+          <CatatanFinalEditor
+            teacherId={teacher.id}
+            savedValue={teacher.finalCatatan ?? null}
+            fallbackValue={fallbackCatatan}
+          />
 
           {/* Missing evaluators */}
           {missingEvaluators.length > 0 && (

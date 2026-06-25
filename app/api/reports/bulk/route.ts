@@ -66,6 +66,8 @@ export async function GET(req: Request) {
       criteria: s.criteria.map((c) => ({ id: c.id, label: c.label })),
     }))
     const catatanParts = evaluations.filter((e) => e.catatan).map((e) => e.catatan as string)
+    const catatanSummary = teacher.finalCatatan
+      ?? (catatanParts.length > 0 ? catatanParts.join(" | ") : null)
     return {
       teacher: { name: teacher.name, role: teacher.role },
       evaluators: allEvaluators,
@@ -75,7 +77,7 @@ export async function GET(req: Request) {
       grade,
       generatedAt: new Date(),
       org,
-      catatanSummary: catatanParts.length > 0 ? catatanParts.join(" | ") : null,
+      catatanSummary,
     }
   })
 

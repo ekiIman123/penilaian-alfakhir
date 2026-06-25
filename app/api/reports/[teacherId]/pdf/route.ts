@@ -103,11 +103,14 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     logoBase64: orgSettingsRaw.logoBase64 ?? null,
   }
 
-  const catatanInputs = evaluations
-    .filter((e) => e.catatan)
-    .map((e) => ({ evaluatorName: e.evaluator.name, text: e.catatan as string }))
-
-  const catatanSummary = await summarizeCatatan(catatanInputs)
+  // Use saved final catatan if available, otherwise generate via AI
+  let catatanSummary: string | null = teacher.finalCatatan ?? null
+  if (!catatanSummary) {
+    const catatanInputs = evaluations
+      .filter((e) => e.catatan)
+      .map((e) => ({ evaluatorName: e.evaluator.name, text: e.catatan as string }))
+    catatanSummary = await summarizeCatatan(catatanInputs)
+  }
 
   const reportData: ReportData = {
     teacher: { name: teacher.name, role: teacher.role },
