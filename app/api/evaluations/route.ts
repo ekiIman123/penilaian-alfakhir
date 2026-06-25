@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       include: { evaluator: true, teacher: true },
     })
 
+    revalidatePath("/")
     return NextResponse.json(result, { status: 200 })
   } catch (e) {
     console.error(e)

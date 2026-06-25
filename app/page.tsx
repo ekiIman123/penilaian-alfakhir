@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Users, CheckCircle2, Clock, AlertCircle, PenLine } from "lucide-react"
 import { DashboardTeacherList } from "@/components/dashboard/teacher-list"
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
   const teachers = await prisma.teacher.findMany({
     include: { evaluations: { include: { evaluator: true } } },
