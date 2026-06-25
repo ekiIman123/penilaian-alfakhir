@@ -632,7 +632,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
         </div>
 
         {/* ── Tabs + Bulk Download ── */}
-        <div className="px-5 pt-3 pb-0 flex items-center justify-between gap-2">
+        <div className="px-5 pt-3 pb-3 sm:pb-0 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => switchTab("guru")}
