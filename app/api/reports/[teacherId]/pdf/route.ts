@@ -1,11 +1,39 @@
 import { renderToBuffer } from "@react-pdf/renderer"
 import { createElement } from "react"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 import { prisma } from "@/lib/prisma"
-import { SECTIONS, getScoreGrade } from "@/lib/rubrics"
+import { getSectionsForRole, getScoreGrade } from "@/lib/rubrics"
 import { parseScores, calcTotal } from "@/lib/calculations"
 import { ReportDocument, type ReportData } from "@/components/pdf/report-document"
 
 export const dynamic = "force-dynamic"
+
+async function summarizeCatatan(
+  catatan: { evaluatorName: string; text: string }[],
+): Promise<string | null> {
+  if (catatan.length === 0) return null
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return null
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+
+    const catatanText = catatan
+      .map((c) => `- ${c.evaluatorName}: "${c.text}"`)
+      .join("\n")
+
+    const prompt =
+      `Kamu adalah asisten yang merangkum catatan evaluasi kinerja guru dari beberapa penilai menjadi satu catatan ringkas dalam Bahasa Indonesia. ` +
+      `Tulis ringkasan dalam 2-3 kalimat, langsung tanpa pengantar, fokus pada poin-poin utama yang disepakati para penilai.\n\n` +
+      `Catatan dari ${catatan.length} penilai:\n${catatanText}\n\nRingkasan:`
+
+    const result = await model.generateContent(prompt)
+    return result.response.text().trim() || null
+  } catch {
+    return null
+  }
+}
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teacherId]/pdf">) {
   const { teacherId } = await ctx.params
@@ -43,7 +71,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
 
   const grade = avgTotal != null ? getScoreGrade(avgTotal) : null
 
-  const sections = SECTIONS.map((s) => ({
+  const roleSections = getSectionsForRole(teacher.role ?? "guru")
+  const sections = roleSections.map((s) => ({
     id: s.id,
     label: s.label,
     icon: s.icon,
@@ -66,10 +95,19 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     city: orgSettingsRaw.city,
     periodLabel: orgSettingsRaw.periodLabel,
     kepalaSekolah: orgSettingsRaw.kepalaSekolah,
+    kepalaTitle: orgSettingsRaw.kepalaTitle,
+    signer2Name: orgSettingsRaw.signer2Name,
+    signer2Title: orgSettingsRaw.signer2Title,
     ketuaName: orgSettingsRaw.ketuaName,
     ketuaTitle: orgSettingsRaw.ketuaTitle,
     logoBase64: orgSettingsRaw.logoBase64 ?? null,
   }
+
+  const catatanInputs = evaluations
+    .filter((e) => e.catatan)
+    .map((e) => ({ evaluatorName: e.evaluator.name, text: e.catatan as string }))
+
+  const catatanSummary = await summarizeCatatan(catatanInputs)
 
   const reportData: ReportData = {
     teacher: { name: teacher.name, role: teacher.role },
@@ -80,6 +118,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     grade,
     generatedAt: new Date(),
     org,
+    catatanSummary,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

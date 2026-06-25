@@ -47,8 +47,11 @@ model OrgSettings {
   city          String   @default("Jakarta")
   periodLabel   String   @default("Semester Ganjil 2025/2026")
   kepalaSekolah String   @default("")
+  kepalaTitle   String   @default("Kepala SMP Islam Modern Al Fakhir")
+  signer2Name   String   @default("")
+  signer2Title  String   @default("Deputi Litbang & SDM Al Fakhir")
   ketuaName     String   @default("")
-  ketuaTitle    String   @default("Ketua Balitbang SDM")
+  ketuaTitle    String   @default("Owner & Founder Al Fakhir")
   logoBase64    String?
   updatedAt     DateTime @updatedAt
 }

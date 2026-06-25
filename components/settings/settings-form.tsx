@@ -12,6 +12,9 @@ interface OrgSettingsForm {
   city: string
   periodLabel: string
   kepalaSekolah: string
+  kepalaTitle: string
+  signer2Name: string
+  signer2Title: string
   ketuaName: string
   ketuaTitle: string
   logoBase64: string | null
@@ -145,19 +148,40 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
       {/* Pejabat Penandatangan */}
       <div className="card p-5">
         <SectionHeader icon={UserCog} title="Pejabat Penandatangan" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Nama Kepala Sekolah">
-            <Input value={form.kepalaSekolah} onChange={(v) => set("kepalaSekolah", v)} placeholder="Nama lengkap..." />
-          </Field>
-          <Field label="Nama Ketua">
-            <Input value={form.ketuaName} onChange={(v) => set("ketuaName", v)} placeholder="Nama lengkap..." />
-          </Field>
-          <Field label="Jabatan Ketua">
-            <Input value={form.ketuaTitle} onChange={(v) => set("ketuaTitle", v)} placeholder="Ketua Balitbang SDM" />
-          </Field>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+          {/* Signer 1 — Kepala Sekolah */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 1</p>
+            <Field label="Nama">
+              <Input value={form.kepalaSekolah} onChange={(v) => set("kepalaSekolah", v)} placeholder="Deny Rahmat, S.Sos.I" />
+            </Field>
+            <Field label="Jabatan">
+              <Input value={form.kepalaTitle} onChange={(v) => set("kepalaTitle", v)} placeholder="Kepala SMP Islam Modern Al Fakhir" />
+            </Field>
+          </div>
+          {/* Signer 2 */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 2</p>
+            <Field label="Nama">
+              <Input value={form.signer2Name} onChange={(v) => set("signer2Name", v)} placeholder="Anggraini, A.Md" />
+            </Field>
+            <Field label="Jabatan">
+              <Input value={form.signer2Title} onChange={(v) => set("signer2Title", v)} placeholder="Deputi Litbang & SDM Al Fakhir" />
+            </Field>
+          </div>
+          {/* Signer 3 — Ketua / Owner */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 3</p>
+            <Field label="Nama">
+              <Input value={form.ketuaName} onChange={(v) => set("ketuaName", v)} placeholder="Deni Irawan, M.Pd" />
+            </Field>
+            <Field label="Jabatan">
+              <Input value={form.ketuaTitle} onChange={(v) => set("ketuaTitle", v)} placeholder="Owner & Founder Al Fakhir" />
+            </Field>
+          </div>
         </div>
-        <p className="mt-3 text-xs" style={{ color: "#94A3B8" }}>
-          Ketiga pihak ini akan muncul pada bagian tanda tangan di laporan PDF.
+        <p className="mt-4 text-xs" style={{ color: "#94A3B8" }}>
+          Ketiga pejabat ini akan muncul pada bagian tanda tangan di laporan PDF.
         </p>
       </div>
 

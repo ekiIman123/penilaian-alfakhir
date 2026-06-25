@@ -16,7 +16,8 @@ export async function PUT(req: Request) {
   const body = await req.json()
   const allowed = [
     "yayasanName", "schoolName", "address", "phone", "city",
-    "periodLabel", "kepalaSekolah", "ketuaName", "ketuaTitle", "logoBase64",
+    "periodLabel", "kepalaSekolah", "kepalaTitle", "signer2Name", "signer2Title",
+    "ketuaName", "ketuaTitle", "logoBase64",
   ]
   const data: Record<string, unknown> = {}
   for (const key of allowed) {

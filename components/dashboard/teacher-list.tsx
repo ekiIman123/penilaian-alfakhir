@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect, Fragment } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ChevronDown, GraduationCap, Search, X, Save, Loader2 } from "lucide-react"
+import { ChevronDown, GraduationCap, Search, X, Save, Loader2, Printer, FileText, FolderOpen } from "lucide-react"
 import { SECTIONS, STAFF_SECTIONS, getSectionsForRole, EVALUATOR_COLORS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw } from "@/lib/calculations"
 import { toast } from "sonner"
@@ -351,6 +351,177 @@ function QuickEditModal({
   return createPortal(modal, document.body)
 }
 
+// ── Bulk Download Button ───────────────────────────────────────────────────────
+
+type BulkRole   = "guru" | "staff" | "all"
+type BulkFormat = "pdf" | "zip"
+
+function BulkDownloadButton({
+  guruCount,
+  staffCount,
+  activeTab,
+}: {
+  guruCount: number
+  staffCount: number
+  activeTab: "guru" | "staff"
+}) {
+  const [open,    setOpen]    = useState(false)
+  const [format,  setFormat]  = useState<BulkFormat>("pdf")
+  const [loading, setLoading] = useState<BulkRole | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
+
+  async function download(role: BulkRole) {
+    setOpen(false)
+    setLoading(role)
+    const count    = role === "all" ? guruCount + staffCount : role === "guru" ? guruCount : staffCount
+    const label    = role === "all" ? "Semua" : role === "guru" ? "Guru" : "Staf"
+    const isPdf    = format === "pdf"
+    const year     = new Date().getFullYear()
+    const filename = isPdf
+      ? `rapor-massal-${role}-${year}.pdf`
+      : `rapor-${role}-${year}.zip`
+
+    const toastId = toast.loading(
+      isPdf
+        ? `Membuat 1 PDF untuk ${count} rapor ${label}…`
+        : `Membuat ${count} file PDF terpisah dalam ZIP…`
+    )
+    try {
+      const res = await fetch(`/api/reports/bulk?role=${role}&format=${format}`)
+      if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement("a")
+      a.href     = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(
+        isPdf
+          ? `PDF ${count} rapor ${label} berhasil diunduh`
+          : `ZIP ${count} file rapor ${label} berhasil diunduh`,
+        { id: toastId }
+      )
+    } catch {
+      toast.error("Gagal mengunduh rapor, coba lagi", { id: toastId })
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const isLoading = loading !== null
+
+  const dataOptions: { role: BulkRole; label: string; count: number }[] = [
+    { role: "guru",  label: "Guru",  count: guruCount  },
+    { role: "staff", label: "Staf",  count: staffCount },
+    { role: "all",   label: "Semua", count: guruCount + staffCount },
+  ]
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Trigger button */}
+      <button
+        onClick={() => !isLoading && setOpen((o) => !o)}
+        disabled={isLoading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
+        style={{ backgroundColor: "#0F2540", color: "#FFFFFF", boxShadow: "0 1px 4px rgba(15,37,64,0.18)" }}
+      >
+        {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Printer size={12} />}
+        {isLoading ? "Memproses…" : "Cetak Massal"}
+        {!isLoading && (
+          <ChevronDown size={10} style={{ opacity: 0.7, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+        )}
+      </button>
+
+      {/* Panel */}
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 z-30 rounded-xl"
+          style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE3EC", width: 232, boxShadow: "0 8px 28px rgba(0,0,0,0.13)" }}
+        >
+          {/* Header */}
+          <div className="px-4 py-3" style={{ borderBottom: "1px solid #DDE3EC" }}>
+            <p className="text-xs font-bold" style={{ color: "#1A2233" }}>Ekspor Rapor Massal</p>
+            <p className="text-[10px] mt-0.5" style={{ color: "#94A3B8" }}>Pilih format lalu pilih data</p>
+          </div>
+
+          {/* Format toggle */}
+          <div className="px-4 pt-3 pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94A3B8" }}>Format</p>
+            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #DDE3EC" }}>
+              <button
+                onClick={() => setFormat("pdf")}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold transition-colors"
+                style={
+                  format === "pdf"
+                    ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                    : { backgroundColor: "transparent", color: "#64748B" }
+                }
+              >
+                <FileText size={11} />
+                1 File PDF
+              </button>
+              <button
+                onClick={() => setFormat("zip")}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold transition-colors"
+                style={
+                  format === "zip"
+                    ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                    : { backgroundColor: "transparent", color: "#64748B" }
+                }
+              >
+                <FolderOpen size={11} />
+                File Terpisah
+              </button>
+            </div>
+            <p className="text-[10px] mt-1.5" style={{ color: "#94A3B8" }}>
+              {format === "pdf"
+                ? "Semua rapor dalam 1 PDF multi-halaman"
+                : "Setiap rapor jadi file PDF terpisah (.zip)"}
+            </p>
+          </div>
+
+          {/* Data picker */}
+          <div className="px-4 pb-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94A3B8" }}>Pilih Data</p>
+            <div className="flex gap-1.5">
+              {dataOptions.map((opt) => (
+                <button
+                  key={opt.role}
+                  onClick={() => download(opt.role)}
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] font-semibold transition-colors"
+                  style={
+                    opt.role === activeTab
+                      ? { backgroundColor: "#FEF9EC", color: "#C4972A", border: "1px solid #E8B84B" }
+                      : { backgroundColor: "#F1F4F8", color: "#374151", border: "1px solid transparent" }
+                  }
+                >
+                  <span>{opt.label}</span>
+                  <span
+                    className="text-[10px] font-bold"
+                    style={{ color: opt.role === activeTab ? "#C4972A" : "#94A3B8" }}
+                  >
+                    {opt.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }: Props) {
@@ -460,30 +631,37 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
           </div>
         </div>
 
-        {/* ── Tabs ── */}
-        <div className="px-5 pt-3 pb-0 flex items-center gap-2">
-          <button
-            onClick={() => switchTab("guru")}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-            style={
-              activeTab === "guru"
-                ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
-                : { backgroundColor: "#EDF0F5", color: "#64748B" }
-            }
-          >
-            Guru ({guruTeachers.length})
-          </button>
-          <button
-            onClick={() => switchTab("staff")}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-            style={
-              activeTab === "staff"
-                ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
-                : { backgroundColor: "#EDF0F5", color: "#64748B" }
-            }
-          >
-            Staf ({staffTeachers.length})
-          </button>
+        {/* ── Tabs + Bulk Download ── */}
+        <div className="px-5 pt-3 pb-0 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => switchTab("guru")}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              style={
+                activeTab === "guru"
+                  ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                  : { backgroundColor: "#EDF0F5", color: "#64748B" }
+              }
+            >
+              Guru ({guruTeachers.length})
+            </button>
+            <button
+              onClick={() => switchTab("staff")}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              style={
+                activeTab === "staff"
+                  ? { backgroundColor: "#0F2540", color: "#FFFFFF" }
+                  : { backgroundColor: "#EDF0F5", color: "#64748B" }
+              }
+            >
+              Staf ({staffTeachers.length})
+            </button>
+          </div>
+          <BulkDownloadButton
+            guruCount={guruTeachers.length}
+            staffCount={staffTeachers.length}
+            activeTab={activeTab}
+          />
         </div>
 
         {/* ── Table — always rendered ── */}
