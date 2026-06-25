@@ -116,7 +116,7 @@ export async function GET(req: Request) {
     compression: "DEFLATE",
     compressionOptions: { level: 6 },
   })
-  return new Response(zipBuffer, {
+  return new Response(new Uint8Array(zipBuffer), {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="rapor-${roleLabel}-${year}.zip"`,
