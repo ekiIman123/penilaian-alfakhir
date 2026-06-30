@@ -2,7 +2,77 @@
 
 import { useState, useRef } from "react"
 import { toast } from "sonner"
-import { Save, Upload, X, Building2, Calendar, UserCog, ImageIcon, PenLine } from "lucide-react"
+import { Save, Upload, X, Building2, Calendar, UserCog, ImageIcon, PenLine, Loader2 } from "lucide-react"
+
+// ── Image compression via Canvas API ──────────────────────────────────────────
+
+async function compressImage(file: File, maxSizeKB: number): Promise<string> {
+  const maxBytes = maxSizeKB * 1024
+
+  // Already within limit — just read as-is
+  if (file.size <= maxBytes) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => resolve(e.target?.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    const objUrl = URL.createObjectURL(file)
+    const img = new window.Image()
+
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl)
+
+      const canvas = document.createElement("canvas")
+      const MAX_DIM = 1200
+      let { width, height } = img
+
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height)
+        width  = Math.round(width  * ratio)
+        height = Math.round(height * ratio)
+      }
+
+      canvas.width  = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")!
+      ctx.fillStyle = "#FFFFFF"
+      ctx.fillRect(0, 0, width, height)
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // base64 byte estimate: length × 0.75
+      let quality = 0.9
+      let dataUrl  = canvas.toDataURL("image/jpeg", quality)
+
+      while (dataUrl.length * 0.75 > maxBytes && quality > 0.2) {
+        quality -= 0.1
+        dataUrl  = canvas.toDataURL("image/jpeg", quality)
+      }
+
+      // Last resort: scale canvas down
+      if (dataUrl.length * 0.75 > maxBytes) {
+        const scale = Math.sqrt(maxBytes / (dataUrl.length * 0.75)) * 0.9
+        const w2 = Math.max(Math.round(width  * scale), 50)
+        const h2 = Math.max(Math.round(height * scale), 20)
+        canvas.width  = w2
+        canvas.height = h2
+        const ctx2 = canvas.getContext("2d")!
+        ctx2.fillStyle = "#FFFFFF"
+        ctx2.fillRect(0, 0, w2, h2)
+        ctx2.drawImage(img, 0, 0, w2, h2)
+        dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+      }
+
+      resolve(dataUrl)
+    }
+
+    img.onerror = (err) => { URL.revokeObjectURL(objUrl); reject(err) }
+    img.src = objUrl
+  })
+}
 
 interface OrgSettingsForm {
   yayasanName: string
@@ -74,21 +144,34 @@ function SignatureUpload({
   label: string
 }) {
   const ref = useRef<HTMLInputElement>(null)
+  const [compressing, setCompressing] = useState(false)
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith("image/")) {
       toast.error("File harus berupa gambar PNG/JPG")
       return
     }
-    if (file.size > 300 * 1024) {
-      toast.error("Ukuran tanda tangan maks. 300 KB")
-      return
+
+    const MAX_KB = 300
+    const needsCompress = file.size > MAX_KB * 1024
+
+    if (needsCompress) {
+      setCompressing(true)
+      toast.info("Mengompresi gambar…")
     }
-    const reader = new FileReader()
-    reader.onload = (ev) => onChange(ev.target?.result as string)
-    reader.readAsDataURL(file)
+
+    try {
+      const dataUrl = await compressImage(file, MAX_KB)
+      onChange(dataUrl)
+      if (needsCompress) toast.success("Gambar berhasil dikompres dan diupload")
+    } catch {
+      toast.error("Gagal memproses gambar, coba lagi")
+    } finally {
+      setCompressing(false)
+      if (ref.current) ref.current.value = ""
+    }
   }
 
   return (
@@ -100,7 +183,12 @@ function SignatureUpload({
       >
         {/* Preview */}
         <div className="h-14 flex items-center justify-center px-3">
-          {value ? (
+          {compressing ? (
+            <div className="flex flex-col items-center gap-1">
+              <Loader2 size={16} className="animate-spin" style={{ color: "#C4972A" }} />
+              <span className="text-[10px]" style={{ color: "#94A3B8" }}>Mengompresi…</span>
+            </div>
+          ) : value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="Tanda tangan" className="max-h-12 max-w-full object-contain" />
           ) : (
@@ -118,13 +206,14 @@ function SignatureUpload({
           <button
             type="button"
             onClick={() => ref.current?.click()}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors"
+            disabled={compressing}
+            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors disabled:opacity-40"
             style={{ backgroundColor: "#EDF0F5", color: "#374151" }}
           >
             <Upload size={9} />
             Upload
           </button>
-          {value && (
+          {value && !compressing && (
             <button
               type="button"
               onClick={() => { onChange(null); if (ref.current) ref.current.value = "" }}
@@ -145,26 +234,39 @@ function SignatureUpload({
 export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
   const [form, setForm] = useState<OrgSettingsForm>(initial)
   const [loading, setLoading] = useState(false)
+  const [logoCompressing, setLogoCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function set(key: keyof OrgSettingsForm, value: string | null) {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith("image/")) {
       toast.error("File harus berupa gambar (PNG, JPG, SVG)")
       return
     }
-    if (file.size > 500 * 1024) {
-      toast.error("Ukuran logo maks. 500 KB")
-      return
+
+    const MAX_KB = 500
+    const needsCompress = file.size > MAX_KB * 1024
+
+    if (needsCompress) {
+      setLogoCompressing(true)
+      toast.info("Mengompresi logo…")
     }
-    const reader = new FileReader()
-    reader.onload = (ev) => { set("logoBase64", ev.target?.result as string) }
-    reader.readAsDataURL(file)
+
+    try {
+      const dataUrl = await compressImage(file, MAX_KB)
+      set("logoBase64", dataUrl)
+      if (needsCompress) toast.success("Logo berhasil dikompres dan diupload")
+    } catch {
+      toast.error("Gagal memproses gambar, coba lagi")
+    } finally {
+      setLogoCompressing(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
   }
 
   async function handleSave() {
@@ -284,7 +386,12 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
             className="w-28 h-28 rounded-lg flex items-center justify-center shrink-0"
             style={{ border: "2px dashed #DDE3EC", backgroundColor: "#F8FAFC" }}
           >
-            {form.logoBase64 ? (
+            {logoCompressing ? (
+              <div className="flex flex-col items-center gap-1.5">
+                <Loader2 size={22} className="animate-spin" style={{ color: "#C4972A" }} />
+                <span className="text-[10px] text-center" style={{ color: "#94A3B8" }}>Mengompresi…</span>
+              </div>
+            ) : form.logoBase64 ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={form.logoBase64} alt="Logo" className="w-full h-full object-contain rounded-lg p-1" />
             ) : (
@@ -306,13 +413,14 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+                disabled={logoCompressing}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
                 style={{ backgroundColor: "#1E3A5F" }}
               >
-                <Upload size={14} />
-                Pilih Gambar
+                {logoCompressing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {logoCompressing ? "Mengompresi…" : "Pilih Gambar"}
               </button>
-              {form.logoBase64 && (
+              {form.logoBase64 && !logoCompressing && (
                 <button
                   type="button"
                   onClick={() => { set("logoBase64", null); if (fileInputRef.current) fileInputRef.current.value = "" }}
