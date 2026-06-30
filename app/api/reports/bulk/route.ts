@@ -35,19 +35,22 @@ export async function GET(req: Request) {
   ])
 
   const org = {
-    yayasanName:   orgSettingsRaw.yayasanName,
-    schoolName:    orgSettingsRaw.schoolName,
-    address:       orgSettingsRaw.address,
-    phone:         orgSettingsRaw.phone,
-    city:          orgSettingsRaw.city,
-    periodLabel:   orgSettingsRaw.periodLabel,
-    kepalaSekolah: orgSettingsRaw.kepalaSekolah,
-    kepalaTitle:   orgSettingsRaw.kepalaTitle,
-    signer2Name:   orgSettingsRaw.signer2Name,
-    signer2Title:  orgSettingsRaw.signer2Title,
-    ketuaName:     orgSettingsRaw.ketuaName,
-    ketuaTitle:    orgSettingsRaw.ketuaTitle,
-    logoBase64:    orgSettingsRaw.logoBase64 ?? null,
+    yayasanName:            orgSettingsRaw.yayasanName,
+    schoolName:             orgSettingsRaw.schoolName,
+    address:                orgSettingsRaw.address,
+    phone:                  orgSettingsRaw.phone,
+    city:                   orgSettingsRaw.city,
+    periodLabel:            orgSettingsRaw.periodLabel,
+    kepalaSekolah:          orgSettingsRaw.kepalaSekolah,
+    kepalaTitle:            orgSettingsRaw.kepalaTitle,
+    kepalaSignatureBase64:  orgSettingsRaw.kepalaSignatureBase64 ?? null,
+    signer2Name:            orgSettingsRaw.signer2Name,
+    signer2Title:           orgSettingsRaw.signer2Title,
+    signer2SignatureBase64: orgSettingsRaw.signer2SignatureBase64 ?? null,
+    ketuaName:              orgSettingsRaw.ketuaName,
+    ketuaTitle:             orgSettingsRaw.ketuaTitle,
+    ketuaSignatureBase64:   orgSettingsRaw.ketuaSignatureBase64 ?? null,
+    logoBase64:             orgSettingsRaw.logoBase64 ?? null,
   }
 
   const items: ReportData[] = teachers.map((teacher) => {

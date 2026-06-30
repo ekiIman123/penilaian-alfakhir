@@ -96,10 +96,13 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     periodLabel: orgSettingsRaw.periodLabel,
     kepalaSekolah: orgSettingsRaw.kepalaSekolah,
     kepalaTitle: orgSettingsRaw.kepalaTitle,
+    kepalaSignatureBase64: orgSettingsRaw.kepalaSignatureBase64 ?? null,
     signer2Name: orgSettingsRaw.signer2Name,
     signer2Title: orgSettingsRaw.signer2Title,
+    signer2SignatureBase64: orgSettingsRaw.signer2SignatureBase64 ?? null,
     ketuaName: orgSettingsRaw.ketuaName,
     ketuaTitle: orgSettingsRaw.ketuaTitle,
+    ketuaSignatureBase64: orgSettingsRaw.ketuaSignatureBase64 ?? null,
     logoBase64: orgSettingsRaw.logoBase64 ?? null,
   }
 

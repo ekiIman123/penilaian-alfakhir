@@ -48,10 +48,13 @@ export default async function SettingsPage() {
           periodLabel: settings.periodLabel,
           kepalaSekolah: settings.kepalaSekolah,
           kepalaTitle: settings.kepalaTitle,
+          kepalaSignatureBase64: settings.kepalaSignatureBase64 ?? null,
           signer2Name: settings.signer2Name,
           signer2Title: settings.signer2Title,
+          signer2SignatureBase64: settings.signer2SignatureBase64 ?? null,
           ketuaName: settings.ketuaName,
           ketuaTitle: settings.ketuaTitle,
+          ketuaSignatureBase64: settings.ketuaSignatureBase64 ?? null,
           logoBase64: settings.logoBase64 ?? null,
         }}
       />
