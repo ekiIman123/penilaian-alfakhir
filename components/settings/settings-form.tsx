@@ -277,9 +277,14 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error("Gagal menyimpan")
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}))
+        console.error("[settings] PUT failed:", res.status, errBody)
+        throw new Error(errBody?.error ?? "Gagal menyimpan")
+      }
       toast.success("Pengaturan berhasil disimpan")
-    } catch {
+    } catch (err) {
+      console.error("[settings] handleSave error:", err)
       toast.error("Terjadi kesalahan, coba lagi")
     } finally {
       setLoading(false)

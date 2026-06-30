@@ -393,15 +393,17 @@ function TeacherReportPage({ data }: { data: ReportData }) {
 
           {/* Kepala Sekolah */}
           <View style={{ width: "30%", alignItems: "flex-start" }}>
-            <Text style={{ fontSize: 8, color: DARK, marginBottom: org.kepalaSignatureBase64 ? 4 : 68 }}>
+            <Text style={{ fontSize: 8, color: DARK, marginBottom: 4 }}>
               {org.kepalaTitle || "Kepala Sekolah"}
             </Text>
             {org.kepalaSignatureBase64 ? (
               <Image
                 src={org.kepalaSignatureBase64}
-                style={{ width: 80, height: 50, objectFit: "contain", marginBottom: 4 }}
+                style={{ width: "100%", height: 60, objectFit: "contain", marginBottom: 4 }}
               />
-            ) : null}
+            ) : (
+              <View style={{ height: 60, marginBottom: 4 }} />
+            )}
             <View style={{ borderTopWidth: 1, borderTopColor: DARK, width: "100%", marginBottom: 3 }} />
             <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
               {org.kepalaSekolah || "_______________"}
@@ -410,15 +412,17 @@ function TeacherReportPage({ data }: { data: ReportData }) {
 
           {/* Signer 2 */}
           <View style={{ width: "30%", alignItems: "flex-start" }}>
-            <Text style={{ fontSize: 8, color: DARK, marginBottom: org.signer2SignatureBase64 ? 4 : 68 }}>
+            <Text style={{ fontSize: 8, color: DARK, marginBottom: 4 }}>
               {org.signer2Title || "_______________"}
             </Text>
             {org.signer2SignatureBase64 ? (
               <Image
                 src={org.signer2SignatureBase64}
-                style={{ width: 80, height: 50, objectFit: "contain", marginBottom: 4 }}
+                style={{ width: "100%", height: 60, objectFit: "contain", marginBottom: 4 }}
               />
-            ) : null}
+            ) : (
+              <View style={{ height: 60, marginBottom: 4 }} />
+            )}
             <View style={{ borderTopWidth: 1, borderTopColor: DARK, width: "100%", marginBottom: 3 }} />
             <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
               {org.signer2Name || "_______________"}
@@ -427,15 +431,17 @@ function TeacherReportPage({ data }: { data: ReportData }) {
 
           {/* Ketua / Owner */}
           <View style={{ width: "30%", alignItems: "flex-start" }}>
-            <Text style={{ fontSize: 8, color: DARK, marginBottom: org.ketuaSignatureBase64 ? 4 : 68 }}>
+            <Text style={{ fontSize: 8, color: DARK, marginBottom: 4 }}>
               {org.ketuaTitle || "Owner & Founder"}
             </Text>
             {org.ketuaSignatureBase64 ? (
               <Image
                 src={org.ketuaSignatureBase64}
-                style={{ width: 80, height: 50, objectFit: "contain", marginBottom: 4 }}
+                style={{ width: "100%", height: 60, objectFit: "contain", marginBottom: 4 }}
               />
-            ) : null}
+            ) : (
+              <View style={{ height: 60, marginBottom: 4 }} />
+            )}
             <View style={{ borderTopWidth: 1, borderTopColor: DARK, width: "100%", marginBottom: 3 }} />
             <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
               {org.ketuaName || "_______________"}
