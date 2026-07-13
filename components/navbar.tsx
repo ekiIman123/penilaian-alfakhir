@@ -4,13 +4,70 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Database, Menu, Settings, X } from "lucide-react"
 import { useState, useEffect } from "react"
 
-const NAV_ITEMS = [
-  { href: "/alfakhir",          label: "Dashboard",   icon: LayoutDashboard, exact: true,  accent: false },
-  { href: "/alfakhir/admin",    label: "Kelola Data", icon: Database,        exact: false, accent: false },
-  { href: "/alfakhir/settings", label: "Pengaturan",  icon: Settings,        exact: false, accent: false },
-] as const
+type NavItem = {
+  href: string
+  label: string
+  icon: React.ElementType
+  exact: boolean
+}
 
-function active(pathname: string, href: string, exact: boolean) {
+type LembagaConfig = {
+  label: string
+  tagline: string
+  homeHref: string
+  abbr: string
+  navItems: NavItem[]
+}
+
+const CONFIGS: Record<string, LembagaConfig> = {
+  alfakhir: {
+    label: "Al Fakhir",
+    tagline: "Performance Appraisal",
+    homeHref: "/alfakhir",
+    abbr: "AF",
+    navItems: [
+      { href: "/alfakhir",          label: "Dashboard",   icon: LayoutDashboard, exact: true  },
+      { href: "/alfakhir/admin",    label: "Kelola Data", icon: Database,        exact: false },
+      { href: "/alfakhir/settings", label: "Pengaturan",  icon: Settings,        exact: false },
+    ],
+  },
+  iysa: {
+    label: "IYSA",
+    tagline: "Dashboard Penilaian",
+    homeHref: "/iysa/dashboard",
+    abbr: "IY",
+    navItems: [
+      { href: "/iysa/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+    ],
+  },
+  icgi: {
+    label: "ICGI",
+    tagline: "Dashboard Penilaian",
+    homeHref: "/icgi/dashboard",
+    abbr: "IC",
+    navItems: [
+      { href: "/icgi/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+    ],
+  },
+  iyora: {
+    label: "IYORA",
+    tagline: "Dashboard Penilaian",
+    homeHref: "/iyora/dashboard",
+    abbr: "IO",
+    navItems: [
+      { href: "/iyora/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+    ],
+  },
+}
+
+function detectLembaga(pathname: string): string {
+  if (pathname.startsWith("/iysa"))    return "iysa"
+  if (pathname.startsWith("/icgi"))    return "icgi"
+  if (pathname.startsWith("/iyora"))   return "iyora"
+  return "alfakhir"
+}
+
+function isActive(pathname: string, href: string, exact: boolean) {
   return exact ? pathname === href : pathname.startsWith(href)
 }
 
@@ -20,6 +77,10 @@ export function Navbar() {
   const [logoFailed, setLogoFailed] = useState(false)
 
   useEffect(() => { setOpen(false) }, [path])
+
+  const lembagaKey = detectLembaga(path)
+  const config = CONFIGS[lembagaKey]
+  const isAlfakhir = lembagaKey === "alfakhir"
 
   return (
     <nav
@@ -32,8 +93,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Brand */}
-        <Link href="/alfakhir" className="flex items-center gap-3">
-          {!logoFailed ? (
+        <Link href={config.homeHref} className="flex items-center gap-3">
+          {isAlfakhir && !logoFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src="/api/logo"
@@ -49,18 +110,18 @@ export function Navbar() {
                 color: "#0F2540",
               }}
             >
-              AF
+              {config.abbr}
             </div>
           )}
           <div className="leading-tight">
             <div className="font-semibold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.95)" }}>
-              Al Fakhir
+              {config.label}
             </div>
             <div
               className="text-[10px] tracking-widest uppercase hidden sm:block"
               style={{ color: "rgba(255,255,255,0.45)" }}
             >
-              Performance Appraisal
+              {config.tagline}
             </div>
           </div>
         </Link>
@@ -70,24 +131,23 @@ export function Navbar() {
           className="hidden md:flex items-center gap-0.5 rounded-lg p-1"
           style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          {NAV_ITEMS.map((item) => {
-            const isActive = active(path, item.href, item.exact)
+          {config.navItems.map((item) => {
+            const active = isActive(path, item.href, item.exact)
             const Icon = item.icon
-
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-medium transition-colors"
                 style={{
-                  color: isActive ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
-                  backgroundColor: isActive ? "rgba(196,151,42,0.12)" : "transparent",
+                  color: active ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
+                  backgroundColor: active ? "rgba(196,151,42,0.12)" : "transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.07)"
+                  if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.07)"
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"
+                  if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"
                 }}
               >
                 <Icon size={14} />
@@ -125,19 +185,18 @@ export function Navbar() {
           }}
         >
           <div className="px-4 py-3 flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
-              const isActive = active(path, item.href, item.exact)
+            {config.navItems.map((item) => {
+              const active = isActive(path, item.href, item.exact)
               const Icon = item.icon
-
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium"
                   style={{
-                    color: isActive ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
-                    backgroundColor: isActive ? "rgba(196,151,42,0.10)" : "rgba(255,255,255,0.03)",
-                    borderLeft: `3px solid ${isActive ? "#C4972A" : "transparent"}`,
+                    color: active ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.65)",
+                    backgroundColor: active ? "rgba(196,151,42,0.10)" : "rgba(255,255,255,0.03)",
+                    borderLeft: `3px solid ${active ? "#C4972A" : "transparent"}`,
                   }}
                 >
                   <Icon size={16} />
