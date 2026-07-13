@@ -231,7 +231,7 @@ function SignatureUpload({
   )
 }
 
-export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
+export function SettingsForm({ initial, lembagaId = "alfakhir" }: { initial: OrgSettingsForm; lembagaId?: string }) {
   const [form, setForm] = useState<OrgSettingsForm>(initial)
   const [loading, setLoading] = useState(false)
   const [logoCompressing, setLogoCompressing] = useState(false)
@@ -275,7 +275,7 @@ export function SettingsForm({ initial }: { initial: OrgSettingsForm }) {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, lembagaId }),
       })
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}))

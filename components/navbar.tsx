@@ -37,7 +37,8 @@ const CONFIGS: Record<string, LembagaConfig> = {
     homeHref: "/iysa/dashboard",
     abbr: "IY",
     navItems: [
-      { href: "/iysa/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+      { href: "/iysa/dashboard",  label: "Dashboard",  icon: LayoutDashboard, exact: false },
+      { href: "/iysa/settings",   label: "Pengaturan", icon: Settings,        exact: false },
     ],
   },
   icgi: {
@@ -46,7 +47,8 @@ const CONFIGS: Record<string, LembagaConfig> = {
     homeHref: "/icgi/dashboard",
     abbr: "IC",
     navItems: [
-      { href: "/icgi/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+      { href: "/icgi/dashboard",  label: "Dashboard",  icon: LayoutDashboard, exact: false },
+      { href: "/icgi/settings",   label: "Pengaturan", icon: Settings,        exact: false },
     ],
   },
   iyora: {
@@ -55,7 +57,8 @@ const CONFIGS: Record<string, LembagaConfig> = {
     homeHref: "/iyora/dashboard",
     abbr: "IO",
     navItems: [
-      { href: "/iyora/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: false },
+      { href: "/iyora/dashboard", label: "Dashboard",  icon: LayoutDashboard, exact: false },
+      { href: "/iyora/settings",  label: "Pengaturan", icon: Settings,        exact: false },
     ],
   },
 }
