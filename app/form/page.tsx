@@ -11,13 +11,13 @@ export default async function FormPage({ searchParams }: Props) {
 
   const [evaluators, teachers] = await Promise.all([
     prisma.evaluator.findMany({ orderBy: { name: "asc" } }),
-    prisma.teacher.findMany({ orderBy: { name: "asc" } }),
+    prisma.employee.findMany({ orderBy: { name: "asc" } }),
   ])
 
   let existingEvaluation = null
   if (teacherId && evaluatorId) {
     const existing = await prisma.evaluation.findUnique({
-      where: { evaluatorId_teacherId: { evaluatorId, teacherId } },
+      where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
     })
     if (existing) {
       existingEvaluation = {

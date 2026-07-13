@@ -20,7 +20,7 @@ export async function GET(req: Request) {
                        { role: { not: "staff" } }
 
   const [teachers, allEvaluators, orgSettingsRaw] = await Promise.all([
-    prisma.teacher.findMany({
+    prisma.employee.findMany({
       where: roleFilter,
       include: {
         evaluations: {
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       orderBy: { name: "asc" },
     }),
     prisma.evaluator.findMany({ orderBy: { name: "asc" } }),
-    prisma.orgSettings.upsert({ where: { id: "default" }, create: { id: "default" }, update: {} }),
+    prisma.orgSettings.upsert({ where: { id: "alfakhir" }, create: { id: "alfakhir" }, update: {} }),
   ])
 
   const org = {

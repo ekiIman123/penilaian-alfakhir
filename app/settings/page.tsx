@@ -4,8 +4,8 @@ import { Settings } from "lucide-react"
 
 export default async function SettingsPage() {
   const settings = await prisma.orgSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default" },
+    where: { id: "alfakhir" },
+    create: { id: "alfakhir" },
     update: {},
   })
 

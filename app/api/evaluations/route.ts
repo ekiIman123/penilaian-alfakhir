@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   }
 
   const evaluation = await prisma.evaluation.findUnique({
-    where: { evaluatorId_teacherId: { evaluatorId, teacherId } },
+    where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
   })
 
   if (!evaluation) return NextResponse.json(null)
@@ -33,10 +33,10 @@ export async function POST(req: Request) {
     }
 
     const result = await prisma.evaluation.upsert({
-      where: { evaluatorId_teacherId: { evaluatorId, teacherId } },
+      where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
       update: { scores: JSON.stringify(scores), catatan: catatan ?? null },
-      create: { evaluatorId, teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null },
-      include: { evaluator: true, teacher: true },
+      create: { evaluatorId, employeeId: teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null },
+      include: { evaluator: true, employee: true },
     })
 
     revalidatePath("/")

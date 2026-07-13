@@ -8,7 +8,7 @@ import { DashboardTeacherList } from "@/components/dashboard/teacher-list"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const teachers = await prisma.teacher.findMany({
+  const teachers = await prisma.employee.findMany({
     include: { evaluations: { include: { evaluator: true } } },
     orderBy: { name: "asc" },
   })

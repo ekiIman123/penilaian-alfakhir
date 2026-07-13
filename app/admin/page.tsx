@@ -4,7 +4,7 @@ import { Database, GraduationCap, Briefcase, UserCheck } from "lucide-react"
 
 export default async function AdminPage() {
   const [teachersWithCount, evaluatorsWithCount] = await Promise.all([
-    prisma.teacher.findMany({
+    prisma.employee.findMany({
       orderBy: { name: "asc" },
       include: { _count: { select: { evaluations: true } } },
     }),

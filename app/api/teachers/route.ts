@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
   const validRole = role === "staff" ? "staff" : "guru"
   try {
-    const teacher = await prisma.teacher.create({ data: { name: name.trim(), role: validRole } })
+    const teacher = await prisma.employee.create({ data: { name: name.trim(), role: validRole } })
     return NextResponse.json(teacher, { status: 201 })
   } catch {
     return NextResponse.json({ error: "Name already exists" }, { status: 409 })
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const teachers = await prisma.teacher.findMany({
+  const teachers = await prisma.employee.findMany({
     include: {
       evaluations: { include: { evaluator: true } },
     },

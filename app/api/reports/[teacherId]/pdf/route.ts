@@ -38,7 +38,7 @@ async function summarizeCatatan(
 export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teacherId]/pdf">) {
   const { teacherId } = await ctx.params
 
-  const teacher = await prisma.teacher.findUnique({
+  const employee = await prisma.employee.findUnique({
     where: { id: teacherId },
     include: {
       evaluations: {
@@ -48,8 +48,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
     },
   })
 
-  if (!teacher) {
-    return new Response(JSON.stringify({ error: "Teacher not found" }), {
+  if (!employee) {
+    return new Response(JSON.stringify({ error: "Employee not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     })
@@ -57,7 +57,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
 
   const allEvaluators = await prisma.evaluator.findMany({ orderBy: { name: "asc" } })
 
-  const evaluations = teacher.evaluations.map((e) => ({
+  const evaluations = employee.evaluations.map((e) => ({
     evaluator: e.evaluator,
     scores: parseScores(e.scores),
     catatan: e.catatan,
@@ -71,7 +71,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
 
   const grade = avgTotal != null ? getScoreGrade(avgTotal) : null
 
-  const roleSections = getSectionsForRole(teacher.role ?? "guru")
+  const roleSections = getSectionsForRole(employee.role ?? "guru")
   const sections = roleSections.map((s) => ({
     id: s.id,
     label: s.label,
@@ -82,8 +82,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   }))
 
   const orgSettingsRaw = await prisma.orgSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default" },
+    where: { id: "alfakhir" },
+    create: { id: "alfakhir" },
     update: {},
   })
 
@@ -107,7 +107,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   }
 
   // Use saved final catatan if available, otherwise generate via AI
-  let catatanSummary: string | null = teacher.finalCatatan ?? null
+  let catatanSummary: string | null = employee.finalCatatan ?? null
   if (!catatanSummary) {
     const catatanInputs = evaluations
       .filter((e) => e.catatan)
@@ -116,7 +116,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   }
 
   const reportData: ReportData = {
-    teacher: { name: teacher.name, role: teacher.role },
+    teacher: { name: employee.name, role: employee.role },
     evaluators: allEvaluators,
     evaluations,
     sections,
@@ -131,7 +131,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teache
   const element = createElement(ReportDocument, { data: reportData }) as any
   const buffer = await renderToBuffer(element)
 
-  const safeName = teacher.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "")
+  const safeName = employee.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "")
   const year = new Date().getFullYear()
 
   return new Response(new Uint8Array(buffer), {

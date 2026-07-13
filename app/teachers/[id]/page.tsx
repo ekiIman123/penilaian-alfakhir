@@ -43,11 +43,11 @@ export default async function TeacherDetailPage({ params }: Props) {
   const { id } = await params
 
   const [teacher, allTeachers, allEvaluators] = await Promise.all([
-    prisma.teacher.findUnique({
+    prisma.employee.findUnique({
       where: { id },
       include: { evaluations: { include: { evaluator: true }, orderBy: { updatedAt: "desc" } } },
     }),
-    prisma.teacher.findMany({ orderBy: { name: "asc" } }),
+    prisma.employee.findMany({ orderBy: { name: "asc" } }),
     prisma.evaluator.findMany({ orderBy: { name: "asc" } }),
   ])
 

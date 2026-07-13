@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
-const DEFAULT_ID = "default"
+const DEFAULT_ID = "alfakhir"
 
 export async function GET() {
   const settings = await prisma.orgSettings.upsert({

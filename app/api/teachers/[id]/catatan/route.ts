@@ -6,7 +6,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/teachers/[id]/
   const { id } = await ctx.params
   const { finalCatatan } = await req.json()
 
-  await prisma.teacher.update({
+  await prisma.employee.update({
     where: { id },
     data: { finalCatatan: finalCatatan ?? null },
   })

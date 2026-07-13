@@ -7,46 +7,52 @@ datasource db {
   provider = "postgresql"
 }
 
-model Evaluator {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  evaluations Evaluation[]
-  createdAt   DateTime     @default(now())
-}
-
-model Teacher {
+model Employee {
   id           String       @id @default(cuid())
   name         String
-  role         String       @default("guru")   // "guru" | "staff"
+  role         String       @default("guru")
+  lembaga      String       @default("alfakhir")
   finalCatatan String?
   evaluations  Evaluation[]
   createdAt    DateTime     @default(now())
 
-  @@unique([name, role])
+  @@unique([name, role, lembaga])
+}
+
+model Evaluator {
+  id          String       @id @default(cuid())
+  name        String
+  lembaga     String       @default("alfakhir")
+  evaluations Evaluation[]
+  createdAt   DateTime     @default(now())
+
+  @@unique([name, lembaga])
 }
 
 model Evaluation {
   id          String    @id @default(cuid())
   evaluatorId String
-  teacherId   String
+  employeeId  String
+  lembaga     String    @default("alfakhir")
   evaluator   Evaluator @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
-  teacher     Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  scores      String    // JSON string: { criterionId: 1-4 }
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  scores      String
   catatan     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@unique([evaluatorId, teacherId])
+  @@unique([evaluatorId, employeeId])
 }
 
 model OrgSettings {
-  id            String   @id @default("default")
-  yayasanName   String   @default("YAYASAN AL FAKHIR")
-  schoolName    String   @default("SMP AL FAKHIR JAKARTA SELATAN")
-  address       String   @default("Jl. Ciledug Raya, Jakarta Selatan")
-  phone         String   @default("")
-  city          String   @default("Jakarta")
-  periodLabel   String   @default("Semester Ganjil 2025/2026")
+  id                     String   @id
+  lembaga                String   @default("alfakhir")
+  yayasanName            String   @default("YAYASAN AL FAKHIR")
+  schoolName             String   @default("SMP AL FAKHIR JAKARTA SELATAN")
+  address                String   @default("Jl. Ciledug Raya, Jakarta Selatan")
+  phone                  String   @default("")
+  city                   String   @default("Jakarta")
+  periodLabel            String   @default("Semester Ganjil 2025/2026")
   kepalaSekolah          String   @default("")
   kepalaTitle            String   @default("Kepala SMP Islam Modern Al Fakhir")
   kepalaSignatureBase64  String?
@@ -57,5 +63,5 @@ model OrgSettings {
   ketuaTitle             String   @default("Owner & Founder Al Fakhir")
   ketuaSignatureBase64   String?
   logoBase64             String?
-  updatedAt     DateTime @updatedAt
+  updatedAt              DateTime @updatedAt
 }

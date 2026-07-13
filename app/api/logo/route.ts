@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic"
 
 export async function GET() {
   const settings = await prisma.orgSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default" },
+    where: { id: "alfakhir" },
+    create: { id: "alfakhir" },
     update: {},
   })
 

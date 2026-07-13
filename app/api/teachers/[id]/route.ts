@@ -10,7 +10,7 @@ export async function PUT(_req: Request, ctx: RouteContext<"/api/teachers/[id]">
   const data: Record<string, string> = { name: name.trim() }
   if (role === "guru" || role === "staff") data.role = role
   try {
-    const teacher = await prisma.teacher.update({ where: { id }, data })
+    const teacher = await prisma.employee.update({ where: { id }, data })
     return NextResponse.json(teacher)
   } catch {
     return NextResponse.json({ error: "Not found or duplicate name" }, { status: 404 })
@@ -20,8 +20,8 @@ export async function PUT(_req: Request, ctx: RouteContext<"/api/teachers/[id]">
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
   const { id } = await ctx.params
   try {
-    await prisma.evaluation.deleteMany({ where: { teacherId: id } })
-    await prisma.teacher.delete({ where: { id } })
+    await prisma.evaluation.deleteMany({ where: { employeeId: id } })
+    await prisma.employee.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -31,7 +31,7 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/teachers/[id
 export async function GET(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
   const { id } = await ctx.params
 
-  const teacher = await prisma.teacher.findUnique({
+  const teacher = await prisma.employee.findUnique({
     where: { id },
     include: { evaluations: { include: { evaluator: true }, orderBy: { createdAt: "asc" } } },
   })

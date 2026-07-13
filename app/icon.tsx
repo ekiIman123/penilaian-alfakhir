@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic"
 
 export default async function Icon() {
   const settings = await prisma.orgSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default" },
+    where: { id: "alfakhir" },
+    create: { id: "alfakhir" },
     update: {},
   })
 
