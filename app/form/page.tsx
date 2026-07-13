@@ -1,39 +1,13 @@
-import { prisma } from "@/lib/prisma"
-import { EvaluationForm } from "@/components/evaluation-form"
-import { parseScores } from "@/lib/calculations"
+import { redirect } from "next/navigation"
 
 interface Props {
-  searchParams: Promise<{ teacherId?: string; evaluatorId?: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default async function FormPage({ searchParams }: Props) {
-  const { teacherId, evaluatorId } = await searchParams
-
-  const [evaluators, teachers] = await Promise.all([
-    prisma.evaluator.findMany({ orderBy: { name: "asc" } }),
-    prisma.employee.findMany({ orderBy: { name: "asc" } }),
-  ])
-
-  let existingEvaluation = null
-  if (teacherId && evaluatorId) {
-    const existing = await prisma.evaluation.findUnique({
-      where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
-    })
-    if (existing) {
-      existingEvaluation = {
-        scores: parseScores(existing.scores),
-        catatan: existing.catatan,
-      }
-    }
-  }
-
-  return (
-    <EvaluationForm
-      evaluators={evaluators}
-      teachers={teachers}
-      prefillEvaluatorId={evaluatorId}
-      prefillTeacherId={teacherId}
-      existingEvaluation={existingEvaluation}
-    />
-  )
+export default async function FormRedirect({ searchParams }: Props) {
+  const params = await searchParams
+  const qs = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined)) as Record<string, string>
+  ).toString()
+  redirect(`/alfakhir/form${qs ? `?${qs}` : ""}`)
 }

@@ -491,7 +491,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                         <p className="text-sm text-slate-400">
                           {activeTab === "guru" ? "Belum ada data guru" : "Belum ada data staf"}
                         </p>
-                        <Link href="/admin" className="px-4 py-1.5 text-xs font-medium rounded-lg text-white" style={{ backgroundColor: "#1E3A5F" }}>
+                        <Link href="/alfakhir/admin" className="px-4 py-1.5 text-xs font-medium rounded-lg text-white" style={{ backgroundColor: "#1E3A5F" }}>
                           Kelola Data Master
                         </Link>
                       </div>
@@ -543,7 +543,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                         {/* Name */}
                         <td className="px-3 py-3">
                           <Link
-                            href={`/teachers/${t.id}`}
+                            href={`/alfakhir/teachers/${t.id}`}
                             className="font-semibold text-sm hover:underline"
                             style={{ color: "#111827" }}
                             onClick={(e) => e.stopPropagation()}
@@ -615,7 +615,7 @@ export function DashboardTeacherList({ guruTeachers, staffTeachers, evaluators }
                         {/* Detail button */}
                         <td className="pr-3 py-3 text-center">
                           <Link
-                            href={`/teachers/${t.id}`}
+                            href={`/alfakhir/teachers/${t.id}`}
                             className="inline-flex text-xs font-medium px-2.5 py-1 rounded-md text-white whitespace-nowrap"
                             style={{ backgroundColor: "#1E3A5F" }}
                             onClick={(e) => e.stopPropagation()}

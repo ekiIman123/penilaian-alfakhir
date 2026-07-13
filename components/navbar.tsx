@@ -5,9 +5,9 @@ import { LayoutDashboard, Database, Menu, Settings, X } from "lucide-react"
 import { useState, useEffect } from "react"
 
 const NAV_ITEMS = [
-  { href: "/",         label: "Dashboard",   icon: LayoutDashboard, exact: true,  accent: false },
-  { href: "/admin",    label: "Kelola Data", icon: Database,        exact: false, accent: false },
-  { href: "/settings", label: "Pengaturan",  icon: Settings,        exact: false, accent: false },
+  { href: "/alfakhir",          label: "Dashboard",   icon: LayoutDashboard, exact: true,  accent: false },
+  { href: "/alfakhir/admin",    label: "Kelola Data", icon: Database,        exact: false, accent: false },
+  { href: "/alfakhir/settings", label: "Pengaturan",  icon: Settings,        exact: false, accent: false },
 ] as const
 
 function active(pathname: string, href: string, exact: boolean) {
@@ -32,7 +32,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/alfakhir" className="flex items-center gap-3">
           {!logoFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

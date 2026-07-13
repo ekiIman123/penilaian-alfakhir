@@ -89,7 +89,7 @@ export function TeacherSwitcher({ currentId, teachers }: { currentId: string; te
               {gurus.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { router.push(`/teachers/${t.id}`); setOpen(false) }}
+                  onClick={() => { router.push(`/alfakhir/teachers/${t.id}`); setOpen(false) }}
                   className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors"
                   style={{
                     color: t.id === currentId ? "#1D4ED8" : "#374151",
@@ -116,7 +116,7 @@ export function TeacherSwitcher({ currentId, teachers }: { currentId: string; te
               {staff.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { router.push(`/teachers/${t.id}`); setOpen(false) }}
+                  onClick={() => { router.push(`/alfakhir/teachers/${t.id}`); setOpen(false) }}
                   className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors"
                   style={{
                     color: t.id === currentId ? "#6D28D9" : "#374151",

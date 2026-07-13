@@ -64,7 +64,7 @@ export function RowActionsMenu({
             </div>
           )}
           <Link
-            href={`/teachers/${teacherId}`}
+            href={`/alfakhir/teachers/${teacherId}`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3 py-2.5 text-xs font-medium transition-colors hover:bg-slate-50"
             style={{ color: "#1A2233" }}
@@ -73,7 +73,7 @@ export function RowActionsMenu({
             Detail
           </Link>
           <Link
-            href={`/form?teacherId=${teacherId}`}
+            href={`/alfakhir/form?teacherId=${teacherId}`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-white"
             style={{ backgroundColor: "#1E3A5F" }}

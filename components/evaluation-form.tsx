@@ -626,7 +626,7 @@ export function EvaluationForm({
       })
       if (!res.ok) throw new Error()
       toast.success("Penilaian berhasil disimpan!")
-      router.push(`/teachers/${teacherId}`)
+      router.push(`/alfakhir/teachers/${teacherId}`)
       router.refresh()
     } catch {
       toast.error("Gagal menyimpan penilaian. Coba lagi.")
