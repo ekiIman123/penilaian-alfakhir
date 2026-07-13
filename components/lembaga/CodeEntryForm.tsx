@@ -89,7 +89,7 @@ export function CodeEntryForm({ lembagaSlug, lembagaLabel, lembagaTagline }: Pro
               type="text"
               value={code}
               onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null) }}
-              placeholder="Mis. KOR-EKI"
+              placeholder="Masukkan kode akses"
               autoFocus
               className="w-full px-4 py-3 border-2 rounded-xl text-sm font-mono tracking-wider uppercase transition-colors"
               style={{
