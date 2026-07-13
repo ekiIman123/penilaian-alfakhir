@@ -6,7 +6,7 @@ import { Settings } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-const ALLOWED_ROLES = ["pm", "founder", "management"]
+const ALLOWED_ROLES = ["pm", "founder", "management", "superadmin"]
 
 export default async function IyoraSettingsPage() {
   const session = await getSession()

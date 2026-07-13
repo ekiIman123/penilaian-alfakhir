@@ -83,7 +83,6 @@ export function Navbar() {
 
   const lembagaKey = detectLembaga(path)
   const config = CONFIGS[lembagaKey]
-  const isAlfakhir = lembagaKey === "alfakhir"
 
   return (
     <nav
@@ -97,10 +96,10 @@ export function Navbar() {
 
         {/* Brand */}
         <Link href={config.homeHref} className="flex items-center gap-3">
-          {isAlfakhir && !logoFailed ? (
+          {!logoFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/api/logo"
+              src={`/api/logo?lembaga=${lembagaKey}`}
               alt="Logo"
               className="h-9 w-auto shrink-0"
               onError={() => setLogoFailed(true)}

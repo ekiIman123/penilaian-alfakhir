@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export default async function IcgiCodeEntryPage() {
   const session = await getSession()
-  if (session && session.lembaga === "icgi") {
+  if (session && (session.lembaga === "icgi" || session.lembaga === "all")) {
     redirect("/icgi/dashboard")
   }
   return (

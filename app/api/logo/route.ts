@@ -3,14 +3,16 @@ import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
-  const settings = await prisma.orgSettings.upsert({
-    where: { id: "alfakhir" },
-    create: { id: "alfakhir" },
-    update: {},
-  })
+const VALID_IDS = ["alfakhir", "iysa", "icgi", "iyora"]
 
-  if (!settings.logoBase64) {
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const param = url.searchParams.get("lembaga") ?? "alfakhir"
+  const lembagaId = VALID_IDS.includes(param) ? param : "alfakhir"
+
+  const settings = await prisma.orgSettings.findUnique({ where: { id: lembagaId } })
+
+  if (!settings?.logoBase64) {
     return new NextResponse(null, { status: 404 })
   }
 

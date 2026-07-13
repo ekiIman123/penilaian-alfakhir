@@ -6,7 +6,7 @@ import { Settings } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-const ALLOWED_ROLES = ["supervisor", "founder", "management"]
+const ALLOWED_ROLES = ["supervisor", "founder", "management", "superadmin"]
 
 export default async function IysaSettingsPage() {
   const session = await getSession()

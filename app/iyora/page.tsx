@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export default async function IyoraCodeEntryPage() {
   const session = await getSession()
-  if (session && session.lembaga === "iyora") {
+  if (session && (session.lembaga === "iyora" || session.lembaga === "all")) {
     redirect("/iyora/dashboard")
   }
   return (

@@ -6,7 +6,7 @@ import { Settings } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-const ALLOWED_ROLES = ["ceo", "founder", "management"]
+const ALLOWED_ROLES = ["ceo", "founder", "management", "superadmin"]
 
 export default async function IcgiSettingsPage() {
   const session = await getSession()

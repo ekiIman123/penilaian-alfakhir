@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export default async function IysaCodeEntryPage() {
   const session = await getSession()
-  if (session && session.lembaga === "iysa") {
+  if (session && (session.lembaga === "iysa" || session.lembaga === "all")) {
     redirect("/iysa/dashboard")
   }
   return (

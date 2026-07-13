@@ -25,6 +25,15 @@ export async function getEvaluatees(
 ): Promise<EvaluateeEmployee[]> {
   const { role, lembaga } = session
 
+  if (role === "superadmin") {
+    const target = currentLembaga
+    if (!target || target === "all") return []
+    return prisma.employee.findMany({
+      where: { lembaga: target },
+      orderBy: [{ divisi: "asc" }, { name: "asc" }],
+    })
+  }
+
   if (role === "koordinator") {
     const divisiList = parseDivisi(session.divisi)
     if (divisiList.length === 0) return []
