@@ -155,12 +155,12 @@ async function main() {
   // Create or find staff teachers
   const staffMap = new Map<string, string>()
   for (const name of STAFF_NAMES) {
-    const existing = await prisma.teacher.findFirst({ where: { name, role: "staff" } })
+    const existing = await prisma.employee.findFirst({ where: { name, role: "staff" } })
     if (existing) {
       staffMap.set(name, existing.id)
       console.log(`ℹ  Exists:   ${name} (staff)`)
     } else {
-      const created = await prisma.teacher.create({ data: { name, role: "staff" } })
+      const created = await prisma.employee.create({ data: { name, role: "staff" } })
       staffMap.set(name, created.id)
       console.log(`➕ Created:  ${name} (staff)`)
     }
@@ -171,14 +171,14 @@ async function main() {
 
   for (const [evName, tchName, scoreVals, catatan] of ROWS) {
     const evaluatorId = evMap.get(evName)
-    const teacherId   = staffMap.get(tchName)
+    const employeeId  = staffMap.get(tchName)
 
     if (!evaluatorId) {
       console.warn(`⚠  Evaluator not found: "${evName}"`)
       skipped++
       continue
     }
-    if (!teacherId) {
+    if (!employeeId) {
       console.warn(`⚠  Teacher not found:   "${tchName}"`)
       skipped++
       continue
@@ -186,7 +186,7 @@ async function main() {
 
     const scores = JSON.stringify(toStaffScores(scoreVals))
     const existing = await prisma.evaluation.findUnique({
-      where: { evaluatorId_teacherId: { evaluatorId, teacherId } },
+      where: { evaluatorId_employeeId: { evaluatorId, employeeId } },
     })
 
     if (existing) {
@@ -198,7 +198,7 @@ async function main() {
       updated++
     } else {
       await prisma.evaluation.create({
-        data: { evaluatorId, teacherId, scores, catatan: catatan === "-" ? null : catatan },
+        data: { evaluatorId, employeeId, scores, catatan: catatan === "-" ? null : catatan },
       })
       console.log(`✅ Inserted: ${evName.split(",")[0]} → ${tchName}`)
       inserted++

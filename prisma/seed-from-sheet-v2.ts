@@ -94,7 +94,7 @@ const ROWS: [string, string, number[], string | null][] = [
 async function main() {
   // Fetch all evaluators and teachers by name
   const evaluators = await prisma.evaluator.findMany()
-  const teachers   = await prisma.teacher.findMany()
+  const teachers   = await prisma.employee.findMany()
 
   const evMap  = new Map(evaluators.map((e) => [e.name, e.id]))
   const tchMap = new Map(teachers.map((t)   => [t.name, t.id]))
@@ -105,14 +105,14 @@ async function main() {
 
   for (const [evName, tchName, scoreVals, catatan] of ROWS) {
     const evaluatorId = evMap.get(evName)
-    const teacherId   = tchMap.get(tchName)
+    const employeeId  = tchMap.get(tchName)
 
     if (!evaluatorId) {
       console.warn(`⚠  Evaluator not found: "${evName}"`)
       skipped++
       continue
     }
-    if (!teacherId) {
+    if (!employeeId) {
       console.warn(`⚠  Teacher not found: "${tchName}"`)
       skipped++
       continue
@@ -120,7 +120,7 @@ async function main() {
 
     const scores = JSON.stringify(toScores(scoreVals))
     const existing = await prisma.evaluation.findUnique({
-      where: { evaluatorId_teacherId: { evaluatorId, teacherId } },
+      where: { evaluatorId_employeeId: { evaluatorId, employeeId } },
     })
 
     if (existing) {
@@ -134,7 +134,7 @@ async function main() {
       await prisma.evaluation.create({
         data: {
           evaluatorId,
-          teacherId,
+          employeeId,
           scores,
           catatan: catatan === "-" ? null : catatan,
         },

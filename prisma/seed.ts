@@ -36,28 +36,28 @@ const EVALUATIONS = [
   {
     id: "cmqnckf7e00004w8wyfqdm453",
     evaluatorId: "cf7107277b6ee741f79c7",
-    teacherId: "c09aa6d3890494f669819",
+    employeeId: "c09aa6d3890494f669819",
     scores: JSON.stringify({ pencapaian_hasil:4, manajemen_waktu:3, kreativitas:3, loyalitas:4, disiplin:4, komitmen:4, persatuan:3, kekompakan:4, kemampuan_mengajar:4, administrasi_pengajaran:3, kemampuan_mentoring:3, pemecahan_masalah:4, pengembangan_profesionalisme:3, kemampuan_manajerial:3, kemampuan_sosialisasi:4, empati:4, toleransi:4, kejujuran:4, tanggung_jawab:4, rasa_hormat:4, sopan_santun:3, sholat_berjamaah:4, sholat_dhuha:3, tutur_kata:4, busana_penampilan:4 }),
     catatan: "Secara keseluruhan Pak Ahmad menunjukkan kinerja yang sangat baik. Perlu ditingkatkan kreativitas dalam pengajaran dan konsistensi administrasi.",
   },
   {
     id: "cmqnckke200014w8wckkixb8i",
     evaluatorId: "c6f7e4fd6d7b97f33cc69",
-    teacherId: "c09aa6d3890494f669819",
+    employeeId: "c09aa6d3890494f669819",
     scores: JSON.stringify({ pencapaian_hasil:3, manajemen_waktu:4, kreativitas:4, loyalitas:4, disiplin:3, komitmen:4, persatuan:4, kekompakan:3, kemampuan_mengajar:4, administrasi_pengajaran:4, kemampuan_mentoring:3, pemecahan_masalah:3, pengembangan_profesionalisme:4, kemampuan_manajerial:3, kemampuan_sosialisasi:4, empati:3, toleransi:4, kejujuran:4, tanggung_jawab:4, rasa_hormat:4, sopan_santun:4, sholat_berjamaah:4, sholat_dhuha:4, tutur_kata:4, busana_penampilan:3 }),
     catatan: "Guru ini memiliki kemampuan mengajar yang baik dan disiplin dalam menjalankan tugasnya. Perlu peningkatan dalam mentoring siswa.",
   },
   {
     id: "cmqnckpyp00024w8w34dqagru",
     evaluatorId: "cb20c26941d0757098ee6",
-    teacherId: "c09aa6d3890494f669819",
+    employeeId: "c09aa6d3890494f669819",
     scores: JSON.stringify({ pencapaian_hasil:4, manajemen_waktu:4, kreativitas:3, loyalitas:3, disiplin:4, komitmen:3, persatuan:4, kekompakan:4, kemampuan_mengajar:3, administrasi_pengajaran:4, kemampuan_mentoring:4, pemecahan_masalah:4, pengembangan_profesionalisme:3, kemampuan_manajerial:4, kemampuan_sosialisasi:4, empati:4, toleransi:3, kejujuran:4, tanggung_jawab:3, rasa_hormat:4, sopan_santun:4, sholat_berjamaah:3, sholat_dhuha:4, tutur_kata:3, busana_penampilan:4 }),
     catatan: "Ahmad Marzuki menunjukkan dedikasi yang tinggi. Kemampuan manajerial kelas perlu ditingkatkan lebih lanjut untuk hasil yang lebih optimal.",
   },
   {
     id: "cmqnm4mfs00044w8wicvu6riv",
     evaluatorId: "cmqnh83p900034w8wf3yl59a8",
-    teacherId: "c09aa6d3890494f669819",
+    employeeId: "c09aa6d3890494f669819",
     scores: JSON.stringify({ pencapaian_hasil:4, manajemen_waktu:3, kreativitas:4, loyalitas:4, disiplin:3, komitmen:4, persatuan:4, kekompakan:3, kemampuan_mengajar:4, administrasi_pengajaran:3, kemampuan_mentoring:4, pemecahan_masalah:3, pengembangan_profesionalisme:4, kemampuan_manajerial:3, kemampuan_sosialisasi:4, empati:4, toleransi:4, kejujuran:4, tanggung_jawab:4, rasa_hormat:4, sopan_santun:4, sholat_berjamaah:4, sholat_dhuha:3, tutur_kata:4, busana_penampilan:4 }),
     catatan: "Ahmad Marzuki menunjukkan kinerja yang baik secara keseluruhan, terutama dalam aspek nilai dan spiritual. Peningkatan lebih lanjut pada kemampuan manajerial dan konsistensi administrasi akan membawa hasil yang lebih optimal.",
   },
@@ -76,7 +76,7 @@ async function main() {
   console.log(`✓ ${EVALUATORS.length} evaluators seeded`)
 
   for (const t of TEACHERS) {
-    await prisma.teacher.upsert({
+    await prisma.employee.upsert({
       where: { id: t.id },
       update: { name: t.name },
       create: t,

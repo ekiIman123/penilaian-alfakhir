@@ -53,150 +53,150 @@ function s(v: number[]): string {
 }
 
 // ── Data evaluasi dari spreadsheet ──────────────────────────────────────────
-// Format: { evaluatorId, teacherId, scores, catatan }
+// Format: { evaluatorId, employeeId, scores, catatan }
 
 const EVALUATIONS = [
 
   // ── ANGGRAINI, A.Md ──────────────────────────────────────────────────────
   {
-    evaluatorId: EV.anggraini, teacherId: T.giar,
+    evaluatorId: EV.anggraini, employeeId: T.giar,
     scores: s([3,2,2,2,2,2,2,2,3,3,2,3,3,3,2,3,3,3,3,3,3,3,3,3,3]),
     catatan: "Pak Giar sering absen dan izin dengan alasan sakit, anak sakit, urus taspen, dll",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.aulia,
+    evaluatorId: EV.anggraini, employeeId: T.aulia,
     scores: s([3,3,3,3,3,3,3,3,3,3,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3]),
     catatan: "kinerja sudah bagus, kompetensi dan mentoring ditingkatkan",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.ariyanto,
+    evaluatorId: EV.anggraini, employeeId: T.ariyanto,
     scores: s([4,4,3,3,3,3,3,3,4,4,3,3,3,2,3,3,3,3,3,4,4,3,3,3,3]),
     catatan: "tingkatkan persatuan, kekompakan, dan keaktifan dalam kegiatan sekolah",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.alfiyyah,
+    evaluatorId: EV.anggraini, employeeId: T.alfiyyah,
     scores: s([2,3,2,3,3,3,3,3,2,3,2,2,2,2,3,3,3,3,3,3,3,3,2,3,3]),
     catatan: "tingkatkan kemampuan dan profesionalisme dalam mengajar",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.ahmad,
+    evaluatorId: EV.anggraini, employeeId: T.ahmad,
     scores: s([3,2,2,2,3,2,2,2,2,2,2,2,2,2,3,2,3,3,2,3,3,4,4,3,3]),
     catatan: "mohon tidak tidur saat jam kerja",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.dedi,
+    evaluatorId: EV.anggraini, employeeId: T.dedi,
     scores: s([3,3,2,3,3,3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,4,4,3,4]),
     catatan: "tingkatkan penguasaan teknologi dan komputer",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.lulu,
+    evaluatorId: EV.anggraini, employeeId: T.lulu,
     scores: s([3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]),
     catatan: "kurangi izin dan gunakan seragam serta jilbab sesuai jadwal",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.asroru,
+    evaluatorId: EV.anggraini, employeeId: T.asroru,
     scores: s([3,2,3,3,2,2,3,3,3,2,3,3,3,3,4,4,4,3,3,3,3,3,3,3,2]),
     catatan: "tingkatkan kedisiplinan dan kerapian dalam berpakaian",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.faisal,
+    evaluatorId: EV.anggraini, employeeId: T.faisal,
     scores: s([3,3,3,3,3,3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4]),
     catatan: "Ust Faisal belum genap setahun & belum mengajar full, jadi belum terlihat saat bekerja dengan load yang tinggi.",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.mutiara,
+    evaluatorId: EV.anggraini, employeeId: T.mutiara,
     scores: s([3,3,2,3,4,3,3,3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,3,4]),
     catatan: "tingkatkan kompetensi dan kembangkan profesionalisme dalam mengajar",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.nurfaidah,
+    evaluatorId: EV.anggraini, employeeId: T.nurfaidah,
     scores: s([3,2,2,2,2,3,3,3,3,3,3,3,2,3,3,3,3,3,3,3,3,3,3,3,4]),
     catatan: "tingkatkan kedisiplinan dan kinerja",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.zahro,
+    evaluatorId: EV.anggraini, employeeId: T.zahro,
     scores: s([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4]),
     catatan: "tingkatkan kedisiplinan",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.thio,
+    evaluatorId: EV.anggraini, employeeId: T.thio,
     scores: s([2,3,2,3,3,3,3,3,2,2,3,2,2,3,3,3,3,3,3,3,3,3,3,3,3]),
     catatan: "tingkatkan kompetensi dan pengembangan profesionalisme",
   },
   {
-    evaluatorId: EV.anggraini, teacherId: T.nurhida,
+    evaluatorId: EV.anggraini, employeeId: T.nurhida,
     scores: s([3,2,2,3,3,3,3,3,3,2,3,3,2,3,3,3,3,3,3,3,3,3,3,3,3]),
     catatan: "tingkatkan kompetensi dan pengembangan profesionalisme",
   },
 
   // ── ARIFAH HILYATI, S.S., M.Pd ───────────────────────────────────────────
   {
-    evaluatorId: EV.arifah, teacherId: T.aulia,
+    evaluatorId: EV.arifah, employeeId: T.aulia,
     scores: s([3,4,4,4,4,4,3,3,4,3,4,3,4,3,4,3,3,4,4,3,3,3,3,3,4]),
     catatan: "Aulia memiliki leadership yang cukup baik, perlu dibimbing secara intensif oleh managemen.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.ariyanto,
+    evaluatorId: EV.arifah, employeeId: T.ariyanto,
     scores: s([3,3,3,3,4,3,3,3,3,4,4,3,3,4,4,3,3,4,3,4,4,4,4,4,4]),
     catatan: "Dalam segala aspek Pak Ari sudah menunjukkan performa yang baik, yang perlu ditingkatkan adalah loyalitas pada lembaga karena sering kali pulang mendahului guru dan staff yang lain ketika kegiatan kepanitiaan",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.alfiyyah,
+    evaluatorId: EV.arifah, employeeId: T.alfiyyah,
     scores: s([3,3,2,3,3,3,3,3,2,3,2,2,2,2,2,3,3,3,4,3,3,3,3,3,3]),
     catatan: "Alfi cukup bertanggung jawab ketika diberikan tugas - tugas untuk kegiatan sekolah maupun kepanitian. Yang harus ditingkatkan adalah ketrampilan mengajar, ketrampilan berkomunikasi. Literasinya harus ditingkatkan.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.ahmad,
+    evaluatorId: EV.arifah, employeeId: T.ahmad,
     scores: s([2,3,2,3,2,3,3,3,2,2,2,2,2,2,3,2,2,3,3,3,3,3,3,3,2]),
     catatan: "Ustadz Marzuki sering tertidur di jam kerja. Beberapa kali izin untuk urusan di luar dan baru hadir di sekolah di siang bahkan sore hari ketika aktifitas di sekolah akan berakhir.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.dedi,
+    evaluatorId: EV.arifah, employeeId: T.dedi,
     scores: s([3,3,2,3,3,3,3,3,3,2,2,3,2,3,3,3,3,4,3,4,4,4,4,4,3]),
     catatan: "Ustadz Dedi bertanggung jawab ketika diberikan tugas. Kemampuan literasi dan penggunaan teknologi harus ditingkatkan.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.lulu,
+    evaluatorId: EV.arifah, employeeId: T.lulu,
     scores: s([3,3,3,3,2,3,2,2,3,3,3,3,3,3,3,3,3,3,3,4,3,3,3,3,2]),
     catatan: "Bu Lulu menunjukkan performa yang baik di hampir segala hal. Namun perizinan cukup sering baik karena kondisi kesehatan, urusan keluarga dll. Untuk seragam, sering kali Bu Lulu memakai seragam yang berbeda tidak sesuai dengan aturan yang ditetapkan.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.asroru,
+    evaluatorId: EV.arifah, employeeId: T.asroru,
     scores: s([4,2,3,3,2,3,4,4,3,2,3,3,3,3,4,4,4,4,3,4,4,3,3,4,2]),
     catatan: "Dalam segala hal Asror sudah menunjukkan performa yang baik. Yang harus ditingkatkan adalah kedisiplinan dan time management.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.faisal,
+    evaluatorId: EV.arifah, employeeId: T.faisal,
     scores: s([4,3,3,3,3,3,4,4,4,3,4,3,3,4,3,3,3,4,4,4,4,4,4,4,4]),
     catatan: "Ustadz Faisal menunjukkan performa yang baik, meskipun beliau adalah pendatang baru di lembaga ini. Beberapa tugas yang dibebankan padanya bisa dilaksanakan dengan baik. Namun selama 1 semester ini ada beberapa hari beliau tidak masuk karena alasan kesehatan.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.mutiara,
+    evaluatorId: EV.arifah, employeeId: T.mutiara,
     scores: s([3,3,3,3,3,3,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,3,3,3,3]),
     catatan: "Mutiara menunjukkan performa kerja yang baik, kemampuan berkomunikasi juga baik, disiplin, time management juga baik.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.nurfaidah,
+    evaluatorId: EV.arifah, employeeId: T.nurfaidah,
     scores: s([3,2,3,3,3,2,2,2,4,3,3,3,2,3,3,3,3,4,3,4,4,3,2,4,4]),
     catatan: "Nur Faidah Djaelani menunjukkan performa kerja yang baik, pembelajar yang cepat, kemampuan komunikasinya baik. Namun, sering sekali izin karena kesehatan dan urusan keluarga juga perizinan di jam kerja. Beliau belum sekalipun mengikuti kegiatan pengembangan profesi yang disediakan oleh sekolah.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.zahro,
+    evaluatorId: EV.arifah, employeeId: T.zahro,
     scores: s([3,2,4,3,2,3,2,2,3,3,3,3,3,3,4,4,4,3,3,4,4,3,3,4,4]),
     catatan: "Zahro menunjukkan performa kerja yang baik. Beliau bisa mengemban tugas dengan baik, totalitas dalam melaksanakan tugasnya, namun Zahro justru mengesampingkan tugas utamanya sebagai wali kelas terutama administrasi perangkat pembelajaran, masih sering terlambat datang ke sekolah.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.thio,
+    evaluatorId: EV.arifah, employeeId: T.thio,
     scores: s([3,3,2,3,3,3,3,3,3,2,3,2,3,2,3,3,3,3,3,3,3,3,3,3,2]),
     catatan: "Tio harus meningkatkan banyak hal terutama di bidang teknologi digital. Sering panik ketika under pressure. Self-controlnya harus ditingkatkan.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.nurhida,
+    evaluatorId: EV.arifah, employeeId: T.nurhida,
     scores: s([3,3,3,4,3,4,4,4,3,3,3,3,3,4,3,4,4,4,4,4,4,3,3,4,3]),
     catatan: "Bu Nun menunjukkan performa kerja yang baik. Yang harus ditingkatkan adalah time management, masih sering hadir terlambat ke sekolah.",
   },
   {
-    evaluatorId: EV.arifah, teacherId: T.giar,
+    evaluatorId: EV.arifah, employeeId: T.giar,
     scores: s([3,2,3,3,2,3,3,3,2,2,2,3,3,2,2,3,3,3,3,3,3,3,3,3,3]),
     catatan: "Pak Giar masih sering izin tidak masuk sekolah sehingga mengurangi performa kinerjanya.",
   },
@@ -209,9 +209,9 @@ async function main() {
   let upserted = 0
   for (const ev of EVALUATIONS) {
     await prisma.evaluation.upsert({
-      where: { evaluatorId_teacherId: { evaluatorId: ev.evaluatorId, teacherId: ev.teacherId } },
+      where: { evaluatorId_employeeId: { evaluatorId: ev.evaluatorId, employeeId: ev.employeeId } },
       update: { scores: ev.scores, catatan: ev.catatan ?? null },
-      create: { evaluatorId: ev.evaluatorId, teacherId: ev.teacherId, scores: ev.scores, catatan: ev.catatan ?? null },
+      create: { evaluatorId: ev.evaluatorId, employeeId: ev.employeeId, scores: ev.scores, catatan: ev.catatan ?? null },
     })
     upserted++
     process.stdout.write(`\r  ✓ ${upserted}/${EVALUATIONS.length} evaluasi`)
