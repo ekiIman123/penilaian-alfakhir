@@ -14,20 +14,21 @@ interface Props {
 export default async function IyoraFormPage({ params }: Props) {
   const { employeeId } = await params
   const session = await getSession()
-  if (!session || session.lembaga !== "iyora") redirect("/iyora")
+  const allowed = session && (session.lembaga === "iyora" || session.lembaga === "all")
+  if (!allowed) redirect("/iyora")
 
-  const allowed = await getEvaluatees(session)
-  const employee = allowed.find((e) => e.id === employeeId)
+  const evaluatees = await getEvaluatees(session!, "iyora")
+  const employee = evaluatees.find((e) => e.id === employeeId)
   if (!employee) notFound()
 
   const existing = await prisma.evaluation.findUnique({
-    where: { evaluatorId_employeeId: { evaluatorId: session.evaluatorId, employeeId } },
+    where: { evaluatorId_employeeId: { evaluatorId: session!.evaluatorId, employeeId } },
   })
 
   return (
     <EvalForm
       lembagaSlug="iyora"
-      evaluatorId={session.evaluatorId}
+      evaluatorId={session!.evaluatorId}
       employeeId={employee.id}
       employeeName={employee.name}
       employeeRole={employee.role}
