@@ -26,16 +26,18 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { evaluatorId, teacherId, scores, catatan } = body
+    const { evaluatorId, teacherId, scores, catatan, rubricType } = body
 
     if (!evaluatorId || !teacherId || !scores) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    const rt: string = typeof rubricType === "string" ? rubricType : "standard"
+
     const result = await prisma.evaluation.upsert({
       where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
-      update: { scores: JSON.stringify(scores), catatan: catatan ?? null },
-      create: { evaluatorId, employeeId: teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null },
+      update: { scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt },
+      create: { evaluatorId, employeeId: teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt },
       include: { evaluator: true, employee: true },
     })
 

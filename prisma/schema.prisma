@@ -12,6 +12,7 @@ model Employee {
   name         String
   role         String       @default("guru")
   lembaga      String       @default("alfakhir")
+  divisi       String?
   finalCatatan String?
   evaluations  Evaluation[]
   createdAt    DateTime     @default(now())
@@ -23,6 +24,9 @@ model Evaluator {
   id          String       @id @default(cuid())
   name        String
   lembaga     String       @default("alfakhir")
+  role        String       @default("evaluator")
+  divisi      String?
+  accessCode  String?      @unique
   evaluations Evaluation[]
   createdAt   DateTime     @default(now())
 
@@ -34,6 +38,7 @@ model Evaluation {
   evaluatorId String
   employeeId  String
   lembaga     String    @default("alfakhir")
+  rubricType  String    @default("standard")
   evaluator   Evaluator @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
   employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   scores      String
