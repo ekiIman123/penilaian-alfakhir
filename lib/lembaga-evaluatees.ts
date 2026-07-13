@@ -19,7 +19,10 @@ function parseDivisi(divisi: string | null): string[] {
   }
 }
 
-export async function getEvaluatees(session: EvaluatorSession): Promise<EvaluateeEmployee[]> {
+export async function getEvaluatees(
+  session: EvaluatorSession,
+  currentLembaga?: string
+): Promise<EvaluateeEmployee[]> {
   const { role, lembaga } = session
 
   if (role === "koordinator") {
@@ -33,23 +36,46 @@ export async function getEvaluatees(session: EvaluatorSession): Promise<Evaluate
 
   if (role === "supervisor") {
     return prisma.employee.findMany({
-      where: { lembaga: "iysa", role: "koordinator" },
-      orderBy: { name: "asc" },
+      where: { lembaga: "iysa" },
+      orderBy: [{ divisi: "asc" }, { name: "asc" }],
     })
   }
 
   if (role === "ceo") {
     return prisma.employee.findMany({
-      where: { lembaga: "icgi", role: "staff" },
+      where: { lembaga: "icgi" },
       orderBy: { name: "asc" },
     })
   }
 
   if (role === "pm") {
     return prisma.employee.findMany({
-      where: { lembaga: "iyora", role: "staff" },
+      where: { lembaga: "iyora" },
       orderBy: { name: "asc" },
     })
+  }
+
+  if (role === "founder") {
+    const target = currentLembaga ?? lembaga
+    if (target === "iysa") {
+      return prisma.employee.findMany({
+        where: { lembaga: "iysa" },
+        orderBy: [{ divisi: "asc" }, { name: "asc" }],
+      })
+    }
+    if (target === "icgi") {
+      return prisma.employee.findMany({
+        where: { lembaga: "icgi" },
+        orderBy: { name: "asc" },
+      })
+    }
+    if (target === "iyora") {
+      return prisma.employee.findMany({
+        where: { lembaga: "iyora" },
+        orderBy: { name: "asc" },
+      })
+    }
+    return []
   }
 
   if (role === "management") {

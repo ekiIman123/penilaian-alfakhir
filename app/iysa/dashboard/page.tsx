@@ -8,12 +8,13 @@ export const dynamic = "force-dynamic"
 
 export default async function IysaDashboardPage() {
   const session = await getSession()
-  if (!session || session.lembaga !== "iysa") redirect("/iysa")
+  const allowed = session && (session.lembaga === "iysa" || session.lembaga === "all")
+  if (!allowed) redirect("/iysa")
 
-  const evaluatees = await getEvaluatees(session)
+  const evaluatees = await getEvaluatees(session!, "iysa")
   const evaluatedIds = new Set(
     (await prisma.evaluation.findMany({
-      where: { evaluatorId: session.evaluatorId, employeeId: { in: evaluatees.map((e) => e.id) } },
+      where: { evaluatorId: session!.evaluatorId, employeeId: { in: evaluatees.map((e) => e.id) } },
       select: { employeeId: true },
     })).map((e) => e.employeeId)
   )
@@ -26,12 +27,15 @@ export default async function IysaDashboardPage() {
     evaluated: evaluatedIds.has(e.id),
   }))
 
+  const grouped = session!.role === "supervisor" || session!.role === "founder"
+
   return (
     <LembagaDashboard
       lembagaSlug="iysa"
       lembagaLabel="IYSA"
-      session={{ name: session.name, role: session.role, divisi: session.divisi }}
+      session={{ name: session!.name, role: session!.role, divisi: session!.divisi }}
       evaluatees={rows}
+      grouped={grouped}
     />
   )
 }

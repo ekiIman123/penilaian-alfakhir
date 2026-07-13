@@ -8,12 +8,13 @@ export const dynamic = "force-dynamic"
 
 export default async function IcgiDashboardPage() {
   const session = await getSession()
-  if (!session || session.lembaga !== "icgi") redirect("/icgi")
+  const allowed = session && (session.lembaga === "icgi" || session.lembaga === "all")
+  if (!allowed) redirect("/icgi")
 
-  const evaluatees = await getEvaluatees(session)
+  const evaluatees = await getEvaluatees(session!, "icgi")
   const evaluatedIds = new Set(
     (await prisma.evaluation.findMany({
-      where: { evaluatorId: session.evaluatorId, employeeId: { in: evaluatees.map((e) => e.id) } },
+      where: { evaluatorId: session!.evaluatorId, employeeId: { in: evaluatees.map((e) => e.id) } },
       select: { employeeId: true },
     })).map((e) => e.employeeId)
   )
@@ -30,8 +31,9 @@ export default async function IcgiDashboardPage() {
     <LembagaDashboard
       lembagaSlug="icgi"
       lembagaLabel="ICGI"
-      session={{ name: session.name, role: session.role, divisi: session.divisi }}
+      session={{ name: session!.name, role: session!.role, divisi: session!.divisi }}
       evaluatees={rows}
+      grouped={false}
     />
   )
 }

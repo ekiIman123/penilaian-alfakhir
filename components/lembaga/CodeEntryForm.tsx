@@ -35,7 +35,7 @@ export function CodeEntryForm({ lembagaSlug, lembagaLabel, lembagaTagline }: Pro
         setSubmitting(false)
         return
       }
-      if (data.session?.lembaga && data.session.lembaga !== lembagaSlug) {
+      if (data.session?.lembaga && data.session.lembaga !== "all" && data.session.lembaga !== lembagaSlug) {
         setError(`Kode ini untuk lembaga ${String(data.session.lembaga).toUpperCase()}, bukan ${lembagaLabel}`)
         setSubmitting(false)
         return
