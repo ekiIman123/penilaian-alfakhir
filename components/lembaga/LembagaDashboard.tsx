@@ -2,13 +2,16 @@
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
-  CheckCircle2, PenLine, LogOut, User2, Users,
-  Clock, Search, ChevronDown, X, ChevronRight,
+  CheckCircle2, PenLine, LogOut, User2,
+  Clock, Search, ChevronDown, X, ChevronRight, Plus,
 } from "lucide-react"
-import { useMemo, useState, useRef, useEffect } from "react"
-import { AG_SECTIONS } from "@/lib/rubrics"
+import { useMemo, useState, useRef, useEffect, useCallback } from "react"
+import type { EvaluateeRowData, EvalSummary } from "@/lib/lembaga-dashboard-data"
+import { LembagaEvalModal, type LembagaEditTarget } from "./LembagaEvalModal"
 
-// Short display names for each AG section column header
+export type { EvaluateeRowData }
+
+// Short display names for each section column header (A-G = AG_SECTIONS[0-6])
 const SECTION_NAMES = [
   "Disiplin",
   "Loyalitas",
@@ -19,28 +22,12 @@ const SECTION_NAMES = [
   "Manajemen Tim",
 ]
 
-export interface EvaluateeRow {
-  id: string
-  name: string
-  role: string
-  divisi: string | null
-  rubricType: "ae" | "ag"
-  evaluated: boolean
-  sectionScores: (number | null)[]   // 7 elements [A,B,C,D,E,F,G]; null = not applicable
-  sectionMax: (number | null)[]
-  totalScore: number | null
-  maxScore: number
-  grade: { label: string; color: string; bg: string } | null
-  catatan: string | null
-}
-
 interface Props {
   lembagaSlug: "iysa" | "icgi" | "iyora"
   lembagaLabel: string
-  session: { name: string; role: string; divisi: string | null }
-  evaluatees: EvaluateeRow[]
+  session: { evaluatorId: string; name: string; role: string; divisi: string | null }
+  evaluatees: EvaluateeRowData[]
 }
-
 
 const ROLE_LABEL: Record<string, string> = {
   staff:       "Staff",
@@ -50,6 +37,7 @@ const ROLE_LABEL: Record<string, string> = {
   pm:          "Project Manager",
   management:  "Management",
   founder:     "General Manager",
+  superadmin:  "Super Admin",
 }
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -60,6 +48,7 @@ const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   staff:       { bg: "#EEF2FF", color: "#4338CA" },
   founder:     { bg: "#FEF3C7", color: "#92400E" },
   management:  { bg: "#F3F4F6", color: "#374151" },
+  superadmin:  { bg: "#FDF4FF", color: "#7E22CE" },
 }
 
 type StatusFilter = "all" | "done" | "pending"
@@ -92,7 +81,7 @@ function FilterDropdown<T extends string>({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap"
         style={{
           backgroundColor: isActive ? "#0F2540" : "#EDF0F5",
           color: isActive ? "#FFFFFF" : "#64748B",
@@ -101,10 +90,7 @@ function FilterDropdown<T extends string>({
       >
         <span className="text-[10px] font-semibold uppercase tracking-wide opacity-60">{label}</span>
         <span>{current?.label}</span>
-        <ChevronDown
-          size={11}
-          style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
-        />
+        <ChevronDown size={11} style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
       </button>
       {open && (
         <div
@@ -115,7 +101,7 @@ function FilterDropdown<T extends string>({
             <button
               key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false) }}
-              className="w-full text-left px-4 py-2 text-xs font-medium transition-colors whitespace-nowrap"
+              className="w-full text-left px-4 py-2 text-xs font-medium whitespace-nowrap"
               style={{ color: value === opt.value ? "#C4972A" : "#374151", backgroundColor: value === opt.value ? "#FEF9EC" : "transparent" }}
             >
               {opt.label}
@@ -128,95 +114,208 @@ function FilterDropdown<T extends string>({
 }
 
 function ScoreCell({ score, max }: { score: number | null; max: number | null }) {
-  if (score === null || max === null) {
-    return <span style={{ color: "#CBD5E1" }}>—</span>
-  }
+  if (score === null || max === null) return <span style={{ color: "#CBD5E1" }}>—</span>
   const pct = max > 0 ? score / max : 0
   const color = pct >= 0.86 ? "#059669" : pct >= 0.71 ? "#2563EB" : pct >= 0.56 ? "#D97706" : "#DC2626"
   return (
     <span className="tabular-nums font-semibold text-xs" style={{ color }}>
-      {score}
-      <span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{max}</span>
+      {score}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{max}</span>
     </span>
+  )
+}
+
+function EvaluatorTable({
+  e,
+  sessionEvaluatorId,
+  lembagaSlug,
+  onEdit,
+}: {
+  e: EvaluateeRowData
+  sessionEvaluatorId: string
+  lembagaSlug: string
+  onEdit: (t: LembagaEditTarget) => void
+}) {
+  const hasMyEval = e.evaluationSummaries.some((s) => s.evaluatorId === sessionEvaluatorId)
+
+  return (
+    <div>
+      {e.evaluationSummaries.length === 0 ? (
+        <div className="py-6 flex flex-col items-center gap-2">
+          <p className="text-xs text-slate-400">Belum ada penilaian untuk karyawan ini.</p>
+          <button
+            onClick={() =>
+              onEdit({
+                employeeId: e.id,
+                employeeName: e.name,
+                evaluatorId: sessionEvaluatorId,
+                evaluatorName: "Saya",
+                rubricType: e.rubricType,
+              })
+            }
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+            style={{ background: "linear-gradient(135deg, #C4972A, #E8B84B)", color: "#1C1409" }}
+          >
+            <Plus size={12} /> Tambah Penilaian
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#EDF2F7" }}>
+                <th className="px-3 py-2 text-left text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Penilai</th>
+                {SECTION_NAMES.map((name, i) => (
+                  <th key={i} className="px-1.5 py-2 text-center" style={{ color: "#64748B", minWidth: "60px" }}>
+                    <div className="text-[8px] font-bold uppercase" style={{ color: "#C4972A" }}>{String.fromCharCode(65 + i)}</div>
+                    <div className="text-[8px] font-semibold uppercase leading-tight">{name}</div>
+                  </th>
+                ))}
+                <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Total</th>
+                <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Predikat</th>
+                <th className="w-16" />
+              </tr>
+            </thead>
+            <tbody>
+              {e.evaluationSummaries.map((sum) => {
+                const grade = sum.totalScore !== undefined
+                  ? { label: "—", color: "#94A3B8", bg: "#F1F5F9" }
+                  : null
+                const pct = sum.totalScore / sum.maxScore
+                const gradeInfo = pct >= 0.86
+                  ? { label: "Sangat Baik", color: "#059669", bg: "#ECFDF5" }
+                  : pct >= 0.71
+                  ? { label: "Baik", color: "#2563EB", bg: "#EFF6FF" }
+                  : pct >= 0.56
+                  ? { label: "Cukup", color: "#D97706", bg: "#FFFBEB" }
+                  : { label: "Perlu Perbaikan", color: "#DC2626", bg: "#FEF2F2" }
+                return (
+                  <tr key={sum.evaluatorId} style={{ borderTop: "1px solid #E2E8F0" }}>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0"
+                          style={{ backgroundColor: "#0F2540", fontSize: "8px" }}
+                        >
+                          {sum.evaluatorName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 truncate max-w-[120px]">{sum.evaluatorName}</span>
+                        {sum.catatan && (
+                          <span
+                            className="text-[8px] px-1.5 py-0.5 rounded font-medium shrink-0"
+                            title={sum.catatan}
+                            style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
+                          >
+                            catatan
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    {sum.sectionScores.map((score, i) => (
+                      <td key={i} className="px-1.5 py-2.5 text-center">
+                        <ScoreCell score={score} max={sum.sectionMax[i]} />
+                      </td>
+                    ))}
+                    <td className="px-2 py-2.5 text-center">
+                      <span className="tabular-nums font-bold text-xs" style={{ color: "#0F2540" }}>
+                        {sum.totalScore}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{sum.maxScore}</span>
+                      </span>
+                    </td>
+                    <td className="px-2 py-2.5 text-center">
+                      <span
+                        className="text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+                        style={{ backgroundColor: gradeInfo.bg, color: gradeInfo.color }}
+                      >
+                        {gradeInfo.label}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2.5 text-right pr-3">
+                      <button
+                        onClick={() =>
+                          onEdit({
+                            employeeId: e.id,
+                            employeeName: e.name,
+                            evaluatorId: sum.evaluatorId,
+                            evaluatorName: sum.evaluatorName,
+                            rubricType: e.rubricType,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-opacity hover:opacity-80"
+                        style={{ background: "linear-gradient(135deg, #1E3A5F, #2A4F7A)", color: "#fff" }}
+                      >
+                        <PenLine size={9} /> Edit
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+
+          {/* Add current-session evaluator's score if not yet submitted */}
+          {!hasMyEval && (
+            <div className="px-4 py-3 border-t" style={{ borderColor: "#E2E8F0" }}>
+              <button
+                onClick={() =>
+                  onEdit({
+                    employeeId: e.id,
+                    employeeName: e.name,
+                    evaluatorId: sessionEvaluatorId,
+                    evaluatorName: "Saya",
+                    rubricType: e.rubricType,
+                  })
+                }
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                style={{ background: "linear-gradient(135deg, #C4972A, #E8B84B)", color: "#1C1409" }}
+              >
+                <Plus size={11} /> Tambah Penilaian Saya
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
 function ExpandedRow({
   e,
   colSpan,
+  sessionEvaluatorId,
   lembagaSlug,
+  onEdit,
 }: {
-  e: EvaluateeRow
+  e: EvaluateeRowData
   colSpan: number
+  sessionEvaluatorId: string
   lembagaSlug: string
+  onEdit: (t: LembagaEditTarget) => void
 }) {
-  const sections = [
-    { label: "A · Disiplin",                  idx: 0 },
-    { label: "B · Loyalitas",                 idx: 1 },
-    { label: "C · Komitmen",                  idx: 2 },
-    { label: "D · Jujur & Amanah",            idx: 3 },
-    { label: "E · Persatuan & Kekeluargaan",  idx: 4 },
-    { label: "F · Leadership",                idx: 5 },
-    { label: "G · Manajemen Tim",             idx: 6 },
-  ]
-
   return (
     <tr style={{ backgroundColor: "#F8FAFC" }}>
-      <td colSpan={colSpan} className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Section breakdown */}
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94A3B8" }}>Detail Per Seksi</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {sections.map(({ label, idx }) => {
-                const score = e.sectionScores[idx]
-                const max = e.sectionMax[idx]
-                if (score === null || max === null) return null
-                const pct = max > 0 ? Math.round((score / max) * 100) : 0
-                const color = pct >= 86 ? "#059669" : pct >= 71 ? "#2563EB" : pct >= 56 ? "#D97706" : "#DC2626"
-                const bg = pct >= 86 ? "#DCFCE7" : pct >= 71 ? "#DBEAFE" : pct >= 56 ? "#FEF3C7" : "#FEE2E2"
-                return (
-                  <div key={idx} className="flex items-center gap-2">
-                    <div className="w-28 shrink-0 text-[10px] font-medium" style={{ color: "#475569" }}>{label}</div>
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8F0" }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
-                    </div>
-                    <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 tabular-nums"
-                      style={{ backgroundColor: bg, color }}
-                    >
-                      {score}/{max}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Catatan */}
-          {e.catatan && (
-            <div className="md:w-56 shrink-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "#94A3B8" }}>Catatan</p>
-              <p className="text-xs leading-relaxed" style={{ color: "#475569" }}>{e.catatan}</p>
-            </div>
-          )}
-
-          {/* Total recap */}
-          {e.evaluated && e.totalScore !== null && e.grade && (
-            <div className="md:w-36 shrink-0 flex flex-col items-center justify-center gap-1 p-3 rounded-lg" style={{ backgroundColor: e.grade.bg }}>
-              <div className="text-2xl font-bold tabular-nums" style={{ color: e.grade.color }}>
-                {e.totalScore}
-              </div>
-              <div className="text-[9px] font-semibold" style={{ color: e.grade.color }}>dari {e.maxScore}</div>
-              <div
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5"
-                style={{ backgroundColor: e.grade.color, color: "#fff" }}
-              >
-                {e.grade.label}
-              </div>
-            </div>
-          )}
+      <td colSpan={colSpan} className="px-0 py-0" style={{ borderBottom: "2px solid #DDE3EC" }}>
+        <div className="px-5 pt-3 pb-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94A3B8" }}>
+            Rekap Penilaian Per Penilai
+          </p>
         </div>
+        <EvaluatorTable
+          e={e}
+          sessionEvaluatorId={sessionEvaluatorId}
+          lembagaSlug={lembagaSlug}
+          onEdit={onEdit}
+        />
+        {/* Catatan from first evaluator if any */}
+        {e.evaluationSummaries.length > 0 && e.evaluationSummaries.some((s) => s.catatan) && (
+          <div className="px-5 py-3 border-t space-y-2" style={{ borderColor: "#E2E8F0" }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>Catatan</p>
+            {e.evaluationSummaries.filter((s) => s.catatan).map((s) => (
+              <div key={s.evaluatorId} className="flex gap-2">
+                <span className="text-[10px] font-semibold shrink-0" style={{ color: "#64748B" }}>{s.evaluatorName}:</span>
+                <span className="text-xs" style={{ color: "#475569" }}>{s.catatan}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </td>
     </tr>
   )
@@ -227,23 +326,28 @@ function EvalRow({
   index,
   lembagaSlug,
   colSpan,
+  sessionEvaluatorId,
+  onEdit,
 }: {
-  e: EvaluateeRow
+  e: EvaluateeRowData
   index: number
   lembagaSlug: string
   colSpan: number
+  sessionEvaluatorId: string
+  onEdit: (t: LembagaEditTarget) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const roleStyle = ROLE_COLORS[e.role] ?? { bg: "#F3F4F6", color: "#6B7280" }
+  const hasAny = e.evaluationSummaries.length > 0
 
   return (
     <>
       <tr
         className="tr-hover cursor-pointer"
         style={{ borderBottom: expanded ? "none" : "1px solid #EDF0F5" }}
-        onClick={() => { if (e.evaluated) setExpanded((v) => !v) }}
+        onClick={() => setExpanded((v) => !v)}
       >
-        {/* Rank */}
+        {/* # */}
         <td className="py-3 pl-4 text-center w-8">
           <span className="text-xs font-medium tabular-nums" style={{ color: "#9CA3AF" }}>{index + 1}</span>
         </td>
@@ -263,17 +367,15 @@ function EvalRow({
             <div className="min-w-0">
               <div className="flex items-center gap-1">
                 <p className="font-semibold text-sm text-gray-800 truncate leading-tight">{e.name}</p>
-                {e.evaluated && (
-                  <ChevronRight
-                    size={12}
-                    style={{
-                      color: "#94A3B8",
-                      transform: expanded ? "rotate(90deg)" : "none",
-                      transition: "transform 0.15s",
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
+                <ChevronRight
+                  size={12}
+                  style={{
+                    color: hasAny ? "#C4972A" : "#94A3B8",
+                    transform: expanded ? "rotate(90deg)" : "none",
+                    transition: "transform 0.15s",
+                    flexShrink: 0,
+                  }}
+                />
               </div>
               <div className="flex flex-wrap gap-1 mt-0.5">
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={roleStyle}>
@@ -282,6 +384,11 @@ function EvalRow({
                 {e.divisi && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
                     {e.divisi}
+                  </span>
+                )}
+                {hasAny && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}>
+                    {e.evaluationSummaries.length} penilai
                   </span>
                 )}
               </div>
@@ -300,8 +407,7 @@ function EvalRow({
         <td className="px-3 py-3 text-center" style={{ minWidth: "60px" }}>
           {e.totalScore !== null ? (
             <span className="tabular-nums font-bold text-xs" style={{ color: "#0F2540" }}>
-              {e.totalScore}
-              <span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{e.maxScore}</span>
+              {e.totalScore}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{e.maxScore}</span>
             </span>
           ) : (
             <span style={{ color: "#CBD5E1", fontSize: "10px" }}>—</span>
@@ -318,10 +424,7 @@ function EvalRow({
               {e.grade.label}
             </span>
           ) : (
-            <span
-              className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
-            >
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
               Belum
             </span>
           )}
@@ -332,7 +435,7 @@ function EvalRow({
           <Link
             href={`/${lembagaSlug}/form/${e.id}`}
             onClick={(ev) => ev.stopPropagation()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-90"
             style={{
               background: e.evaluated
                 ? "linear-gradient(135deg, #1E3A5F, #2A4F7A)"
@@ -346,8 +449,15 @@ function EvalRow({
           </Link>
         </td>
       </tr>
-      {expanded && e.evaluated && (
-        <ExpandedRow e={e} colSpan={colSpan} lembagaSlug={lembagaSlug} />
+
+      {expanded && (
+        <ExpandedRow
+          e={e}
+          colSpan={colSpan}
+          sessionEvaluatorId={sessionEvaluatorId}
+          lembagaSlug={lembagaSlug}
+          onEdit={onEdit}
+        />
       )}
     </>
   )
@@ -360,6 +470,9 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
   const [searchQ, setSearchQ]           = useState("")
   const [divisiFilter, setDivisiFilter] = useState("all")
   const [roleFilter, setRoleFilter]     = useState("all")
+  const [editTarget, setEditTarget]     = useState<LembagaEditTarget | null>(null)
+
+  const handleEdit = useCallback((t: LembagaEditTarget) => setEditTarget(t), [])
 
   async function logout() {
     await fetch("/api/auth/lembaga", { method: "DELETE" })
@@ -380,7 +493,6 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
     }
   }
 
-  // Derive distinct divisi and role options from data
   const divisiOptions = useMemo(() => {
     const set = new Set<string>()
     for (const e of evaluatees) if (e.divisi) set.add(e.divisi)
@@ -424,7 +536,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
 
   const isFiltered = statusFilter !== "all" || divisiFilter !== "all" || roleFilter !== "all" || !!searchQ
 
-  // Total columns: # (1) + Name (1) + A-G (7) + Total (1) + Grade (1) + Action (1) = 13
+  // # + Name + 7 sections + Total + Grade + Action = 13
   const totalCols = 13
 
   return (
@@ -439,7 +551,6 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
       >
         <div className="px-6 py-6 md:px-8">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            {/* Left: identity */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(196,151,42,0.85)" }}>
                 {lembagaLabel} · Dashboard Penilaian
@@ -474,7 +585,6 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
               </div>
             </div>
 
-            {/* Right: stats + logout */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {[
                 { label: "Total Karyawan", value: evaluatees.length, color: "#C4972A" },
@@ -493,7 +603,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
               <button
                 type="button"
                 onClick={logout}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold"
                 style={{ backgroundColor: "rgba(220,38,38,0.15)", color: "#FCA5A5", border: "1px solid rgba(220,38,38,0.3)" }}
               >
                 <LogOut size={14} /> Keluar
@@ -510,7 +620,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
         </div>
       ) : (
         <div className="card">
-          {/* ── Filter bar ── */}
+          {/* Filter bar */}
           <div
             className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5"
             style={{ borderBottom: "1px solid #DDE3EC" }}
@@ -541,25 +651,11 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
               </div>
 
               {divisiOptions.length > 2 && (
-                <FilterDropdown
-                  label="Divisi"
-                  options={divisiOptions}
-                  value={divisiFilter}
-                  defaultValue="all"
-                  onChange={setDivisiFilter}
-                />
+                <FilterDropdown label="Divisi" options={divisiOptions} value={divisiFilter} defaultValue="all" onChange={setDivisiFilter} />
               )}
-
               {roleOptions.length > 2 && (
-                <FilterDropdown
-                  label="Jabatan"
-                  options={roleOptions}
-                  value={roleFilter}
-                  defaultValue="all"
-                  onChange={setRoleFilter}
-                />
+                <FilterDropdown label="Jabatan" options={roleOptions} value={roleFilter} defaultValue="all" onChange={setRoleFilter} />
               )}
-
               <FilterDropdown
                 label="Status"
                 options={[
@@ -571,7 +667,6 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                 defaultValue="all"
                 onChange={setStatusFilter}
               />
-
               <FilterDropdown
                 label="Urutan"
                 options={[
@@ -586,7 +681,6 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                 defaultValue="name-asc"
                 onChange={setSortBy}
               />
-
               {isFiltered && (
                 <button
                   onClick={() => { setStatusFilter("all"); setSortBy("name-asc"); setSearchQ(""); setDivisiFilter("all"); setRoleFilter("all") }}
@@ -633,13 +727,33 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                 </thead>
                 <tbody>
                   {filtered.map((e, i) => (
-                    <EvalRow key={e.id} e={e} index={i} lembagaSlug={lembagaSlug} colSpan={totalCols} />
+                    <EvalRow
+                      key={e.id}
+                      e={e}
+                      index={i}
+                      lembagaSlug={lembagaSlug}
+                      colSpan={totalCols}
+                      sessionEvaluatorId={session.evaluatorId}
+                      onEdit={handleEdit}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
           )}
         </div>
+      )}
+
+      {/* Modal */}
+      {editTarget && (
+        <LembagaEvalModal
+          target={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            setEditTarget(null)
+            router.refresh()
+          }}
+        />
       )}
     </div>
   )
