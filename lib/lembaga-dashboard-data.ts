@@ -88,6 +88,16 @@ export async function buildDashboardRows(
       totalScore = sectionScores.slice(0, applicableSections).reduce<number>((a, b) => a + (b ?? 0), 0)
       grade = getNewRubricGrade(totalScore, rubricType)
       catatan = myEval.catatan ?? null
+    } else if (evals.length > 0) {
+      // No personal evaluation yet — show averaged scores across all evaluators
+      sectionScores = AG_SECTIONS.map((sec, i) => {
+        if (i >= applicableSections) return null
+        const vals = evals.map((ev) => calcSectionRaw(parseScores(ev.scores), sec.id, AG_SECTIONS))
+        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+      })
+      sectionMax = AG_SECTIONS.map((sec, i) => (i < applicableSections ? sec.maxScore : null))
+      totalScore = sectionScores.slice(0, applicableSections).reduce<number>((a, b) => a + (b ?? 0), 0)
+      grade = getNewRubricGrade(totalScore, rubricType)
     }
 
     const evaluationSummaries: EvalSummary[] = evals.map((ev) => {

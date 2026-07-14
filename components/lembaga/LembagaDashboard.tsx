@@ -136,6 +136,7 @@ function EvaluatorTable({
   onEdit: (t: LembagaEditTarget) => void
 }) {
   const hasMyEval = e.evaluationSummaries.some((s) => s.evaluatorId === sessionEvaluatorId)
+  const secCount = e.rubricType === "ae" ? 5 : 7
 
   return (
     <div>
@@ -160,11 +161,11 @@ function EvaluatorTable({
         </div>
       ) : (
         <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: secCount === 5 ? "560px" : "700px" }}>
             <thead>
               <tr style={{ backgroundColor: "#EDF2F7" }}>
                 <th className="px-3 py-2 text-left text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Penilai</th>
-                {SECTION_NAMES.map((name, i) => (
+                {SECTION_NAMES.slice(0, secCount).map((name, i) => (
                   <th key={i} className="px-1.5 py-2 text-center" style={{ color: "#64748B", minWidth: "60px" }}>
                     <div className="text-[8px] font-bold uppercase" style={{ color: "#C4972A" }}>{String.fromCharCode(65 + i)}</div>
                     <div className="text-[8px] font-semibold uppercase leading-tight">{name}</div>
@@ -177,9 +178,6 @@ function EvaluatorTable({
             </thead>
             <tbody>
               {e.evaluationSummaries.map((sum) => {
-                const grade = sum.totalScore !== undefined
-                  ? { label: "—", color: "#94A3B8", bg: "#F1F5F9" }
-                  : null
                 const pct = sum.totalScore / sum.maxScore
                 const gradeInfo = pct >= 0.86
                   ? { label: "Sangat Baik", color: "#059669", bg: "#ECFDF5" }
@@ -210,7 +208,7 @@ function EvaluatorTable({
                         )}
                       </div>
                     </td>
-                    {sum.sectionScores.map((score, i) => (
+                    {sum.sectionScores.slice(0, secCount).map((score, i) => (
                       <td key={i} className="px-1.5 py-2.5 text-center">
                         <ScoreCell score={score} max={sum.sectionMax[i]} />
                       </td>
@@ -326,6 +324,7 @@ function EvalRow({
   index,
   lembagaSlug,
   colSpan,
+  sectionCount,
   sessionEvaluatorId,
   onEdit,
 }: {
@@ -333,6 +332,7 @@ function EvalRow({
   index: number
   lembagaSlug: string
   colSpan: number
+  sectionCount: number
   sessionEvaluatorId: string
   onEdit: (t: LembagaEditTarget) => void
 }) {
@@ -396,8 +396,8 @@ function EvalRow({
           </div>
         </td>
 
-        {/* Section score columns A–G */}
-        {e.sectionScores.map((score, i) => (
+        {/* Section score columns — A–E or A–G based on sectionCount */}
+        {e.sectionScores.slice(0, sectionCount).map((score, i) => (
           <td key={i} className="px-2 py-3 text-center" style={{ minWidth: "44px" }}>
             <ScoreCell score={score} max={e.sectionMax[i]} />
           </td>
@@ -536,8 +536,13 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
 
   const isFiltered = statusFilter !== "all" || divisiFilter !== "all" || roleFilter !== "all" || !!searchQ
 
-  // # + Name + 7 sections + Total + Grade + Action = 13
-  const totalCols = 13
+  // Dynamic section count: 5 (A–E) when all visible rows are staff, else 7 (A–G)
+  const sectionCount = useMemo(
+    () => (filtered.every((e) => e.rubricType === "ae") ? 5 : 7),
+    [filtered]
+  )
+  // # + Name + sections + Total + Grade + Action
+  const totalCols = 2 + sectionCount + 3
 
   return (
     <div className="space-y-6 animate-in">
@@ -714,7 +719,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                   <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "2px solid #DDE3EC" }}>
                     <th className="py-2.5 pl-4 text-center text-[10px] font-bold uppercase tracking-widest w-8" style={{ color: "#6B7280" }}>#</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>Nama</th>
-                    {SECTION_NAMES.map((name, i) => (
+                    {SECTION_NAMES.slice(0, sectionCount).map((name, i) => (
                       <th key={i} className="px-2 py-2 text-center" style={{ color: "#6B7280", minWidth: "72px" }}>
                         <div className="text-[8px] font-bold uppercase" style={{ color: "#C4972A" }}>{String.fromCharCode(65 + i)}</div>
                         <div className="text-[9px] font-bold uppercase tracking-wide leading-tight">{name}</div>
@@ -733,6 +738,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                       index={i}
                       lembagaSlug={lembagaSlug}
                       colSpan={totalCols}
+                      sectionCount={sectionCount}
                       sessionEvaluatorId={session.evaluatorId}
                       onEdit={handleEdit}
                     />
