@@ -96,11 +96,11 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
     <div
       className="animate-slide"
       style={{
-        width: "400px",
+        width: "520px",
         flexShrink: 0,
         position: "sticky",
         top: "80px",
-        maxHeight: "calc(100vh - 180px)",
+        height: "calc(100vh - 96px)",
         display: "flex",
         flexDirection: "column",
         borderRadius: "0.75rem",
