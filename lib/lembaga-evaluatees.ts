@@ -7,6 +7,7 @@ export type EvaluateeEmployee = {
   role: string
   lembaga: string
   divisi: string | null
+  finalCatatan: string | null
 }
 
 function parseDivisi(divisi: string | null): string[] {

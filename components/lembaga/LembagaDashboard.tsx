@@ -3,11 +3,12 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   CheckCircle2, PenLine, LogOut, User2,
-  Clock, Search, ChevronDown, X, ChevronRight, Plus,
+  Clock, Search, ChevronDown, X, ChevronRight, Plus, ExternalLink,
 } from "lucide-react"
 import { useMemo, useState, useRef, useEffect, useCallback } from "react"
 import type { EvaluateeRowData, EvalSummary } from "@/lib/lembaga-dashboard-data"
 import { LembagaEvalModal, type LembagaEditTarget } from "./LembagaEvalModal"
+import { LembagaDetailPanel } from "./LembagaDetailPanel"
 
 export type { EvaluateeRowData }
 
@@ -129,11 +130,13 @@ function EvaluatorTable({
   sessionEvaluatorId,
   lembagaSlug,
   onEdit,
+  onDetail,
 }: {
   e: EvaluateeRowData
   sessionEvaluatorId: string
   lembagaSlug: string
   onEdit: (t: LembagaEditTarget) => void
+  onDetail: (e: EvaluateeRowData) => void
 }) {
   const hasMyEval = e.evaluationSummaries.some((s) => s.evaluatorId === sessionEvaluatorId)
   const secCount = e.rubricType === "ae" ? 5 : 7
@@ -143,21 +146,30 @@ function EvaluatorTable({
       {e.evaluationSummaries.length === 0 ? (
         <div className="py-6 flex flex-col items-center gap-2">
           <p className="text-xs text-slate-400">Belum ada penilaian untuk karyawan ini.</p>
-          <button
-            onClick={() =>
-              onEdit({
-                employeeId: e.id,
-                employeeName: e.name,
-                evaluatorId: sessionEvaluatorId,
-                evaluatorName: "Saya",
-                rubricType: e.rubricType,
-              })
-            }
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: "linear-gradient(135deg, #C4972A, #E8B84B)", color: "#1C1409" }}
-          >
-            <Plus size={12} /> Tambah Penilaian
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onDetail(e)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "linear-gradient(135deg, #1E3A5F, #2A4F7A)", color: "#fff" }}
+            >
+              <ExternalLink size={11} /> Detil Karyawan
+            </button>
+            <button
+              onClick={() =>
+                onEdit({
+                  employeeId: e.id,
+                  employeeName: e.name,
+                  evaluatorId: sessionEvaluatorId,
+                  evaluatorName: "Saya",
+                  rubricType: e.rubricType,
+                })
+              }
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "linear-gradient(135deg, #C4972A, #E8B84B)", color: "#1C1409" }}
+            >
+              <Plus size={12} /> Tambah Penilaian
+            </button>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
@@ -249,9 +261,16 @@ function EvaluatorTable({
             </tbody>
           </table>
 
-          {/* Add current-session evaluator's score if not yet submitted */}
-          {!hasMyEval && (
-            <div className="px-4 py-3 border-t" style={{ borderColor: "#E2E8F0" }}>
+          {/* Bottom action bar — always shown */}
+          <div className="px-4 py-3 border-t flex items-center justify-between gap-2" style={{ borderColor: "#E2E8F0" }}>
+            <button
+              onClick={() => onDetail(e)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "linear-gradient(135deg, #1E3A5F, #2A4F7A)", color: "#fff" }}
+            >
+              <ExternalLink size={11} /> Detil Karyawan
+            </button>
+            {!hasMyEval && (
               <button
                 onClick={() =>
                   onEdit({
@@ -265,10 +284,10 @@ function EvaluatorTable({
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
                 style={{ background: "linear-gradient(135deg, #C4972A, #E8B84B)", color: "#1C1409" }}
               >
-                <Plus size={11} /> Tambah Penilaian Saya
+                <Plus size={11} /> Nilai Saya
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -281,12 +300,14 @@ function ExpandedRow({
   sessionEvaluatorId,
   lembagaSlug,
   onEdit,
+  onDetail,
 }: {
   e: EvaluateeRowData
   colSpan: number
   sessionEvaluatorId: string
   lembagaSlug: string
   onEdit: (t: LembagaEditTarget) => void
+  onDetail: (e: EvaluateeRowData) => void
 }) {
   return (
     <tr style={{ backgroundColor: "#F8FAFC" }}>
@@ -301,6 +322,7 @@ function ExpandedRow({
           sessionEvaluatorId={sessionEvaluatorId}
           lembagaSlug={lembagaSlug}
           onEdit={onEdit}
+          onDetail={onDetail}
         />
         {/* Catatan from first evaluator if any */}
         {e.evaluationSummaries.length > 0 && e.evaluationSummaries.some((s) => s.catatan) && (
@@ -327,6 +349,7 @@ function EvalRow({
   sectionCount,
   sessionEvaluatorId,
   onEdit,
+  onDetail,
 }: {
   e: EvaluateeRowData
   index: number
@@ -335,6 +358,7 @@ function EvalRow({
   sectionCount: number
   sessionEvaluatorId: string
   onEdit: (t: LembagaEditTarget) => void
+  onDetail: (e: EvaluateeRowData) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const roleStyle = ROLE_COLORS[e.role] ?? { bg: "#F3F4F6", color: "#6B7280" }
@@ -457,6 +481,7 @@ function EvalRow({
           sessionEvaluatorId={sessionEvaluatorId}
           lembagaSlug={lembagaSlug}
           onEdit={onEdit}
+          onDetail={onDetail}
         />
       )}
     </>
@@ -470,9 +495,11 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
   const [searchQ, setSearchQ]           = useState("")
   const [divisiFilter, setDivisiFilter] = useState("all")
   const [roleFilter, setRoleFilter]     = useState("all")
-  const [editTarget, setEditTarget]     = useState<LembagaEditTarget | null>(null)
+  const [editTarget, setEditTarget]         = useState<LembagaEditTarget | null>(null)
+  const [selectedEmployee, setSelectedEmployee] = useState<EvaluateeRowData | null>(null)
 
-  const handleEdit = useCallback((t: LembagaEditTarget) => setEditTarget(t), [])
+  const handleEdit   = useCallback((t: LembagaEditTarget) => setEditTarget(t), [])
+  const handleDetail = useCallback((e: EvaluateeRowData) => setSelectedEmployee(e), [])
 
   async function logout() {
     await fetch("/api/auth/lembaga", { method: "DELETE" })
@@ -624,7 +651,8 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
           <p className="text-sm text-gray-500">Tidak ada karyawan yang dapat Anda nilai saat ini.</p>
         </div>
       ) : (
-        <div className="card">
+        <div className={selectedEmployee ? "flex gap-5 items-start" : ""}>
+        <div className={`card${selectedEmployee ? " flex-1 min-w-0" : ""}`}>
           {/* Filter bar */}
           <div
             className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5"
@@ -741,12 +769,23 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                       sectionCount={sectionCount}
                       sessionEvaluatorId={session.evaluatorId}
                       onEdit={handleEdit}
+                      onDetail={handleDetail}
                     />
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+        </div>
+        {selectedEmployee && (
+          <LembagaDetailPanel
+            e={selectedEmployee}
+            lembagaSlug={lembagaSlug}
+            sessionEvaluatorId={session.evaluatorId}
+            onClose={() => setSelectedEmployee(null)}
+            onEdit={handleEdit}
+          />
+        )}
         </div>
       )}
 
@@ -757,6 +796,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
           onClose={() => setEditTarget(null)}
           onSaved={() => {
             setEditTarget(null)
+            setSelectedEmployee(null)
             router.refresh()
           }}
         />

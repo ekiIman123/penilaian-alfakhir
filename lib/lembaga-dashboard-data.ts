@@ -14,6 +14,7 @@ export interface EvalSummary {
   maxScore: number
   catatan: string | null
   rubricType: "ae" | "ag"
+  scores: Record<string, number>
 }
 
 export interface EvaluateeRowData {
@@ -29,6 +30,7 @@ export interface EvaluateeRowData {
   maxScore: number
   grade: { label: string; color: string; bg: string } | null
   catatan: string | null
+  finalCatatan: string | null
   evaluationSummaries: EvalSummary[]
 }
 
@@ -121,6 +123,7 @@ export async function buildDashboardRows(
         maxScore,
         catatan: ev.catatan ?? null,
         rubricType,
+        scores: parseScores(ev.scores),
       }
     })
 
@@ -137,6 +140,7 @@ export async function buildDashboardRows(
       maxScore,
       grade,
       catatan,
+      finalCatatan: e.finalCatatan ?? null,
       evaluationSummaries,
     }
   })
