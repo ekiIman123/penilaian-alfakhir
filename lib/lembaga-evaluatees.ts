@@ -26,70 +26,75 @@ export async function getEvaluatees(
 ): Promise<EvaluateeEmployee[]> {
   const { role, lembaga } = session
 
+  // Prevent self-evaluation: exclude any employee whose name matches the logged-in evaluator
+  function excludeSelf(list: EvaluateeEmployee[]): EvaluateeEmployee[] {
+    return list.filter((e) => e.name !== session.name)
+  }
+
   if (role === "superadmin") {
     const target = currentLembaga
     if (!target || target === "all") return []
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: { lembaga: target },
       orderBy: [{ divisi: "asc" }, { name: "asc" }],
-    })
+    }))
   }
 
   if (role === "koordinator") {
     const divisiList = parseDivisi(session.divisi)
     if (divisiList.length === 0) return []
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: { lembaga, role: "staff", divisi: { in: divisiList } },
       orderBy: { name: "asc" },
-    })
+    }))
   }
 
   if (role === "supervisor") {
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: { lembaga: "iysa" },
       orderBy: [{ divisi: "asc" }, { name: "asc" }],
-    })
+    }))
   }
 
   if (role === "ceo") {
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: { lembaga: "icgi" },
       orderBy: { name: "asc" },
-    })
+    }))
   }
 
   if (role === "pm") {
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: { lembaga: "iyora" },
       orderBy: { name: "asc" },
-    })
+    }))
   }
 
   if (role === "founder") {
     const target = currentLembaga ?? lembaga
     if (target === "iysa") {
-      return prisma.employee.findMany({
+      return excludeSelf(await prisma.employee.findMany({
         where: { lembaga: "iysa" },
         orderBy: [{ divisi: "asc" }, { name: "asc" }],
-      })
+      }))
     }
     if (target === "icgi") {
-      return prisma.employee.findMany({
+      return excludeSelf(await prisma.employee.findMany({
         where: { lembaga: "icgi" },
         orderBy: { name: "asc" },
-      })
+      }))
     }
     if (target === "iyora") {
-      return prisma.employee.findMany({
+      return excludeSelf(await prisma.employee.findMany({
         where: { lembaga: "iyora" },
         orderBy: { name: "asc" },
-      })
+      }))
     }
     return []
   }
 
   if (role === "management") {
-    return prisma.employee.findMany({
+    return excludeSelf(await prisma.employee.findMany({
       where: {
         OR: [
           { lembaga: "iysa", role: { in: ["supervisor", "koordinator"] } },
@@ -98,7 +103,7 @@ export async function getEvaluatees(
         ],
       },
       orderBy: { name: "asc" },
-    })
+    }))
   }
 
   return []
