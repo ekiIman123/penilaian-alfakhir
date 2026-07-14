@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X, Save, Loader2 } from "lucide-react"
+import { X, Save, Loader2, Trash2, AlertTriangle } from "lucide-react"
 import { getSectionsForRubric, getNewRubricGrade } from "@/lib/rubrics"
 import { calcSectionRaw } from "@/lib/calculations"
 import { toast } from "sonner"
@@ -25,10 +25,13 @@ export function LembagaEvalModal({
   onSaved: () => void
 }) {
   const [mounted, setMounted] = useState(false)
+  const [evaluationId, setEvaluationId] = useState<string | null>(null)
   const [scores, setScores] = useState<Record<string, number>>({})
   const [catatan, setCatatan] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const sections = getSectionsForRubric(target.rubricType)
 
@@ -38,11 +41,14 @@ export function LembagaEvalModal({
     setLoading(true)
     setScores({})
     setCatatan("")
+    setEvaluationId(null)
+    setConfirmDelete(false)
     fetch(`/api/evaluations?teacherId=${target.employeeId}&evaluatorId=${target.evaluatorId}`)
       .then((r) => r.json())
       .then((data) => {
         if (data?.scores) setScores(data.scores)
         setCatatan(data?.catatan ?? "")
+        setEvaluationId(data?.id ?? null)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -83,6 +89,21 @@ export function LembagaEvalModal({
     } catch {
       toast.error("Gagal menyimpan penilaian")
       setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!evaluationId) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/evaluations/${evaluationId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error()
+      toast.success("Penilaian berhasil dihapus")
+      onSaved()
+    } catch {
+      toast.error("Gagal menghapus penilaian")
+      setDeleting(false)
+      setConfirmDelete(false)
     }
   }
 
@@ -227,14 +248,54 @@ export function LembagaEvalModal({
           )}
         </div>
 
+        {/* Delete confirmation bar */}
+        {confirmDelete && (
+          <div
+            className="px-4 py-3 flex items-center gap-3 shrink-0"
+            style={{ backgroundColor: "#FEF2F2", borderTop: "1px solid #FECACA" }}
+          >
+            <AlertTriangle size={14} style={{ color: "#DC2626", flexShrink: 0 }} />
+            <span className="text-xs font-medium flex-1" style={{ color: "#991B1B" }}>
+              Hapus penilaian ini secara permanen?
+            </span>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ backgroundColor: "#F1F5F9", color: "#64748B" }}
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+              style={{ backgroundColor: "#DC2626" }}
+            >
+              {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+              Ya, Hapus
+            </button>
+          </div>
+        )}
+
         {/* Footer */}
         <div
           className="px-4 py-3 flex items-center justify-between gap-3 shrink-0"
           style={{ borderTop: "1px solid #DDE3EC", backgroundColor: "#F8FAFC" }}
         >
-          <span className="text-[11px]" style={{ color: "#94A3B8" }}>
-            {filledCount}/{allCriteria.length} kriteria diisi
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px]" style={{ color: "#94A3B8" }}>
+              {filledCount}/{allCriteria.length} kriteria diisi
+            </span>
+            {evaluationId && !confirmDelete && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors"
+                style={{ backgroundColor: "#FEE2E2", color: "#DC2626" }}
+              >
+                <Trash2 size={11} /> Hapus
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}

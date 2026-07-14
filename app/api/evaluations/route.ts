@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   if (!evaluation) return NextResponse.json(null)
 
   return NextResponse.json({
+    id: evaluation.id,
     scores: JSON.parse(evaluation.scores as string),
     catatan: evaluation.catatan,
   })
