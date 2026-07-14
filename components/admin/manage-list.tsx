@@ -620,7 +620,7 @@ export function ManageList({ people, type }: Props) {
                       {person.evaluationCount > 0 ? (
                         <span
                           className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                          style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}
+                          style={{ backgroundColor: "#BFDBFE", color: "#1E3A8A" }}
                         >
                           {person.evaluationCount}
                         </span>

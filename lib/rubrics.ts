@@ -410,11 +410,11 @@ export const EVALUATOR_COLORS = ["#3B82F6", "#F59E0B", "#10B981"] as const
 
 // avg = rata-rata per kriteria dalam skala 1.0–4.0
 export function getScoreGrade(avg: number) {
-  if (avg >= 3.4) return { label: "Sangat Baik", color: "#15803D", bg: "#DCFCE7" }
-  if (avg >= 2.8) return { label: "Baik", color: "#1D4ED8", bg: "#DBEAFE" }
-  if (avg >= 2.2) return { label: "Cukup", color: "#B45309", bg: "#FEF3C7" }
-  if (avg >= 1.6) return { label: "Kurang", color: "#C2410C", bg: "#FFEDD5" }
-  return { label: "Sangat Kurang", color: "#DC2626", bg: "#FEE2E2" }
+  if (avg >= 3.4) return { label: "Sangat Baik", color: "#14532D", bg: "#BBF7D0" }
+  if (avg >= 2.8) return { label: "Baik", color: "#1E3A8A", bg: "#BFDBFE" }
+  if (avg >= 2.2) return { label: "Cukup", color: "#78350F", bg: "#FDE68A" }
+  if (avg >= 1.6) return { label: "Kurang", color: "#7C2D12", bg: "#FDBA74" }
+  return { label: "Sangat Kurang", color: "#991B1B", bg: "#FECACA" }
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -637,8 +637,8 @@ export function getSectionsForRubric(rubricType: string): Section[] {
 export function getNewRubricGrade(total: number, rubricType: "ae" | "ag") {
   const max = rubricType === "ae" ? 56 : 80
   const pct = (total / max) * 100
-  if (pct >= 86) return { label: "Sangat Baik", color: "#059669", bg: "#ECFDF5" }
-  if (pct >= 71) return { label: "Baik", color: "#2563EB", bg: "#EFF6FF" }
-  if (pct >= 56) return { label: "Cukup", color: "#D97706", bg: "#FFFBEB" }
-  return { label: "Perlu Perbaikan", color: "#DC2626", bg: "#FEF2F2" }
+  if (pct >= 86) return { label: "Sangat Baik", color: "#065F46", bg: "#BBF7D0" }
+  if (pct >= 71) return { label: "Baik", color: "#1E3A8A", bg: "#BFDBFE" }
+  if (pct >= 56) return { label: "Cukup", color: "#92400E", bg: "#FDE68A" }
+  return { label: "Perlu Perbaikan", color: "#991B1B", bg: "#FECACA" }
 }

@@ -35,10 +35,16 @@ export async function POST(req: Request) {
 
     const rt: string = typeof rubricType === "string" ? rubricType : "standard"
 
+    let lb = "alfakhir"
+    if (rt === "ae" || rt === "ag") {
+      const emp = await prisma.employee.findUnique({ where: { id: teacherId }, select: { lembaga: true } })
+      lb = emp?.lembaga ?? "alfakhir"
+    }
+
     const result = await prisma.evaluation.upsert({
       where: { evaluatorId_employeeId: { evaluatorId, employeeId: teacherId } },
-      update: { scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt },
-      create: { evaluatorId, employeeId: teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt },
+      update: { scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt, lembaga: lb },
+      create: { evaluatorId, employeeId: teacherId, scores: JSON.stringify(scores), catatan: catatan ?? null, rubricType: rt, lembaga: lb },
       include: { evaluator: true, employee: true },
     })
 

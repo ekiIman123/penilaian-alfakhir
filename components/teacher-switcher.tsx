@@ -55,7 +55,7 @@ export function TeacherSwitcher({ currentId, teachers }: { currentId: string; te
         <span className="truncate">{current?.name ?? "Pilih..."}</span>
         <span
           className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-          style={{ backgroundColor: current?.role === "staff" ? "#F5F3FF" : "#EFF6FF", color: current?.role === "staff" ? "#6D28D9" : "#1D4ED8" }}
+          style={{ backgroundColor: current?.role === "staff" ? "#DDD6FE" : "#BFDBFE", color: current?.role === "staff" ? "#4C1D95" : "#1E3A8A" }}
         >
           {current?.role === "staff" ? "Staf" : "Guru"}
         </span>
@@ -92,8 +92,8 @@ export function TeacherSwitcher({ currentId, teachers }: { currentId: string; te
                   onClick={() => { router.push(`/alfakhir/teachers/${t.id}`); setOpen(false) }}
                   className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors"
                   style={{
-                    color: t.id === currentId ? "#1D4ED8" : "#374151",
-                    backgroundColor: t.id === currentId ? "#EFF6FF" : "transparent",
+                    color: t.id === currentId ? "#1E3A8A" : "#374151",
+                    backgroundColor: t.id === currentId ? "#BFDBFE" : "transparent",
                     fontWeight: t.id === currentId ? 600 : 400,
                   }}
                 >
@@ -119,8 +119,8 @@ export function TeacherSwitcher({ currentId, teachers }: { currentId: string; te
                   onClick={() => { router.push(`/alfakhir/teachers/${t.id}`); setOpen(false) }}
                   className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 transition-colors"
                   style={{
-                    color: t.id === currentId ? "#6D28D9" : "#374151",
-                    backgroundColor: t.id === currentId ? "#F5F3FF" : "transparent",
+                    color: t.id === currentId ? "#4C1D95" : "#374151",
+                    backgroundColor: t.id === currentId ? "#DDD6FE" : "transparent",
                     fontWeight: t.id === currentId ? 600 : 400,
                   }}
                 >

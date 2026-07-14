@@ -61,7 +61,7 @@ function LeftSidebar({
   totalCriteria: number
   onNavigate: (s: number) => void
 }) {
-  const totalRaw = Object.values(scores).reduce((a, b) => a + b, 0)
+  const totalRaw = sections.flatMap(s => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
   const max = rubricType === "ae" ? 56 : 80
   const grade = getNewRubricGrade(totalRaw, rubricType)
   const isFinalStep = step === sections.length
@@ -149,8 +149,8 @@ function LeftSidebar({
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0"
                   style={{
-                    backgroundColor: done ? "#DCFCE7" : isCurrent ? `${s.color}18` : "#F9FAFB",
-                    border: isCurrent ? `2px solid ${s.color}` : done ? "2px solid #BBF7D0" : "2px solid transparent",
+                    backgroundColor: done ? "#BBF7D0" : isCurrent ? `${s.color}18` : "#F9FAFB",
+                    border: isCurrent ? `2px solid ${s.color}` : done ? "2px solid #6EE7B7" : "2px solid transparent",
                   }}
                 >
                   {done
@@ -361,7 +361,7 @@ function RubricPanel({
   isFinalStep: boolean
 }) {
   const max = rubricType === "ae" ? 56 : 80
-  const totalRaw = Object.values(scores).reduce((a, b) => a + b, 0)
+  const totalRaw = sections.flatMap(s => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
   const grade = getNewRubricGrade(totalRaw, rubricType)
 
   if (isFinalStep) {
@@ -426,10 +426,10 @@ function RubricPanel({
         <div className="space-y-2">
           {([4, 3, 2, 1] as const).map((n) => {
             const meta = {
-              4: { c: "#15803D", bg: "#DCFCE7", desc: "Selalu / Sangat Baik" },
-              3: { c: "#1D4ED8", bg: "#DBEAFE", desc: "Sering / Baik" },
-              2: { c: "#B45309", bg: "#FEF3C7", desc: "Jarang / Cukup" },
-              1: { c: "#DC2626", bg: "#FEE2E2", desc: "Tidak Pernah / Kurang" },
+              4: { c: "#14532D", bg: "#BBF7D0", desc: "Selalu / Sangat Baik" },
+              3: { c: "#1E3A8A", bg: "#BFDBFE", desc: "Sering / Baik" },
+              2: { c: "#78350F", bg: "#FDE68A", desc: "Jarang / Cukup" },
+              1: { c: "#991B1B", bg: "#FECACA", desc: "Tidak Pernah / Kurang" },
             }[n]
             return (
               <div key={n} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: meta.bg }}>
@@ -556,7 +556,7 @@ export function EvalForm({
   const currentSection = isFinalStep ? null : sections[step]
   const totalCriteria = sections.flatMap((s) => s.criteria).length
   const totalFilled = sections.flatMap((s) => s.criteria).filter((c) => scores[c.id]).length
-  const totalRaw = Object.values(scores).reduce((a, b) => a + b, 0)
+  const totalRaw = sections.flatMap((s) => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
   const max = rubricType === "ae" ? 56 : 80
   const grade = getNewRubricGrade(totalRaw, rubricType)
   const effectiveFocusedId = focusedId ?? (currentSection?.criteria[0]?.id ?? null)
@@ -598,6 +598,8 @@ export function EvalForm({
       toast.error(`Masih ada ${missing.length} kriteria yang belum dinilai`)
       return
     }
+    const cleanScores: Record<string, number> = {}
+    for (const id of allIds) cleanScores[id] = scores[id]
     setSubmitting(true)
     try {
       const res = await fetch("/api/evaluations", {
@@ -606,7 +608,7 @@ export function EvalForm({
         body: JSON.stringify({
           evaluatorId,
           teacherId: employeeId,
-          scores,
+          scores: cleanScores,
           catatan: catatan.trim() || null,
           rubricType,
         }),

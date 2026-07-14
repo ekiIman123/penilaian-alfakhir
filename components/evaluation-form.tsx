@@ -237,10 +237,10 @@ function RubricPanel({
         <div className="space-y-2">
           {([4, 3, 2, 1] as const).map((n) => {
             const meta = {
-              4: { c: "#15803D", bg: "#DCFCE7", desc: "Selalu / Sangat Baik" },
-              3: { c: "#1D4ED8", bg: "#DBEAFE", desc: "Sering / Baik" },
-              2: { c: "#B45309", bg: "#FEF3C7", desc: "Jarang / Cukup" },
-              1: { c: "#DC2626", bg: "#FEE2E2", desc: "Tidak Pernah / Kurang" },
+              4: { c: "#14532D", bg: "#BBF7D0", desc: "Selalu / Sangat Baik" },
+              3: { c: "#1E3A8A", bg: "#BFDBFE", desc: "Sering / Baik" },
+              2: { c: "#78350F", bg: "#FDE68A", desc: "Jarang / Cukup" },
+              1: { c: "#991B1B", bg: "#FECACA", desc: "Tidak Pernah / Kurang" },
             }[n]
             return (
               <div key={n} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ backgroundColor: meta.bg }}>
@@ -460,9 +460,9 @@ function LeftSidebar({
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0"
                   style={{
                     backgroundColor: isDone && sectionDone
-                      ? "#DCFCE7"
+                      ? "#BBF7D0"
                       : isDone && !sectionData
-                      ? "#F0FDF4"
+                      ? "#D1FAE5"
                       : isCurrent
                       ? `${sectionData?.color ?? "#C4972A"}18`
                       : "#F9FAFB",

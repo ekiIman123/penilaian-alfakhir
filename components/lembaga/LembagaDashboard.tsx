@@ -41,14 +41,14 @@ const ROLE_LABEL: Record<string, string> = {
 }
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
-  koordinator: { bg: "#EDE9FE", color: "#5B21B6" },
-  supervisor:  { bg: "#DBEAFE", color: "#1D4ED8" },
-  ceo:         { bg: "#FEE2E2", color: "#B91C1C" },
-  pm:          { bg: "#D1FAE5", color: "#065F46" },
-  staff:       { bg: "#EEF2FF", color: "#4338CA" },
-  founder:     { bg: "#FEF3C7", color: "#92400E" },
-  management:  { bg: "#F3F4F6", color: "#374151" },
-  superadmin:  { bg: "#FDF4FF", color: "#7E22CE" },
+  koordinator: { bg: "#DDD6FE", color: "#4C1D95" },
+  supervisor:  { bg: "#BFDBFE", color: "#1E3A8A" },
+  ceo:         { bg: "#FECACA", color: "#991B1B" },
+  pm:          { bg: "#A7F3D0", color: "#064E3B" },
+  staff:       { bg: "#C7D2FE", color: "#3730A3" },
+  founder:     { bg: "#FDE68A", color: "#78350F" },
+  management:  { bg: "#E5E7EB", color: "#1F2937" },
+  superadmin:  { bg: "#E9D5FF", color: "#6B21A8" },
 }
 
 type StatusFilter = "all" | "done" | "pending"
@@ -116,7 +116,7 @@ function FilterDropdown<T extends string>({
 function ScoreCell({ score, max }: { score: number | null; max: number | null }) {
   if (score === null || max === null) return <span style={{ color: "#CBD5E1" }}>—</span>
   const pct = max > 0 ? score / max : 0
-  const color = pct >= 0.86 ? "#059669" : pct >= 0.71 ? "#2563EB" : pct >= 0.56 ? "#D97706" : "#DC2626"
+  const color = pct >= 0.86 ? "#065F46" : pct >= 0.71 ? "#1E3A8A" : pct >= 0.56 ? "#92400E" : "#991B1B"
   return (
     <span className="tabular-nums font-semibold text-xs" style={{ color }}>
       {score}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{max}</span>
@@ -180,12 +180,12 @@ function EvaluatorTable({
               {e.evaluationSummaries.map((sum) => {
                 const pct = sum.totalScore / sum.maxScore
                 const gradeInfo = pct >= 0.86
-                  ? { label: "Sangat Baik", color: "#059669", bg: "#ECFDF5" }
+                  ? { label: "Sangat Baik", color: "#065F46", bg: "#BBF7D0" }
                   : pct >= 0.71
-                  ? { label: "Baik", color: "#2563EB", bg: "#EFF6FF" }
+                  ? { label: "Baik", color: "#1E3A8A", bg: "#BFDBFE" }
                   : pct >= 0.56
-                  ? { label: "Cukup", color: "#D97706", bg: "#FFFBEB" }
-                  : { label: "Perlu Perbaikan", color: "#DC2626", bg: "#FEF2F2" }
+                  ? { label: "Cukup", color: "#92400E", bg: "#FDE68A" }
+                  : { label: "Perlu Perbaikan", color: "#991B1B", bg: "#FECACA" }
                 return (
                   <tr key={sum.evaluatorId} style={{ borderTop: "1px solid #E2E8F0" }}>
                     <td className="px-3 py-2.5">
@@ -201,7 +201,7 @@ function EvaluatorTable({
                           <span
                             className="text-[8px] px-1.5 py-0.5 rounded font-medium shrink-0"
                             title={sum.catatan}
-                            style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
+                            style={{ backgroundColor: "#C7D2FE", color: "#3730A3" }}
                           >
                             catatan
                           </span>
@@ -358,8 +358,8 @@ function EvalRow({
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
               style={{
-                backgroundColor: e.evaluated ? "#DCFCE7" : "#F3F4F6",
-                color: e.evaluated ? "#15803D" : "#9CA3AF",
+                backgroundColor: e.evaluated ? "#BBF7D0" : "#F3F4F6",
+                color: e.evaluated ? "#14532D" : "#9CA3AF",
               }}
             >
               {e.name.charAt(0).toUpperCase()}
@@ -382,12 +382,12 @@ function EvalRow({
                   {ROLE_LABEL[e.role] ?? e.role}
                 </span>
                 {e.divisi && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FDE68A", color: "#78350F" }}>
                     {e.divisi}
                   </span>
                 )}
                 {hasAny && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8" }}>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#BFDBFE", color: "#1E3A8A" }}>
                     {e.evaluationSummaries.length} penilai
                   </span>
                 )}
@@ -424,7 +424,7 @@ function EvalRow({
               {e.grade.label}
             </span>
           ) : (
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FDE68A", color: "#78350F" }}>
               Belum
             </span>
           )}
