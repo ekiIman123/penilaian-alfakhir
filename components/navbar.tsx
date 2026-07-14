@@ -1,8 +1,8 @@
 "use client"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, Database, Menu, Settings, X } from "lucide-react"
-import { useState, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { LayoutDashboard, Database, Menu, Settings, X, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 
 type NavItem = {
   href: string
@@ -63,6 +63,12 @@ const CONFIGS: Record<string, LembagaConfig> = {
   },
 }
 
+const LEMBAGA_GROUP = [
+  { key: "iysa",  label: "IYSA",  abbr: "IY", href: "/iysa/dashboard" },
+  { key: "icgi",  label: "ICGI",  abbr: "IC", href: "/icgi/dashboard" },
+  { key: "iyora", label: "IYORA", abbr: "IO", href: "/iyora/dashboard" },
+]
+
 function detectLembaga(pathname: string): string {
   if (pathname.startsWith("/iysa"))    return "iysa"
   if (pathname.startsWith("/icgi"))    return "icgi"
@@ -74,6 +80,85 @@ function isActive(pathname: string, href: string, exact: boolean) {
   return exact ? pathname === href : pathname.startsWith(href)
 }
 
+function LembagaSwitcher({ current }: { current: string }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!open) return
+    function h(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [open])
+
+  const currentItem = LEMBAGA_GROUP.find((l) => l.key === current)!
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+        style={{
+          backgroundColor: open ? "rgba(196,151,42,0.18)" : "rgba(196,151,42,0.10)",
+          color: "rgba(196,151,42,0.95)",
+          border: "1px solid rgba(196,151,42,0.30)",
+        }}
+        onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(196,151,42,0.18)" }}
+        onMouseLeave={(e) => { if (!open) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(196,151,42,0.10)" }}
+      >
+        <span>{currentItem.label}</span>
+        <ChevronDown size={11} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full mt-1.5 z-[200] min-w-[120px] rounded-xl overflow-hidden"
+          style={{
+            backgroundColor: "#0F2540",
+            border: "1px solid rgba(196,151,42,0.25)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.40)",
+          }}
+        >
+          {LEMBAGA_GROUP.map((l) => (
+            <button
+              key={l.key}
+              onClick={() => { setOpen(false); router.push(l.href) }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium transition-colors"
+              style={{
+                color: l.key === current ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.70)",
+                backgroundColor: l.key === current ? "rgba(196,151,42,0.12)" : "transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (l.key !== current) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.07)"
+              }}
+              onMouseLeave={(e) => {
+                if (l.key !== current) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0"
+                style={{
+                  backgroundColor: l.key === current ? "rgba(196,151,42,0.25)" : "rgba(255,255,255,0.10)",
+                  color: l.key === current ? "#E8B84B" : "rgba(255,255,255,0.55)",
+                }}
+              >
+                {l.abbr}
+              </div>
+              {l.label}
+              {l.key === current && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#C4972A" }} />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Navbar() {
   const path = usePathname()
   const [open, setOpen] = useState(false)
@@ -83,6 +168,7 @@ export function Navbar() {
 
   const lembagaKey = detectLembaga(path)
   const config = CONFIGS[lembagaKey]
+  const isLembagaGroup = lembagaKey !== "alfakhir"
 
   return (
     <nav
@@ -95,38 +181,47 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Brand */}
-        <Link href={config.homeHref} className="flex items-center gap-3">
-          {!logoFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/api/logo?lembaga=${lembagaKey}`}
-              alt="Logo"
-              className="h-9 w-auto shrink-0"
-              onError={() => setLogoFailed(true)}
-            />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
-              style={{
-                background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                color: "#0F2540",
-              }}
-            >
-              {config.abbr}
+        <div className="flex items-center gap-3">
+          <Link href={config.homeHref} className="flex items-center gap-3">
+            {!logoFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/api/logo?lembaga=${lembagaKey}`}
+                alt="Logo"
+                className="h-9 w-auto shrink-0"
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
+                  color: "#0F2540",
+                }}
+              >
+                {config.abbr}
+              </div>
+            )}
+            <div className="leading-tight">
+              <div className="font-semibold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.95)" }}>
+                {config.label}
+              </div>
+              <div
+                className="text-[10px] tracking-widest uppercase hidden sm:block"
+                style={{ color: "rgba(255,255,255,0.45)" }}
+              >
+                {config.tagline}
+              </div>
+            </div>
+          </Link>
+
+          {/* Lembaga switcher — only for iysa/icgi/iyora */}
+          {isLembagaGroup && (
+            <div className="hidden md:block ml-1">
+              <LembagaSwitcher current={lembagaKey} />
             </div>
           )}
-          <div className="leading-tight">
-            <div className="font-semibold text-sm tracking-wide" style={{ color: "rgba(196,151,42,0.95)" }}>
-              {config.label}
-            </div>
-            <div
-              className="text-[10px] tracking-widest uppercase hidden sm:block"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-            >
-              {config.tagline}
-            </div>
-          </div>
-        </Link>
+        </div>
 
         {/* Desktop nav */}
         <div
@@ -187,6 +282,32 @@ export function Navbar() {
           }}
         >
           <div className="px-4 py-3 flex flex-col gap-1">
+            {/* Lembaga switcher on mobile */}
+            {isLembagaGroup && (
+              <div className="mb-2 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="text-[9px] uppercase tracking-widest mb-1.5 px-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  Pilih Lembaga
+                </div>
+                <div className="flex gap-1.5">
+                  {LEMBAGA_GROUP.map((l) => (
+                    <Link
+                      key={l.key}
+                      href={l.href}
+                      className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-center"
+                      style={{
+                        backgroundColor: l.key === lembagaKey ? "rgba(196,151,42,0.12)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${l.key === lembagaKey ? "rgba(196,151,42,0.30)" : "transparent"}`,
+                        color: l.key === lembagaKey ? "rgba(196,151,42,0.95)" : "rgba(255,255,255,0.55)",
+                      }}
+                    >
+                      <span className="text-[9px] font-bold">{l.abbr}</span>
+                      <span className="text-[10px] font-medium">{l.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {config.navItems.map((item) => {
               const active = isActive(path, item.href, item.exact)
               const Icon = item.icon
