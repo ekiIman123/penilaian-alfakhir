@@ -6,6 +6,18 @@ import {
   Clock, Search, ChevronDown, X, ChevronRight,
 } from "lucide-react"
 import { useMemo, useState, useRef, useEffect } from "react"
+import { AG_SECTIONS } from "@/lib/rubrics"
+
+// Short display names for each AG section column header
+const SECTION_NAMES = [
+  "Disiplin",
+  "Loyalitas",
+  "Komitmen",
+  "Jujur & Amanah",
+  "Persatuan",
+  "Leadership",
+  "Manajemen Tim",
+]
 
 export interface EvaluateeRow {
   id: string
@@ -29,7 +41,6 @@ interface Props {
   evaluatees: EvaluateeRow[]
 }
 
-const SECTION_LABELS = ["A", "B", "C", "D", "E", "F", "G"]
 
 const ROLE_LABEL: Record<string, string> = {
   staff:       "Staff",
@@ -604,13 +615,16 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
             </div>
           ) : (
             <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "820px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1060px" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#F1F4F8", borderBottom: "2px solid #DDE3EC" }}>
                     <th className="py-2.5 pl-4 text-center text-[10px] font-bold uppercase tracking-widest w-8" style={{ color: "#6B7280" }}>#</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: "#6B7280" }}>Nama</th>
-                    {SECTION_LABELS.map((l) => (
-                      <th key={l} className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-11" style={{ color: "#6B7280" }}>{l}</th>
+                    {SECTION_NAMES.map((name, i) => (
+                      <th key={i} className="px-2 py-2 text-center" style={{ color: "#6B7280", minWidth: "72px" }}>
+                        <div className="text-[8px] font-bold uppercase" style={{ color: "#C4972A" }}>{String.fromCharCode(65 + i)}</div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide leading-tight">{name}</div>
+                      </th>
                     ))}
                     <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-14" style={{ color: "#6B7280" }}>Total</th>
                     <th className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-20" style={{ color: "#6B7280" }}>Predikat</th>
