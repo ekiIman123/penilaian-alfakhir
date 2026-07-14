@@ -231,9 +231,9 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                   y="28"
                   textAnchor="middle"
                   fill="white"
-                  style={{ fontSize: "13px", fontWeight: 700 }}
+                  style={{ fontSize: "11px", fontWeight: 700 }}
                 >
-                  {totalScore}
+                  {maxScore > 0 ? (totalScore * 4 / maxScore).toFixed(1) : "0"}
                 </text>
                 <text
                   x="32"
@@ -242,7 +242,7 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                   fill="rgba(255,255,255,0.50)"
                   style={{ fontSize: "9px" }}
                 >
-                  /{maxScore}
+                  /4
                 </text>
               </g>
             </svg>

@@ -185,7 +185,7 @@ function EvaluatorTable({
                     <div className="text-[8px] font-semibold uppercase leading-tight">{name}</div>
                   </th>
                 ))}
-                <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Total</th>
+                <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Rata-rata</th>
                 <th className="px-2 py-2 text-center text-[9px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>Predikat</th>
                 <th className="w-16" />
               </tr>
@@ -229,7 +229,7 @@ function EvaluatorTable({
                     ))}
                     <td className="px-2 py-2.5 text-center">
                       <span className="tabular-nums font-bold text-xs" style={{ color: "#0F2540" }}>
-                        {sum.totalScore}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{sum.maxScore}</span>
+                        {(sum.totalScore * 4 / sum.maxScore).toFixed(1)}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/4</span>
                       </span>
                     </td>
                     <td className="px-2 py-2.5 text-center">
@@ -433,7 +433,7 @@ function EvalRow({
         <td className="px-3 py-3 text-center" style={{ minWidth: "60px" }}>
           {e.totalScore !== null ? (
             <span className="tabular-nums font-bold text-xs" style={{ color: "#0F2540" }}>
-              {e.totalScore}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{e.maxScore}</span>
+              {(e.totalScore * 4 / e.maxScore).toFixed(1)}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/4</span>
             </span>
           ) : (
             <span style={{ color: "#CBD5E1", fontSize: "10px" }}>—</span>
@@ -755,7 +755,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                         <div className="text-[9px] font-bold uppercase tracking-wide leading-tight">{name}</div>
                       </th>
                     ))}
-                    <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-14" style={{ color: "#6B7280" }}>Total</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-14" style={{ color: "#6B7280" }}>Rata-rata</th>
                     <th className="px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest w-20" style={{ color: "#6B7280" }}>Predikat</th>
                     <th className="w-20" />
                   </tr>

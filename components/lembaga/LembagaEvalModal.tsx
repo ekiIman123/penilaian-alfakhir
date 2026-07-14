@@ -143,7 +143,7 @@ export function LembagaEvalModal({
             {grade && totalScore !== null && (
               <div className="text-right">
                 <div className="text-xl font-bold tabular-nums leading-none" style={{ color: "#E8B84B" }}>
-                  {totalScore}<span className="text-xs font-normal opacity-60">/{maxScore}</span>
+                  {maxScore > 0 ? (totalScore * 4 / maxScore).toFixed(1) : "0"}<span className="text-xs font-normal opacity-60">/4</span>
                 </div>
                 <div
                   className="text-[9px] font-bold mt-1 px-2 py-0.5 rounded-full inline-block"

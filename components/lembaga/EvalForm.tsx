@@ -38,9 +38,9 @@ function ScoreRing({ total, max, color, size = 100 }: { total: number; max: numb
         style={{ transition: "stroke-dashoffset 0.7s cubic-bezier(0.22,1,0.36,1)" }}
       />
       <text x={cx} y={cx - size * 0.04} textAnchor="middle" dominantBaseline="middle"
-        fontSize={size * 0.22} fontWeight="900" fill={color}>{total}</text>
+        fontSize={size * 0.22} fontWeight="900" fill={color}>{max > 0 ? (total * 4 / max).toFixed(1) : "0"}</text>
       <text x={cx} y={cx + size * 0.17} textAnchor="middle"
-        fontSize={size * 0.1} fill="#9CA3AF">/ {max}</text>
+        fontSize={size * 0.1} fill="#9CA3AF">/ 4</text>
     </svg>
   )
 }
@@ -386,7 +386,7 @@ function RubricPanel({
               <div key={s.id}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-semibold text-gray-600 truncate max-w-[120px]">{s.label}</span>
-                  <span className="text-xs font-bold shrink-0 ml-1" style={{ color: s.color }}>{raw}/{s.maxScore}</span>
+                  <span className="text-xs font-bold shrink-0 ml-1" style={{ color: s.color }}>{s.maxScore > 0 ? (raw * 4 / s.maxScore).toFixed(1) : "0"}/4</span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8F0" }}>
                   <div
@@ -398,9 +398,9 @@ function RubricPanel({
             )
           })}
           <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#DDE3EC" }}>
-            <span className="text-sm font-bold text-gray-700">Total</span>
+            <span className="text-sm font-bold text-gray-700">Rata-rata</span>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-black" style={{ color: grade.color }}>{totalRaw}<span className="text-sm text-gray-400">/{max}</span></span>
+              <span className="text-xl font-black" style={{ color: grade.color }}>{max > 0 ? (totalRaw * 4 / max).toFixed(1) : "0"}<span className="text-sm text-gray-400">/4</span></span>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ color: grade.color, backgroundColor: grade.bg }}>
                 {grade.label}
               </span>
@@ -765,7 +765,7 @@ export function EvalForm({
                       <div key={s.id}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-semibold text-gray-600 truncate">{s.label}</span>
-                          <span className="text-xs font-bold shrink-0 ml-1" style={{ color: s.color }}>{raw}/{s.maxScore}</span>
+                          <span className="text-xs font-bold shrink-0 ml-1" style={{ color: s.color }}>{s.maxScore > 0 ? (raw * 4 / s.maxScore).toFixed(1) : "0"}/4</span>
                         </div>
                         <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8F0" }}>
                           <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
@@ -774,9 +774,9 @@ export function EvalForm({
                     )
                   })}
                   <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: "#DDE3EC" }}>
-                    <span className="font-bold text-gray-700">Total</span>
+                    <span className="font-bold text-gray-700">Rata-rata</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xl font-black" style={{ color: grade.color }}>{totalRaw}<span className="text-sm text-gray-400">/{max}</span></span>
+                      <span className="text-xl font-black" style={{ color: grade.color }}>{max > 0 ? (totalRaw * 4 / max).toFixed(1) : "0"}<span className="text-sm text-gray-400">/4</span></span>
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ color: grade.color, backgroundColor: grade.bg }}>
                         {grade.label}
                       </span>
