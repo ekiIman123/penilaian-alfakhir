@@ -306,7 +306,7 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                       {SECTION_NAMES[i]}
                     </span>
                     <span style={{ fontSize: "10px", fontWeight: 700, color: sec.color, tabularNums: true } as React.CSSProperties}>
-                      {raw}<span style={{ fontSize: "8px", fontWeight: 400, color: "#94A3B8" }}>/{mx}</span>
+                      {((raw * 4) / mx).toFixed(1)}<span style={{ fontSize: "8px", fontWeight: 400, color: "#94A3B8" }}>/4</span>
                     </span>
                   </div>
                   <div style={{ height: "5px", borderRadius: "3px", backgroundColor: "#EDF0F5", overflow: "hidden" }}>

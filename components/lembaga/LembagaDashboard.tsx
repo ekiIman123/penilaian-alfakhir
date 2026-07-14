@@ -117,10 +117,12 @@ function FilterDropdown<T extends string>({
 function ScoreCell({ score, max }: { score: number | null; max: number | null }) {
   if (score === null || max === null) return <span style={{ color: "#CBD5E1" }}>—</span>
   const pct = max > 0 ? score / max : 0
+  const avg = max > 0 ? (score * 4) / max : 0
   const color = pct >= 0.86 ? "#065F46" : pct >= 0.71 ? "#1E3A8A" : pct >= 0.56 ? "#92400E" : "#991B1B"
+  const display = Number.isInteger(avg) ? avg.toString() : avg.toFixed(1)
   return (
     <span className="tabular-nums font-semibold text-xs" style={{ color }}>
-      {score}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/{max}</span>
+      {display}<span className="text-[9px] font-normal" style={{ color: "#94A3B8" }}>/4</span>
     </span>
   )
 }
