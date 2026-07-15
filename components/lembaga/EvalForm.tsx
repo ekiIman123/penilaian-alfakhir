@@ -62,7 +62,7 @@ function LeftSidebar({
   onNavigate: (s: number) => void
 }) {
   const totalRaw = sections.flatMap(s => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
-  const max = rubricType === "ae" ? 56 : 80
+  const max = rubricType === "ae" ? 60 : 84
   const grade = getNewRubricGrade(totalRaw, rubricType)
   const isFinalStep = step === sections.length
 
@@ -360,7 +360,7 @@ function RubricPanel({
   rubricType: "ae" | "ag"
   isFinalStep: boolean
 }) {
-  const max = rubricType === "ae" ? 56 : 80
+  const max = rubricType === "ae" ? 60 : 84
   const totalRaw = sections.flatMap(s => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
   const grade = getNewRubricGrade(totalRaw, rubricType)
 
@@ -557,7 +557,7 @@ export function EvalForm({
   const totalCriteria = sections.flatMap((s) => s.criteria).length
   const totalFilled = sections.flatMap((s) => s.criteria).filter((c) => scores[c.id]).length
   const totalRaw = sections.flatMap((s) => s.criteria).reduce((sum, c) => sum + (scores[c.id] ?? 0), 0)
-  const max = rubricType === "ae" ? 56 : 80
+  const max = rubricType === "ae" ? 60 : 84
   const grade = getNewRubricGrade(totalRaw, rubricType)
   const effectiveFocusedId = focusedId ?? (currentSection?.criteria[0]?.id ?? null)
 

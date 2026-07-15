@@ -67,7 +67,7 @@ export async function buildDashboardRows(
 
   return evaluatees.map((e) => {
     const rubricType = rubricTypeFor(e.role)
-    const maxScore = rubricType === "ae" ? 56 : 80
+    const maxScore = rubricType === "ae" ? 60 : 84
     const applicableSections = rubricType === "ae" ? 5 : 7
 
     const evals = evalsByEmployee.get(e.id) ?? []

@@ -66,7 +66,7 @@ export function LembagaEvalModal({
   const totalScore = isComplete
     ? sections.reduce((sum, sec) => sum + calcSectionRaw(scores, sec.id, sections), 0)
     : null
-  const maxScore = target.rubricType === "ae" ? 56 : 80
+  const maxScore = target.rubricType === "ae" ? 60 : 84
   const grade = totalScore !== null ? getNewRubricGrade(totalScore, target.rubricType) : null
 
   async function handleSave() {

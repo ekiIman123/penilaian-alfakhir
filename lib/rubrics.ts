@@ -488,7 +488,7 @@ const AE_C: Section = {
   color: "#059669",
   lightBg: "#ECFDF5",
   textColor: "#047857",
-  maxScore: 8,
+  maxScore: 12,
   criteria: [
     { id: "c1", label: "Tanggung jawab terhadap tugas", options: [
       { score: 4, text: "Sangat bertanggung jawab terhadap tugas" },
@@ -501,6 +501,12 @@ const AE_C: Section = {
       { score: 3, text: "Konsisten dan sungguh-sungguh" },
       { score: 2, text: "Kurang konsisten atau kurang sungguh-sungguh" },
       { score: 1, text: "Tidak konsisten dan tidak sungguh-sungguh" },
+    ]},
+    { id: "c3", label: "Kesesuaian antara proses dan hasil", options: [
+      { score: 4, text: "Proses dan hasil selalu sesuai antara yang direncanakan dan dicapai" },
+      { score: 3, text: "Proses dan hasil sering sesuai antara yang direncanakan dan dicapai" },
+      { score: 2, text: "Proses dan hasil kurang sesuai antara yang direncanakan dan dicapai" },
+      { score: 1, text: "Proses dan hasil tidak sesuai antara yang direncanakan dan dicapai" },
     ]},
   ],
 }
@@ -635,7 +641,7 @@ export function getSectionsForRubric(rubricType: string): Section[] {
 }
 
 export function getNewRubricGrade(total: number, rubricType: "ae" | "ag") {
-  const max = rubricType === "ae" ? 56 : 80
+  const max = rubricType === "ae" ? 60 : 84
   const pct = (total / max) * 100
   if (pct >= 86) return { label: "Sangat Baik", color: "#065F46", bg: "#BBF7D0" }
   if (pct >= 71) return { label: "Baik", color: "#1E3A8A", bg: "#BFDBFE" }
