@@ -548,7 +548,14 @@ export function EvalForm({
   const sections: Section[] = getSectionsForRubric(rubricType)
   const [step, setStep] = useState(0)
   const [scores, setScores] = useState<Record<string, number>>(existing?.scores ?? {})
-  const [catatan, setCatatan] = useState(existing?.catatan ?? "")
+  const [sectionCatatan, setSectionCatatan] = useState<Record<string, string>>(() => {
+    if (!existing?.catatan) return {}
+    try {
+      const p = JSON.parse(existing.catatan)
+      if (p && typeof p === "object" && !Array.isArray(p)) return p as Record<string, string>
+    } catch {}
+    return {}
+  })
   const [submitting, setSubmitting] = useState(false)
   const [focusedId, setFocusedId] = useState<string | null>(null)
 
@@ -600,6 +607,10 @@ export function EvalForm({
     }
     const cleanScores: Record<string, number> = {}
     for (const id of allIds) cleanScores[id] = scores[id]
+    const catatanEntries = Object.fromEntries(
+      Object.entries(sectionCatatan).filter(([, v]) => v.trim())
+    )
+    const catatanPayload = Object.keys(catatanEntries).length > 0 ? JSON.stringify(catatanEntries) : null
     setSubmitting(true)
     try {
       const res = await fetch("/api/evaluations", {
@@ -609,7 +620,7 @@ export function EvalForm({
           evaluatorId,
           teacherId: employeeId,
           scores: cleanScores,
-          catatan: catatan.trim() || null,
+          catatan: catatanPayload,
           rubricType,
         }),
       })
@@ -727,6 +738,34 @@ export function EvalForm({
                   />
                 ))}
               </div>
+              <div className="px-5 pb-5">
+                <div
+                  className="rounded-xl p-3.5"
+                  style={{ backgroundColor: `${currentSection.color}08`, border: `1px solid ${currentSection.color}25` }}
+                >
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: currentSection.color }} />
+                    <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: currentSection.color }}>
+                      Catatan {currentSection.label}
+                    </span>
+                  </div>
+                  <textarea
+                    value={sectionCatatan[currentSection.id] ?? ""}
+                    onChange={(e) => setSectionCatatan((prev) => ({ ...prev, [currentSection.id]: e.target.value }))}
+                    placeholder="Tambahkan catatan untuk aspek ini (opsional)…"
+                    rows={3}
+                    className="w-full text-xs rounded-lg px-3 py-2.5 resize-none outline-none"
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      border: `1px solid ${currentSection.color}30`,
+                      color: "#374151",
+                      lineHeight: "1.6",
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = currentSection.color)}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = `${currentSection.color}30`)}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -787,20 +826,35 @@ export function EvalForm({
 
               <div className="card">
                 <div className="px-5 py-3.5 border-b" style={{ borderColor: "#DDE3EC" }}>
-                  <h3 className="font-bold text-gray-800">Catatan Khusus</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Opsional</p>
+                  <h3 className="font-bold text-gray-800">Catatan Per Aspek</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Opsional — dapat dikosongkan</p>
                 </div>
-                <div className="p-5">
-                  <textarea
-                    value={catatan}
-                    onChange={(e) => setCatatan(e.target.value)}
-                    rows={4}
-                    placeholder="Tuliskan catatan khusus jika diperlukan..."
-                    className="w-full px-3.5 py-3 border-2 border-gray-200 rounded-xl text-sm resize-none"
-                    style={{ outline: "none" }}
-                    onFocus={(e) => (e.target.style.borderColor = "#C4972A")}
-                    onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
-                  />
+                <div className="p-5 space-y-4">
+                  {sections.map((s) => (
+                    <div key={s.id}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-sm">{s.icon}</span>
+                        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: s.color }}>
+                          {s.label}
+                        </span>
+                      </div>
+                      <textarea
+                        value={sectionCatatan[s.id] ?? ""}
+                        onChange={(e) => setSectionCatatan((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                        placeholder="Catatan untuk aspek ini (opsional)…"
+                        rows={2}
+                        className="w-full text-xs rounded-lg px-3 py-2.5 resize-none outline-none"
+                        style={{
+                          backgroundColor: "#F8FAFC",
+                          border: "1px solid #DDE3EC",
+                          color: "#374151",
+                          lineHeight: "1.6",
+                        }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = s.color)}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "#DDE3EC")}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

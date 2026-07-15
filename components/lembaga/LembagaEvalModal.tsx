@@ -27,7 +27,7 @@ export function LembagaEvalModal({
   const [mounted, setMounted] = useState(false)
   const [evaluationId, setEvaluationId] = useState<string | null>(null)
   const [scores, setScores] = useState<Record<string, number>>({})
-  const [catatan, setCatatan] = useState("")
+  const [sectionCatatan, setSectionCatatan] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -40,14 +40,19 @@ export function LembagaEvalModal({
   useEffect(() => {
     setLoading(true)
     setScores({})
-    setCatatan("")
+    setSectionCatatan({})
     setEvaluationId(null)
     setConfirmDelete(false)
     fetch(`/api/evaluations?teacherId=${target.employeeId}&evaluatorId=${target.evaluatorId}`)
       .then((r) => r.json())
       .then((data) => {
         if (data?.scores) setScores(data.scores)
-        setCatatan(data?.catatan ?? "")
+        if (data?.catatan) {
+          try {
+            const p = JSON.parse(data.catatan)
+            if (p && typeof p === "object" && !Array.isArray(p)) setSectionCatatan(p as Record<string, string>)
+          } catch {}
+        }
         setEvaluationId(data?.id ?? null)
         setLoading(false)
       })
@@ -72,6 +77,10 @@ export function LembagaEvalModal({
   async function handleSave() {
     setSaving(true)
     try {
+      const catatanEntries = Object.fromEntries(
+        Object.entries(sectionCatatan).filter(([, v]) => v.trim())
+      )
+      const catatanPayload = Object.keys(catatanEntries).length > 0 ? JSON.stringify(catatanEntries) : null
       const res = await fetch("/api/evaluations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,7 +88,7 @@ export function LembagaEvalModal({
           teacherId: target.employeeId,
           evaluatorId: target.evaluatorId,
           scores,
-          catatan: catatan || null,
+          catatan: catatanPayload,
           rubricType: target.rubricType,
         }),
       })
@@ -216,34 +225,33 @@ export function LembagaEvalModal({
                         )
                       })}
                     </div>
+                    {/* Per-section catatan */}
+                    <div className="mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${section.color}20` }}>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: section.color }} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: section.color }}>
+                          Catatan
+                        </span>
+                      </div>
+                      <textarea
+                        value={sectionCatatan[section.id] ?? ""}
+                        onChange={(e) => setSectionCatatan((prev) => ({ ...prev, [section.id]: e.target.value }))}
+                        placeholder="Catatan untuk aspek ini (opsional)…"
+                        rows={2}
+                        className="w-full text-xs rounded-lg px-3 py-2 resize-none outline-none"
+                        style={{
+                          backgroundColor: "#F8FAFC",
+                          border: "1px solid #DDE3EC",
+                          color: "#374151",
+                          lineHeight: "1.6",
+                        }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = section.color)}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "#DDE3EC")}
+                      />
+                    </div>
                   </div>
                 )
               })}
-
-              {/* Catatan */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#94A3B8" }} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#64748B" }}>
-                    Catatan
-                  </span>
-                </div>
-                <textarea
-                  value={catatan}
-                  onChange={(e) => setCatatan(e.target.value)}
-                  placeholder="Tambahkan catatan evaluasi (opsional)…"
-                  rows={3}
-                  className="w-full text-xs rounded-lg px-3 py-2 resize-none outline-none"
-                  style={{
-                    backgroundColor: "#F8FAFC",
-                    border: "1px solid #DDE3EC",
-                    color: "#374151",
-                    lineHeight: "1.6",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#1E3A5F")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#DDE3EC")}
-                />
-              </div>
             </>
           )}
         </div>

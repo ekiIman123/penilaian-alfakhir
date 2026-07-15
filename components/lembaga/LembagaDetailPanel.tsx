@@ -52,10 +52,24 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   const [saving, setSaving] = useState(false)
   const [savedValue, setSavedValue] = useState(initialCatatan)
 
-  // Fallback catatan text from evaluators
+  function parseSectionCatatan(catatan: string | null): Record<string, string> {
+    if (!catatan) return {}
+    try {
+      const p = JSON.parse(catatan)
+      if (p && typeof p === "object" && !Array.isArray(p)) return p as Record<string, string>
+    } catch {}
+    return {}
+  }
+
+  // Fallback catatan text from evaluators (plain text from JSON values)
   const fallbackCatatan = e.evaluationSummaries
     .filter((s) => s.catatan)
-    .map((s) => `${s.evaluatorName}: ${s.catatan}`)
+    .map((s) => {
+      const parsed = parseSectionCatatan(s.catatan)
+      const parts = sections.map((sec) => parsed[sec.id]?.trim()).filter(Boolean)
+      return parts.length > 0 ? `${s.evaluatorName}: ${parts.join(" | ")}` : null
+    })
+    .filter(Boolean)
     .join("\n")
 
   const displayCatatan = savedValue || fallbackCatatan
@@ -489,23 +503,39 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
             >
               Catatan Penilai
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {e.evaluationSummaries.filter((s) => s.catatan).map((s) => (
-                <div
-                  key={s.evaluatorId}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    backgroundColor: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                  }}
-                >
-                  <p style={{ fontSize: "9px", fontWeight: 700, color: "#64748B", marginBottom: "3px" }}>
-                    {s.evaluatorName}
-                  </p>
-                  <p style={{ fontSize: "11px", color: "#475569", lineHeight: 1.5 }}>{s.catatan}</p>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {e.evaluationSummaries.filter((s) => s.catatan).map((s) => {
+                const parsed = parseSectionCatatan(s.catatan)
+                const entries = sections
+                  .map((sec) => ({ sec, text: parsed[sec.id]?.trim() }))
+                  .filter((x) => x.text)
+                if (entries.length === 0) return null
+                return (
+                  <div
+                    key={s.evaluatorId}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
+                    }}
+                  >
+                    <p style={{ fontSize: "9px", fontWeight: 700, color: "#64748B", marginBottom: "6px" }}>
+                      {s.evaluatorName}
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                      {entries.map(({ sec, text }) => (
+                        <div key={sec.id}>
+                          <p style={{ fontSize: "8px", fontWeight: 700, color: sec.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1px" }}>
+                            {sec.label}
+                          </p>
+                          <p style={{ fontSize: "11px", color: "#475569", lineHeight: 1.5 }}>{text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

@@ -214,7 +214,6 @@ function EvaluatorTable({
                         {sum.catatan && (
                           <span
                             className="text-[8px] px-1.5 py-0.5 rounded font-medium shrink-0"
-                            title={sum.catatan}
                             style={{ backgroundColor: "#C7D2FE", color: "#3730A3" }}
                           >
                             catatan
