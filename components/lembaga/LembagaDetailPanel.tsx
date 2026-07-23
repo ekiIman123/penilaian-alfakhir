@@ -6,6 +6,7 @@ import { getSectionsForRubric } from "@/lib/rubrics"
 import { toast } from "sonner"
 import type { EvaluateeRowData } from "@/lib/lembaga-dashboard-data"
 import type { LembagaEditTarget } from "./LembagaEvalModal"
+import { LembagaPdfButton } from "./LembagaPdfButton"
 
 const SECTION_NAMES = [
   "Disiplin",
@@ -665,48 +666,67 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
           borderTop: "1px solid #E2E8F0",
           backgroundColor: "#F8FAFC",
           display: "flex",
+          flexDirection: "column",
           gap: "8px",
         }}
       >
-        <button
-          onClick={() =>
-            onEdit({
-              employeeId: e.id,
-              employeeName: e.name,
-              evaluatorId: sessionEvaluatorId,
-              evaluatorName: "Saya",
-              rubricType: e.rubricType,
-            })
-          }
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() =>
+              onEdit({
+                employeeId: e.id,
+                employeeName: e.name,
+                evaluatorId: sessionEvaluatorId,
+                evaluatorName: "Saya",
+                rubricType: e.rubricType,
+              })
+            }
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              fontSize: "11px",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #C4972A, #E8B84B)",
+              color: "#1C1409",
+            }}
+          >
+            <PenLine size={11} /> Input Penilaian
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              backgroundColor: "#E2E8F0",
+              color: "#374151",
+            }}
+          >
+            Tutup
+          </button>
+        </div>
+        <div
           style={{
-            flex: 1,
+            padding: "8px 12px",
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "6px",
-            padding: "8px 12px",
-            borderRadius: "8px",
-            fontSize: "11px",
-            fontWeight: 700,
-            background: "linear-gradient(135deg, #C4972A, #E8B84B)",
-            color: "#1C1409",
           }}
         >
-          <PenLine size={11} /> Input Penilaian
-        </button>
-        <button
-          onClick={onClose}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "8px",
-            fontSize: "11px",
-            fontWeight: 600,
-            backgroundColor: "#E2E8F0",
-            color: "#374151",
-          }}
-        >
-          Tutup
-        </button>
+          <LembagaPdfButton
+            employeeId={e.id}
+            employeeName={e.name}
+            lembagaSlug={lembagaSlug}
+          />
+        </div>
       </div>
     </div>
   )

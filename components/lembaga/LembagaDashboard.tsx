@@ -9,6 +9,7 @@ import { useMemo, useState, useRef, useEffect, useCallback } from "react"
 import type { EvaluateeRowData, EvalSummary } from "@/lib/lembaga-dashboard-data"
 import { LembagaEvalModal, type LembagaEditTarget } from "./LembagaEvalModal"
 import { LembagaDetailPanel } from "./LembagaDetailPanel"
+import { LembagaBulkPdfButton } from "./LembagaPdfButton"
 
 export type { EvaluateeRowData }
 
@@ -633,6 +634,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                   <div className="text-[10px] mt-0.5 whitespace-nowrap" style={{ color: "rgba(255,255,255,0.50)" }}>{s.label}</div>
                 </div>
               ))}
+              <LembagaBulkPdfButton lembagaSlug={lembagaSlug} lembagaLabel={lembagaLabel} />
               <button
                 type="button"
                 onClick={logout}
