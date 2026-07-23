@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment, useState, useEffect } from "react"
-import { X, Save, Loader2, Pencil, RotateCcw, PenLine, Wand2 } from "lucide-react"
+import { X, Save, Loader2, Pencil, RotateCcw, PenLine } from "lucide-react"
 import { getSectionsForRubric } from "@/lib/rubrics"
 import { toast } from "sonner"
 import type { EvaluateeRowData } from "@/lib/lembaga-dashboard-data"
@@ -53,8 +53,6 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   const [saving, setSaving] = useState(false)
   const [savedValue, setSavedValue] = useState(initialCatatan)
 
-  // AI preview — auto-generate on panel open
-  const [aiPreview, setAiPreview] = useState<string | null>(null)
   const [loadingAI, setLoadingAI] = useState(false)
 
   useEffect(() => {
@@ -110,23 +108,24 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
 
   async function handleGenerateAI() {
     setLoadingAI(true)
-    setAiPreview(null)
     try {
       const res = await fetch(`/api/lembaga/${lembagaSlug}/employees/${e.id}/summarize`)
       if (!res.ok) throw new Error()
       const data = (await res.json()) as { summary: string | null }
-      setAiPreview(data.summary ?? "Tidak ada catatan dari penilai untuk dirangkum.")
+      if (data.summary) {
+        await fetch(`/api/lembaga/${lembagaSlug}/employees/${e.id}/catatan`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ finalCatatan: data.summary }),
+        })
+        setSavedValue(data.summary)
+        setValue(data.summary)
+      }
     } catch {
-      toast.error("Gagal generate preview AI")
+      // silent — fallback tetap tampil
     } finally {
       setLoadingAI(false)
     }
-  }
-
-  function handleUseAI() {
-    setValue(aiPreview ?? "")
-    setEditing(true)
-    setAiPreview(null)
   }
 
   // SVG ring params
@@ -665,85 +664,35 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
               </div>
             </div>
           ) : (
-            <>
-              <div
-                style={{
-                  padding: "10px",
-                  borderRadius: "8px",
-                  backgroundColor: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  minHeight: "52px",
-                }}
-              >
-                {displayCatatan ? (
-                  <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                    {displayCatatan}
-                  </p>
-                ) : (
-                  <p style={{ fontSize: "11px", color: "#CBD5E1", fontStyle: "italic" }}>
-                    Belum ada catatan final.
-                  </p>
-                )}
-              </div>
-
-              {(loadingAI || aiPreview) && (
-                <div
-                  style={{
-                    marginTop: "8px",
-                    padding: "10px",
-                    borderRadius: "8px",
-                    backgroundColor: "#F5F3FF",
-                    border: "1px solid #DDD6FE",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
-                    {loadingAI
-                      ? <Loader2 size={9} color="#7C3AED" className="animate-spin" />
-                      : <Wand2 size={9} color="#7C3AED" />
-                    }
-                    <span
-                      style={{
-                        fontSize: "9px",
-                        fontWeight: 700,
-                        color: "#7C3AED",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                      }}
-                    >
-                      {loadingAI ? "Generating AI…" : "Hasil Generate AI"}
-                    </span>
+            <div
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                backgroundColor: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                minHeight: "52px",
+              }}
+            >
+              {loadingAI ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+                    <Loader2 size={9} color="#7C3AED" className="animate-spin" />
+                    <span style={{ fontSize: "9px", color: "#7C3AED", fontWeight: 600 }}>Generating AI…</span>
                   </div>
-                  {loadingAI ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                      {[80, 100, 60].map((w, i) => (
-                        <div key={i} style={{ height: "8px", borderRadius: "4px", backgroundColor: "#DDD6FE", width: `${w}%`, opacity: 0.6 }} />
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      <p style={{ fontSize: "11px", color: "#4C1D95", lineHeight: 1.6 }}>{aiPreview}</p>
-                      <button
-                        onClick={handleUseAI}
-                        style={{
-                          marginTop: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontSize: "9px",
-                          fontWeight: 600,
-                          color: "#FFFFFF",
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-                        }}
-                      >
-                        <Save size={9} /> Gunakan sebagai Catatan Final
-                      </button>
-                    </>
-                  )}
+                  {[90, 100, 65].map((w, i) => (
+                    <div key={i} style={{ height: "8px", borderRadius: "4px", backgroundColor: "#DDD6FE", width: `${w}%` }} />
+                  ))}
                 </div>
+              ) : displayCatatan ? (
+                <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                  {displayCatatan}
+                </p>
+              ) : (
+                <p style={{ fontSize: "11px", color: "#CBD5E1", fontStyle: "italic" }}>
+                  Belum ada catatan final.
+                </p>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
