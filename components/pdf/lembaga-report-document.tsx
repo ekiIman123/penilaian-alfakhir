@@ -229,7 +229,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
   })()
 
   const roleDisplay = ROLE_LABEL[employee.role] ?? employee.role
-  const isAG = rubricType === "ag"
 
   return (
     <Page size="A4" style={styles.page}>
@@ -242,7 +241,7 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
               {org.yayasanName || org.schoolName || "IYSA"}
             </Text>
             <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: DARK, marginTop: 3 }}>
-              {`HASIL PERFORMANCE APPRAISAL — ${isAG ? "NON STAF" : "STAF"}`}
+              {"HASIL PERFORMANCE APPRAISAL"}
             </Text>
             <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: DARK, marginTop: 3 }}>
               {org.periodLabel}
