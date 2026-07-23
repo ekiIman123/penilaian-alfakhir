@@ -243,9 +243,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
             <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: DARK, marginTop: 3 }}>
               {"HASIL PERFORMANCE APPRAISAL"}
             </Text>
-            <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: DARK, marginTop: 3 }}>
-              {org.periodLabel}
-            </Text>
           </View>
           {org.logoBase64 ? (
             <Image src={org.logoBase64} style={{ width: 130, height: 52, objectFit: "contain" }} />
