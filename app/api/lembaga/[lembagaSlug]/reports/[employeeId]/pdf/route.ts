@@ -1,6 +1,6 @@
 import { renderToBuffer } from "@react-pdf/renderer"
 import { createElement } from "react"
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import Anthropic from "@anthropic-ai/sdk"
 import { prisma } from "@/lib/prisma"
 import { getSectionsForRubric, getNewRubricGrade } from "@/lib/rubrics"
 import { parseScores } from "@/lib/calculations"
@@ -17,21 +17,38 @@ const VALID_LEMBAGA = ["iysa", "icgi", "iyora"] as const
 type ValidLembaga = (typeof VALID_LEMBAGA)[number]
 
 async function summarizeCatatan(
+  employeeName: string,
   entries: { evaluatorName: string; text: string }[],
 ): Promise<string | null> {
   if (entries.length === 0) return null
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return null
   try {
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
-    const catatanText = entries.map((c) => `- ${c.evaluatorName}: "${c.text}"`).join("\n")
-    const prompt =
-      `Kamu adalah asisten yang merangkum catatan evaluasi kinerja karyawan dari beberapa penilai menjadi satu catatan ringkas dalam Bahasa Indonesia. ` +
-      `Tulis ringkasan dalam 2-3 kalimat, langsung tanpa pengantar, fokus pada poin-poin utama yang disepakati para penilai.\n\n` +
-      `Catatan dari ${entries.length} penilai:\n${catatanText}\n\nRingkasan:`
-    const result = await model.generateContent(prompt)
-    return result.response.text().trim() || null
+    const client = new Anthropic({ apiKey })
+    const catatanText = entries
+      .map((c) => `Penilai: ${c.evaluatorName}\nCatatan: ${c.text}`)
+      .join("\n\n")
+    const message = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 300,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Kamu adalah asisten HR yang menulis catatan evaluasi kinerja profesional dalam Bahasa Indonesia.\n\n` +
+            `Berikut catatan dari ${entries.length} penilai untuk karyawan bernama ${employeeName}:\n\n` +
+            `${catatanText}\n\n` +
+            `Tulis satu paragraf ringkasan catatan (2-3 kalimat) yang:\n` +
+            `- Mencerminkan poin-poin utama yang muncul dari para penilai\n` +
+            `- Menggunakan bahasa formal dan konstruktif\n` +
+            `- Langsung ke inti tanpa kalimat pembuka seperti "Berdasarkan catatan..."\n` +
+            `- Tidak menyebut nama penilai\n\n` +
+            `Tulis hanya paragraf ringkasannya saja:`,
+        },
+      ],
+    })
+    const text = message.content[0].type === "text" ? message.content[0].text.trim() : null
+    return text || null
   } catch {
     return null
   }
@@ -147,7 +164,7 @@ export async function GET(
       })
       .filter((x): x is { evaluatorName: string; text: string } => x !== null)
 
-    catatanSummary = await summarizeCatatan(catatanInputs)
+    catatanSummary = await summarizeCatatan(employee.name, catatanInputs)
   }
 
   const divisiDisplay = employee.divisi

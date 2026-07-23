@@ -78,7 +78,7 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   async function handleSave() {
     setSaving(true)
     try {
-      const res = await fetch(`/api/teachers/${e.id}/catatan`, {
+      const res = await fetch(`/api/lembaga/${lembagaSlug}/employees/${e.id}/catatan`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ finalCatatan: value.trim() || null }),
