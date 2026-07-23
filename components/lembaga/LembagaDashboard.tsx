@@ -458,21 +458,18 @@ function EvalRow({
 
         {/* Action */}
         <td className="px-3 py-3 text-right pr-4" style={{ minWidth: "72px" }}>
-          <Link
-            href={`/${lembagaSlug}/form/${e.id}`}
-            onClick={(ev) => ev.stopPropagation()}
+          <button
+            onClick={(ev) => { ev.stopPropagation(); onDetail(e) }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-90"
             style={{
-              background: e.evaluated
-                ? "linear-gradient(135deg, #1E3A5F, #2A4F7A)"
-                : "linear-gradient(135deg, #C4972A, #E8B84B)",
-              color: e.evaluated ? "#FFF" : "#1C1409",
+              background: "linear-gradient(135deg, #1E3A5F, #2A4F7A)",
+              color: "#FFF",
               boxShadow: "0 2px 8px rgba(15,37,64,0.15)",
             }}
           >
-            <PenLine size={11} />
-            {e.evaluated ? "Edit" : "Nilai"}
-          </Link>
+            <ChevronRight size={11} />
+            Detil
+          </button>
         </td>
       </tr>
 
@@ -783,10 +780,12 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
         {selectedEmployee && (
           <LembagaDetailPanel
             e={selectedEmployee}
+            employees={filtered}
             lembagaSlug={lembagaSlug}
             sessionEvaluatorId={session.evaluatorId}
             onClose={() => setSelectedEmployee(null)}
             onEdit={handleEdit}
+            onNavigate={setSelectedEmployee}
           />
         )}
         </div>

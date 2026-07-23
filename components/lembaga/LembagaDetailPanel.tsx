@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment, useState, useEffect } from "react"
-import { X, Save, Loader2, Pencil, RotateCcw, PenLine } from "lucide-react"
+import { X, Save, Loader2, Pencil, RotateCcw, PenLine, ChevronLeft, ChevronRight } from "lucide-react"
 import { getSectionsForRubric } from "@/lib/rubrics"
 import { toast } from "sonner"
 import type { EvaluateeRowData } from "@/lib/lembaga-dashboard-data"
@@ -31,13 +31,18 @@ const ROLE_LABEL: Record<string, string> = {
 
 interface Props {
   e: EvaluateeRowData
+  employees: EvaluateeRowData[]
   lembagaSlug: string
   sessionEvaluatorId: string
   onClose: () => void
   onEdit: (t: LembagaEditTarget) => void
+  onNavigate: (e: EvaluateeRowData) => void
 }
 
-export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose, onEdit }: Props) {
+export function LembagaDetailPanel({ e, employees, lembagaSlug, sessionEvaluatorId, onClose, onEdit, onNavigate }: Props) {
+  const currentIdx = employees.findIndex((emp) => emp.id === e.id)
+  const hasPrev = currentIdx > 0
+  const hasNext = currentIdx < employees.length - 1
   const sections = getSectionsForRubric(e.rubricType)
   const secCount = e.rubricType === "ae" ? 5 : 7
 
@@ -162,24 +167,49 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
           position: "relative",
         }}
       >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "12px",
-            right: "12px",
-            width: "24px",
-            height: "24px",
-            borderRadius: "6px",
-            backgroundColor: "rgba(255,255,255,0.10)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <X size={13} color="white" />
-        </button>
+        {/* Nav + Close */}
+        <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
+          <button
+            onClick={() => hasPrev && onNavigate(employees[currentIdx - 1])}
+            disabled={!hasPrev}
+            title="Sebelumnya"
+            style={{
+              width: "24px", height: "24px", borderRadius: "6px",
+              backgroundColor: hasPrev ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.04)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: hasPrev ? 1 : 0.35,
+            }}
+          >
+            <ChevronLeft size={13} color="white" />
+          </button>
+          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.50)", fontWeight: 600, minWidth: "28px", textAlign: "center" }}>
+            {currentIdx + 1}/{employees.length}
+          </span>
+          <button
+            onClick={() => hasNext && onNavigate(employees[currentIdx + 1])}
+            disabled={!hasNext}
+            title="Berikutnya"
+            style={{
+              width: "24px", height: "24px", borderRadius: "6px",
+              backgroundColor: hasNext ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.04)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: hasNext ? 1 : 0.35,
+            }}
+          >
+            <ChevronRight size={13} color="white" />
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              width: "24px", height: "24px", borderRadius: "6px",
+              backgroundColor: "rgba(255,255,255,0.10)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginLeft: "2px",
+            }}
+          >
+            <X size={13} color="white" />
+          </button>
+        </div>
 
         <p
           style={{
@@ -194,7 +224,7 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
           Detil Karyawan
         </p>
 
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", paddingRight: "32px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", paddingRight: "120px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p
               style={{
