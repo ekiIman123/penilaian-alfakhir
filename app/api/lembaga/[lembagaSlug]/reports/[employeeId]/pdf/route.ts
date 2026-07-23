@@ -1,6 +1,6 @@
 import { renderToBuffer } from "@react-pdf/renderer"
 import { createElement } from "react"
-import Anthropic from "@anthropic-ai/sdk"
+import Groq from "groq-sdk"
 import { prisma } from "@/lib/prisma"
 import { getSectionsForRubric, getNewRubricGrade } from "@/lib/rubrics"
 import { parseScores } from "@/lib/calculations"
@@ -21,35 +21,37 @@ async function summarizeCatatan(
   entries: { evaluatorName: string; text: string }[],
 ): Promise<string | null> {
   if (entries.length === 0) return null
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) return null
   try {
-    const client = new Anthropic({ apiKey })
+    const client = new Groq({ apiKey })
     const catatanText = entries
       .map((c) => `Penilai: ${c.evaluatorName}\nCatatan: ${c.text}`)
       .join("\n\n")
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5",
+    const completion = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 300,
       messages: [
         {
+          role: "system",
+          content:
+            "Kamu adalah asisten HR yang menulis catatan evaluasi kinerja profesional dalam Bahasa Indonesia. " +
+            "Tulis ringkasan yang formal, konstruktif, dan langsung ke inti. " +
+            "Jangan sebut nama penilai. Jangan gunakan kalimat pembuka seperti 'Berdasarkan catatan...'.",
+        },
+        {
           role: "user",
           content:
-            `Kamu adalah asisten HR yang menulis catatan evaluasi kinerja profesional dalam Bahasa Indonesia.\n\n` +
             `Berikut catatan dari ${entries.length} penilai untuk karyawan bernama ${employeeName}:\n\n` +
             `${catatanText}\n\n` +
-            `Tulis satu paragraf ringkasan catatan (2-3 kalimat) yang:\n` +
-            `- Mencerminkan poin-poin utama yang muncul dari para penilai\n` +
-            `- Menggunakan bahasa formal dan konstruktif\n` +
-            `- Langsung ke inti tanpa kalimat pembuka seperti "Berdasarkan catatan..."\n` +
-            `- Tidak menyebut nama penilai\n\n` +
-            `Tulis hanya paragraf ringkasannya saja:`,
+            `Tulis SATU paragraf ringkasan (2-3 kalimat) yang mencerminkan poin-poin utama dari para penilai. Tulis hanya paragrafnya saja:`,
         },
       ],
     })
-    const text = message.content[0].type === "text" ? message.content[0].text.trim() : null
+    const text = completion.choices[0]?.message?.content?.trim() ?? null
     return text || null
-  } catch {
+  } catch (err) {
+    console.error("[summarizeCatatan] Groq API error:", err)
     return null
   }
 }
