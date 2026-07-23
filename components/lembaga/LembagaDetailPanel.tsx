@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useState } from "react"
+import { Fragment, useState, useEffect } from "react"
 import { X, Save, Loader2, Pencil, RotateCcw, PenLine, Wand2 } from "lucide-react"
 import { getSectionsForRubric } from "@/lib/rubrics"
 import { toast } from "sonner"
@@ -53,9 +53,14 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   const [saving, setSaving] = useState(false)
   const [savedValue, setSavedValue] = useState(initialCatatan)
 
-  // AI preview
+  // AI preview — auto-generate on panel open
   const [aiPreview, setAiPreview] = useState<string | null>(null)
   const [loadingAI, setLoadingAI] = useState(false)
+
+  useEffect(() => {
+    handleGenerateAI()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [e.id])
 
   function parseSectionCatatan(catatan: string | null): Record<string, string> {
     if (!catatan) return {}
@@ -581,43 +586,22 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
               Catatan Final
             </p>
             {!editing && (
-              <div style={{ display: "flex", gap: "4px" }}>
-                <button
-                  onClick={handleGenerateAI}
-                  disabled={loadingAI}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    color: "#6D28D9",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    backgroundColor: "#EDE9FE",
-                    opacity: loadingAI ? 0.6 : 1,
-                  }}
-                >
-                  {loadingAI ? <Loader2 size={9} className="animate-spin" /> : <Wand2 size={9} />}
-                  {loadingAI ? "Loading…" : "Preview AI"}
-                </button>
-                <button
-                  onClick={() => setEditing(true)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    color: "#1E3A5F",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    backgroundColor: "#EDF2F7",
-                  }}
-                >
-                  <Pencil size={9} /> Edit
-                </button>
-              </div>
+              <button
+                onClick={() => setEditing(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "9px",
+                  fontWeight: 600,
+                  color: "#1E3A5F",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  backgroundColor: "#EDF2F7",
+                }}
+              >
+                <Pencil size={9} /> Edit
+              </button>
             )}
           </div>
 
@@ -702,7 +686,7 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                 )}
               </div>
 
-              {aiPreview && (
+              {(loadingAI || aiPreview) && (
                 <div
                   style={{
                     marginTop: "8px",
@@ -713,7 +697,10 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
-                    <Wand2 size={9} color="#7C3AED" />
+                    {loadingAI
+                      ? <Loader2 size={9} color="#7C3AED" className="animate-spin" />
+                      : <Wand2 size={9} color="#7C3AED" />
+                    }
                     <span
                       style={{
                         fontSize: "9px",
@@ -723,27 +710,37 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
                         letterSpacing: "0.1em",
                       }}
                     >
-                      Hasil Generate AI
+                      {loadingAI ? "Generating AI…" : "Hasil Generate AI"}
                     </span>
                   </div>
-                  <p style={{ fontSize: "11px", color: "#4C1D95", lineHeight: 1.6 }}>{aiPreview}</p>
-                  <button
-                    onClick={handleUseAI}
-                    style={{
-                      marginTop: "8px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      color: "#FFFFFF",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-                    }}
-                  >
-                    <Save size={9} /> Gunakan sebagai Catatan Final
-                  </button>
+                  {loadingAI ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                      {[80, 100, 60].map((w, i) => (
+                        <div key={i} style={{ height: "8px", borderRadius: "4px", backgroundColor: "#DDD6FE", width: `${w}%`, opacity: 0.6 }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: "11px", color: "#4C1D95", lineHeight: 1.6 }}>{aiPreview}</p>
+                      <button
+                        onClick={handleUseAI}
+                        style={{
+                          marginTop: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontSize: "9px",
+                          fontWeight: 600,
+                          color: "#FFFFFF",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+                        }}
+                      >
+                        <Save size={9} /> Gunakan sebagai Catatan Final
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </>
