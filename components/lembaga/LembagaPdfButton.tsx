@@ -112,20 +112,40 @@ interface BulkProps {
 }
 
 export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel }: BulkProps) {
-  const [loading, setLoading]     = useState(false)
+  const [loading, setLoading]           = useState(false)
   const [loadingLabel, setLoadingLabel] = useState("")
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [dropPos, setDropPos]           = useState({ top: 0, right: 0 })
+  const btnRef  = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
+
+  function openDropdown() {
+    if (!btnRef.current) return
+    const rect = btnRef.current.getBoundingClientRect()
+    setDropPos({
+      top:   rect.bottom + 6,
+      right: window.innerWidth - rect.right,
+    })
+    setDropdownOpen(true)
+  }
 
   useEffect(() => {
     if (!dropdownOpen) return
     function handleOutside(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+      if (
+        dropRef.current && !dropRef.current.contains(e.target as Node) &&
+        btnRef.current  && !btnRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false)
       }
     }
+    function handleScroll() { setDropdownOpen(false) }
     document.addEventListener("mousedown", handleOutside)
-    return () => document.removeEventListener("mousedown", handleOutside)
+    window.addEventListener("scroll", handleScroll, true)
+    return () => {
+      document.removeEventListener("mousedown", handleOutside)
+      window.removeEventListener("scroll", handleScroll, true)
+    }
   }, [dropdownOpen])
 
   async function handleDownload(format: "pdf" | "zip", role: "all" | "staff" | "non-staff") {
@@ -164,73 +184,87 @@ export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel }: BulkProps) {
     }
   }
 
+  const dropdownMenu = dropdownOpen && typeof document !== "undefined" ? createPortal(
+    <div
+      ref={dropRef}
+      style={{
+        position:        "fixed",
+        top:             dropPos.top,
+        right:           dropPos.right,
+        zIndex:          9999,
+        backgroundColor: "#FFFFFF",
+        border:          "1px solid #DDE3EC",
+        borderRadius:    "8px",
+        minWidth:        "210px",
+        boxShadow:       "0 8px 24px rgba(0,0,0,0.14)",
+        paddingTop:      "6px",
+        paddingBottom:   "6px",
+      }}
+    >
+      <p className="px-3 pb-1 pt-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
+        Format PDF Gabungan
+      </p>
+      {(["all", "non-staff", "staff"] as const).map((role) => {
+        const label = role === "all" ? "Semua Karyawan" : role === "staff" ? "Staf Saja" : "Non-Staf Saja"
+        return (
+          <button
+            key={role}
+            onClick={() => handleDownload("pdf", role)}
+            className="w-full text-left px-3 py-1.5 text-xs font-medium flex items-center gap-2"
+            style={{ color: "#374151" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          >
+            <FileDown size={12} style={{ color: "#1E3A5F", flexShrink: 0 }} />
+            {label}
+          </button>
+        )
+      })}
+
+      <div style={{ height: "1px", backgroundColor: "#E2E8F0", margin: "6px 0" }} />
+      <p className="px-3 pb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
+        Format ZIP (Terpisah)
+      </p>
+      {(["all", "non-staff", "staff"] as const).map((role) => {
+        const label = role === "all" ? "Semua Karyawan" : role === "staff" ? "Staf Saja" : "Non-Staf Saja"
+        return (
+          <button
+            key={role}
+            onClick={() => handleDownload("zip", role)}
+            className="w-full text-left px-3 py-1.5 text-xs font-medium flex items-center gap-2"
+            style={{ color: "#374151" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          >
+            <Archive size={12} style={{ color: "#059669", flexShrink: 0 }} />
+            {label}
+          </button>
+        )
+      })}
+    </div>,
+    document.body,
+  ) : null
+
   return (
     <>
-      <div className="relative" ref={dropRef}>
-        <button
-          onClick={() => !loading && setDropdownOpen((o) => !o)}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-xs font-semibold"
-          style={{
-            backgroundColor: loading ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)",
-            color: loading ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.90)",
-            border: "1px solid rgba(255,255,255,0.20)",
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
-        >
-          {loading ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
-          <span>Unduh Rapor Massal</span>
-          {!loading && <ChevronDown size={11} style={{ opacity: 0.6, transform: dropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />}
-        </button>
+      <button
+        ref={btnRef}
+        onClick={() => !loading && (dropdownOpen ? setDropdownOpen(false) : openDropdown())}
+        disabled={loading}
+        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-xs font-semibold"
+        style={{
+          backgroundColor: loading ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.12)",
+          color: loading ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.90)",
+          border: "1px solid rgba(255,255,255,0.20)",
+          cursor: loading ? "not-allowed" : "pointer",
+        }}
+      >
+        {loading ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
+        <span>Unduh Rapor Massal</span>
+        {!loading && <ChevronDown size={11} style={{ opacity: 0.6, transform: dropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />}
+      </button>
 
-        {dropdownOpen && (
-          <div
-            className="absolute right-0 top-full mt-1.5 z-30 rounded-lg py-1.5"
-            style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE3EC", minWidth: "200px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
-          >
-            <p className="px-3 pb-1 pt-0.5 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
-              Format PDF Gabungan
-            </p>
-            {(["all", "non-staff", "staff"] as const).map((role) => {
-              const label = role === "all" ? "Semua Karyawan" : role === "staff" ? "Staf Saja" : "Non-Staf Saja"
-              return (
-                <button
-                  key={role}
-                  onClick={() => handleDownload("pdf", role)}
-                  className="w-full text-left px-3 py-1.5 text-xs font-medium flex items-center gap-2"
-                  style={{ color: "#374151" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                >
-                  <FileDown size={12} style={{ color: "#1E3A5F", flexShrink: 0 }} />
-                  {label}
-                </button>
-              )
-            })}
-
-            <div style={{ height: "1px", backgroundColor: "#E2E8F0", margin: "6px 0" }} />
-            <p className="px-3 pb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
-              Format ZIP (Terpisah)
-            </p>
-            {(["all", "non-staff", "staff"] as const).map((role) => {
-              const label = role === "all" ? "Semua Karyawan" : role === "staff" ? "Staf Saja" : "Non-Staf Saja"
-              return (
-                <button
-                  key={role}
-                  onClick={() => handleDownload("zip", role)}
-                  className="w-full text-left px-3 py-1.5 text-xs font-medium flex items-center gap-2"
-                  style={{ color: "#374151" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F8FAFC")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                >
-                  <Archive size={12} style={{ color: "#059669", flexShrink: 0 }} />
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      {dropdownMenu}
 
       {loading && typeof document !== "undefined" && createPortal(
         <div

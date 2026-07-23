@@ -74,7 +74,7 @@ async function compressImage(file: File, maxSizeKB: number): Promise<string> {
   })
 }
 
-interface OrgSettingsForm {
+export interface OrgSettingsForm {
   yayasanName: string
   schoolName: string
   address: string

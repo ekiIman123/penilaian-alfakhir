@@ -56,8 +56,8 @@ const MONTHS_ID = [
   "Juli","Agustus","September","Oktober","November","Desember",
 ]
 
-function monthYear(d: Date): string {
-  return `${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`
+function fullDate(d: Date): string {
+  return `${d.getDate()} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -198,15 +198,14 @@ const styles = StyleSheet.create({
 function LembagaReportPage({ data }: { data: LembagaReportData }) {
   const { employee, rubricType, evaluations, sections, maxScore, generatedAt, org, catatanSummary } = data
 
-  // Average score per criterion across all evaluators
+  // Rata-rata skor dari semua penilai per kriteria (standar industri)
+  const evCount = Math.max(evaluations.length, 1)
+
   function criterionAvg(id: string): number {
-    if (evaluations.length === 0) return 0
-    const vals = evaluations.map((e) => e.scores[id] ?? 0).filter((v) => v > 0)
-    if (vals.length === 0) return 0
-    return vals.reduce((s, v) => s + v, 0) / vals.length
+    const sum = evaluations.reduce((s, e) => s + (e.scores[id] ?? 0), 0)
+    return sum / evCount
   }
 
-  // Raw section total (sum of criterion avgs)
   function sectionTotal(sec: Section): number {
     return sec.criteria.reduce((s, c) => s + criterionAvg(c.id), 0)
   }
@@ -214,12 +213,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
   const rawTotal = sections.reduce((s, sec) => s + sectionTotal(sec), 0)
   const pct      = maxScore > 0 ? (rawTotal / maxScore) * 100 : 0
   const nilai4   = maxScore > 0 ? (rawTotal * 4) / maxScore : 0
-
-  const gradeLabel =
-    pct >= 86 ? "SANGAT BAIK" :
-    pct >= 71 ? "BAIK" :
-    pct >= 56 ? "CUKUP" :
-    "PERLU PERBAIKAN"
 
   // Catatan: use summary or fallback from all evaluators
   const catatanText = catatanSummary ?? (() => {
@@ -236,7 +229,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
   })()
 
   const roleDisplay = ROLE_LABEL[employee.role] ?? employee.role
-  const rubricLabel = rubricType === "ae" ? "A–E (Staf)" : "A–G (Non-Staf)"
   const isAG = rubricType === "ag"
 
   return (
@@ -267,22 +259,12 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
           <Text style={styles.idColon}>:</Text>
           <Text style={styles.idValue}>{employee.name}</Text>
         </View>
-        <View style={styles.idRow}>
+        <View style={[styles.idRow, { borderBottomWidth: 0 }]}>
           <Text style={styles.idLabel}>Jabatan</Text>
           <Text style={styles.idColon}>:</Text>
-          <Text style={styles.idValue}>{roleDisplay}</Text>
-        </View>
-        {employee.divisi ? (
-          <View style={styles.idRow}>
-            <Text style={styles.idLabel}>Divisi</Text>
-            <Text style={styles.idColon}>:</Text>
-            <Text style={styles.idValue}>{employee.divisi}</Text>
-          </View>
-        ) : null}
-        <View style={[styles.idRow, { borderBottomWidth: 0 }]}>
-          <Text style={styles.idLabel}>Rubrik Penilaian</Text>
-          <Text style={styles.idColon}>:</Text>
-          <Text style={styles.idValue}>{rubricLabel}</Text>
+          <Text style={styles.idValue}>
+            {employee.divisi ? `${roleDisplay} ${employee.divisi}` : roleDisplay}
+          </Text>
         </View>
 
         {/* Table header */}
@@ -295,15 +277,13 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
 
         {/* Sections + criteria */}
         {sections.map((sec, si) => {
-          const secTotal = sectionTotal(sec)
-          const letter   = String.fromCharCode(65 + si)   // A, B, C …
+          const secTot = sectionTotal(sec)
+          const letter = String.fromCharCode(65 + si)   // A, B, C …
           return (
             <View key={sec.id}>
               {/* Section header */}
               <View style={styles.secRow}>
-                <View style={styles.cNo}>
-                  <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>{letter}</Text>
-                </View>
+                <View style={styles.cNo} />
                 <View style={styles.cAspekFull}>
                   <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>{sec.label}</Text>
                 </View>
@@ -311,7 +291,7 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
 
               {/* Criteria */}
               {sec.criteria.map((c, ci) => {
-                const avg   = criterionAvg(c.id)
+                const avg    = criterionAvg(c.id)
                 const isLast = ci === sec.criteria.length - 1
                 const isAlt  = ci % 2 !== 0
                 const label  = String.fromCharCode(97 + ci)  // a, b, c …
@@ -331,7 +311,7 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
                     </View>
                     <View style={styles.cNilai}>
                       <Text style={{ fontSize: 7.5 }}>
-                        {avg > 0 ? (Number.isInteger(avg) ? avg.toString() : avg.toFixed(1)) : "—"}
+                        {avg > 0 ? (Number.isInteger(avg) ? avg.toString() : avg.toFixed(2)) : "—"}
                       </Text>
                     </View>
                     <View style={styles.cMax}>
@@ -341,23 +321,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
                 )
               })}
 
-              {/* Section subtotal */}
-              <View style={styles.subtotalRow}>
-                <View style={styles.cNo} />
-                <View style={styles.cAspek}>
-                  <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold" }}>
-                    Subtotal {letter}
-                  </Text>
-                </View>
-                <View style={styles.cNilai}>
-                  <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold" }}>
-                    {secTotal > 0 ? (Number.isInteger(secTotal) ? secTotal.toString() : secTotal.toFixed(1)) : "—"}
-                  </Text>
-                </View>
-                <View style={styles.cMax}>
-                  <Text style={{ fontSize: 7.5, color: GRAY }}>{sec.maxScore}</Text>
-                </View>
-              </View>
             </View>
           )
         })}
@@ -378,25 +341,10 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
           </View>
         </View>
 
-        <View style={styles.totRow}>
+        <View style={styles.totRowLast}>
           <View style={styles.cNo} />
           <View style={styles.cAspek}>
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>PERSENTASE</Text>
-          </View>
-          <View style={styles.cNilai}>
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
-              {rawTotal > 0 ? `${pct.toFixed(1)}%` : "—"}
-            </Text>
-          </View>
-          <View style={styles.cMax}>
-            <Text style={{ fontSize: 8, color: GRAY }}>100%</Text>
-          </View>
-        </View>
-
-        <View style={styles.totRow}>
-          <View style={styles.cNo} />
-          <View style={styles.cAspek}>
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>NILAI AKHIR (SKALA 1–4)</Text>
+            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>IPK</Text>
           </View>
           <View style={styles.cNilai}>
             <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
@@ -405,18 +353,6 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
           </View>
           <View style={styles.cMax}>
             <Text style={{ fontSize: 8, color: GRAY }}>4.00</Text>
-          </View>
-        </View>
-
-        <View style={styles.totRowLast}>
-          <View style={styles.cNo} />
-          <View style={styles.cAspek}>
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>PREDIKAT</Text>
-          </View>
-          <View style={[styles.cNilai, styles.cMax, { width: "26%" }]}>
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>
-              {rawTotal > 0 ? gradeLabel : "—"}
-            </Text>
           </View>
         </View>
 
@@ -433,7 +369,7 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
       {/* Date */}
       <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 10, marginBottom: 10 }}>
         <Text style={{ fontSize: 8, color: GRAY }}>
-          {org.city || "Jakarta"}, {monthYear(generatedAt)}
+          {org.city || "Jakarta"}, {fullDate(generatedAt)}
         </Text>
       </View>
 

@@ -77,25 +77,14 @@ export async function buildDashboardRows(
     let sectionMax: (number | null)[] = Array(7).fill(null)
     let totalScore: number | null = null
     let grade = null
-    let catatan: string | null = null
+    const catatan: string | null = myEval?.catatan ?? null
 
-    if (myEval) {
-      const scores = parseScores(myEval.scores)
-      sectionScores = AG_SECTIONS.map((sec, i) =>
-        i < applicableSections ? calcSectionRaw(scores, sec.id, AG_SECTIONS) : null
-      )
-      sectionMax = AG_SECTIONS.map((sec, i) =>
-        i < applicableSections ? sec.maxScore : null
-      )
-      totalScore = sectionScores.slice(0, applicableSections).reduce<number>((a, b) => a + (b ?? 0), 0)
-      grade = getNewRubricGrade(totalScore, rubricType)
-      catatan = myEval.catatan ?? null
-    } else if (evals.length > 0) {
-      // No personal evaluation yet — show averaged scores across all evaluators
+    if (evals.length > 0) {
+      // Selalu tampilkan rata-rata dari semua penilai di baris utama
       sectionScores = AG_SECTIONS.map((sec, i) => {
         if (i >= applicableSections) return null
         const vals = evals.map((ev) => calcSectionRaw(parseScores(ev.scores), sec.id, AG_SECTIONS))
-        return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+        return vals.reduce((a, b) => a + b, 0) / vals.length
       })
       sectionMax = AG_SECTIONS.map((sec, i) => (i < applicableSections ? sec.maxScore : null))
       totalScore = sectionScores.slice(0, applicableSections).reduce<number>((a, b) => a + (b ?? 0), 0)
