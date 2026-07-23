@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment, useState } from "react"
-import { X, Save, Loader2, Pencil, RotateCcw, PenLine } from "lucide-react"
+import { X, Save, Loader2, Pencil, RotateCcw, PenLine, Wand2 } from "lucide-react"
 import { getSectionsForRubric } from "@/lib/rubrics"
 import { toast } from "sonner"
 import type { EvaluateeRowData } from "@/lib/lembaga-dashboard-data"
@@ -53,6 +53,10 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   const [saving, setSaving] = useState(false)
   const [savedValue, setSavedValue] = useState(initialCatatan)
 
+  // AI preview
+  const [aiPreview, setAiPreview] = useState<string | null>(null)
+  const [loadingAI, setLoadingAI] = useState(false)
+
   function parseSectionCatatan(catatan: string | null): Record<string, string> {
     if (!catatan) return {}
     try {
@@ -97,6 +101,27 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
   function handleCancel() {
     setValue(savedValue)
     setEditing(false)
+  }
+
+  async function handleGenerateAI() {
+    setLoadingAI(true)
+    setAiPreview(null)
+    try {
+      const res = await fetch(`/api/lembaga/${lembagaSlug}/employees/${e.id}/summarize`)
+      if (!res.ok) throw new Error()
+      const data = (await res.json()) as { summary: string | null }
+      setAiPreview(data.summary ?? "Tidak ada catatan dari penilai untuk dirangkum.")
+    } catch {
+      toast.error("Gagal generate preview AI")
+    } finally {
+      setLoadingAI(false)
+    }
+  }
+
+  function handleUseAI() {
+    setValue(aiPreview ?? "")
+    setEditing(true)
+    setAiPreview(null)
   }
 
   // SVG ring params
@@ -556,22 +581,43 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
               Catatan Final
             </p>
             {!editing && (
-              <button
-                onClick={() => setEditing(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontSize: "9px",
-                  fontWeight: 600,
-                  color: "#1E3A5F",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  backgroundColor: "#EDF2F7",
-                }}
-              >
-                <Pencil size={9} /> Edit
-              </button>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <button
+                  onClick={handleGenerateAI}
+                  disabled={loadingAI}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    color: "#6D28D9",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    backgroundColor: "#EDE9FE",
+                    opacity: loadingAI ? 0.6 : 1,
+                  }}
+                >
+                  {loadingAI ? <Loader2 size={9} className="animate-spin" /> : <Wand2 size={9} />}
+                  {loadingAI ? "Loading…" : "Preview AI"}
+                </button>
+                <button
+                  onClick={() => setEditing(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    color: "#1E3A5F",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    backgroundColor: "#EDF2F7",
+                  }}
+                >
+                  <Pencil size={9} /> Edit
+                </button>
+              </div>
             )}
           </div>
 
@@ -635,25 +681,72 @@ export function LembagaDetailPanel({ e, lembagaSlug, sessionEvaluatorId, onClose
               </div>
             </div>
           ) : (
-            <div
-              style={{
-                padding: "10px",
-                borderRadius: "8px",
-                backgroundColor: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-                minHeight: "52px",
-              }}
-            >
-              {displayCatatan ? (
-                <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                  {displayCatatan}
-                </p>
-              ) : (
-                <p style={{ fontSize: "11px", color: "#CBD5E1", fontStyle: "italic" }}>
-                  Belum ada catatan final.
-                </p>
+            <>
+              <div
+                style={{
+                  padding: "10px",
+                  borderRadius: "8px",
+                  backgroundColor: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  minHeight: "52px",
+                }}
+              >
+                {displayCatatan ? (
+                  <p style={{ fontSize: "11px", color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    {displayCatatan}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: "11px", color: "#CBD5E1", fontStyle: "italic" }}>
+                    Belum ada catatan final.
+                  </p>
+                )}
+              </div>
+
+              {aiPreview && (
+                <div
+                  style={{
+                    marginTop: "8px",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    backgroundColor: "#F5F3FF",
+                    border: "1px solid #DDD6FE",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
+                    <Wand2 size={9} color="#7C3AED" />
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        color: "#7C3AED",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Hasil Generate AI
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "11px", color: "#4C1D95", lineHeight: 1.6 }}>{aiPreview}</p>
+                  <button
+                    onClick={handleUseAI}
+                    style={{
+                      marginTop: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "9px",
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+                    }}
+                  >
+                    <Save size={9} /> Gunakan sebagai Catatan Final
+                  </button>
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
