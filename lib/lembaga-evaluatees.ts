@@ -26,9 +26,10 @@ export async function getEvaluatees(
 ): Promise<EvaluateeEmployee[]> {
   const { role, lembaga } = session
 
-  // Prevent self-evaluation: exclude any employee whose name matches the logged-in evaluator
+  // Prevent self-evaluation: exclude employee whose name matches the evaluator (case-insensitive, trimmed)
+  const selfName = session.name.trim().toLowerCase()
   function excludeSelf(list: EvaluateeEmployee[]): EvaluateeEmployee[] {
-    return list.filter((e) => e.name !== session.name)
+    return list.filter((e) => e.name.trim().toLowerCase() !== selfName)
   }
 
   if (role === "superadmin") {
