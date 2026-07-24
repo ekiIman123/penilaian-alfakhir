@@ -109,9 +109,10 @@ export function LembagaPdfButton({ employeeId, employeeName, lembagaSlug }: Sing
 interface BulkProps {
   lembagaSlug: string
   lembagaLabel: string
+  employees: { id: string; role: string }[]
 }
 
-export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel }: BulkProps) {
+export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel, employees }: BulkProps) {
   const [loading, setLoading]           = useState(false)
   const [loadingLabel, setLoadingLabel] = useState("")
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -156,8 +157,21 @@ export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel }: BulkProps) {
     setLoadingLabel(`${formatLabel} — ${roleLabel}`)
     setLoading(true)
     try {
+      const ids = employees
+        .filter((e) =>
+          role === "all" ? true :
+          role === "staff" ? e.role === "staff" :
+          e.role !== "staff"
+        )
+        .map((e) => e.id)
+
+      if (ids.length === 0) {
+        toast.error("Tidak ada karyawan yang sesuai.")
+        return
+      }
+
       const res = await fetch(
-        `/api/lembaga/${lembagaSlug}/reports/bulk?format=${format}&role=${role}`,
+        `/api/lembaga/${lembagaSlug}/reports/bulk?format=${format}&ids=${ids.join(",")}`,
       )
       if (!res.ok) {
         toast.error("Gagal membuat laporan. Coba lagi.")

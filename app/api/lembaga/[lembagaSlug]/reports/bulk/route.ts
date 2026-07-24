@@ -70,17 +70,15 @@ export async function GET(
   }
 
   const { searchParams } = new URL(req.url)
-  const format = searchParams.get("format") ?? "pdf"   // "pdf" | "zip"
-  const role   = searchParams.get("role")   ?? "all"   // "all" | "staff" | "non-staff"
-
-  const roleFilter =
-    role === "staff"     ? { role: "staff" } :
-    role === "non-staff" ? { role: { not: "staff" } } :
-    {}
+  const format   = searchParams.get("format") ?? "pdf"
+  const idsParam = searchParams.get("ids") ?? ""
+  const ids      = idsParam ? idsParam.split(",").filter(Boolean) : []
 
   const [employees, orgRaw] = await Promise.all([
     prisma.employee.findMany({
-      where: { lembaga: lembagaSlug, ...roleFilter },
+      where: ids.length > 0
+        ? { id: { in: ids }, lembaga: lembagaSlug }
+        : { lembaga: lembagaSlug },
       include: {
         evaluations: {
           include: { evaluator: true },
@@ -144,23 +142,19 @@ export async function GET(
     }
   })
 
-  const year      = new Date().getFullYear()
-  const roleLabel =
-    role === "staff"     ? "staf" :
-    role === "non-staff" ? "non-staf" :
-    "semua"
+  const year = new Date().getFullYear()
   const slug = lembagaSlug.toUpperCase()
 
   // ── Single merged PDF ────────────────────────────────────────────────────────
   if (format === "pdf") {
-    const title   = `Laporan Penilaian Kinerja ${slug} — ${roleLabel === "semua" ? "Semua" : roleLabel === "staf" ? "Staf" : "Non Staf"} — ${orgRaw.periodLabel}`
+    const title   = `Laporan Penilaian Kinerja ${slug} — ${orgRaw.periodLabel}`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const element = createElement(LembagaBulkReportDocument, { items, title }) as any
     const buffer  = await renderToBuffer(element)
     return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="rapor-${lembagaSlug}-${roleLabel}-${year}.pdf"`,
+        "Content-Disposition": `attachment; filename="rapor-${lembagaSlug}-${year}.pdf"`,
       },
     })
   }

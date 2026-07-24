@@ -631,7 +631,11 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
                   <div className="text-[10px] mt-0.5 whitespace-nowrap" style={{ color: "rgba(255,255,255,0.50)" }}>{s.label}</div>
                 </div>
               ))}
-              <LembagaBulkPdfButton lembagaSlug={lembagaSlug} lembagaLabel={lembagaLabel} />
+              <LembagaBulkPdfButton
+                lembagaSlug={lembagaSlug}
+                lembagaLabel={lembagaLabel}
+                employees={evaluatees.map((e) => ({ id: e.id, role: e.role }))}
+              />
               <button
                 type="button"
                 onClick={logout}
