@@ -181,7 +181,7 @@ export async function GET(
   return new Response(new Uint8Array(zipBuffer), {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="rapor-${lembagaSlug}-${roleLabel}-${year}.zip"`,
+      "Content-Disposition": `attachment; filename="rapor-${lembagaSlug}-${year}.zip"`,
     },
   })
 }
