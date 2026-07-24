@@ -370,24 +370,33 @@ function LembagaReportPage({ data }: { data: LembagaReportData }) {
       </View>
 
       {/* Signatures */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 0 }}>
-        {[
-          { title: org.kepalaTitle  || "Pimpinan",            name: org.kepalaSekolah   || "_______________", sig: org.kepalaSignatureBase64  },
-          { title: org.signer2Title || "_______________",      name: org.signer2Name     || "_______________", sig: org.signer2SignatureBase64 },
-          { title: org.ketuaTitle   || "Owner & Founder",     name: org.ketuaName       || "_______________", sig: org.ketuaSignatureBase64   },
-        ].map((s, i) => (
-          <View key={i} style={{ width: "30%", alignItems: "flex-start" }}>
-            <Text style={{ fontSize: 8, color: DARK, marginBottom: 4 }}>{s.title}</Text>
-            {s.sig ? (
-              <Image src={s.sig} style={{ width: "100%", height: 60, objectFit: "contain", marginBottom: 4 }} />
-            ) : (
-              <View style={{ height: 60, marginBottom: 4 }} />
-            )}
-            <View style={{ borderTopWidth: 1, borderTopColor: DARK, width: "100%", marginBottom: 3 }} />
-            <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>{s.name}</Text>
+      {(() => {
+        const all = [
+          { title: org.kepalaTitle,  name: org.kepalaSekolah, sig: org.kepalaSignatureBase64  },
+          { title: org.signer2Title, name: org.signer2Name,   sig: org.signer2SignatureBase64 },
+          { title: org.ketuaTitle,   name: org.ketuaName,     sig: org.ketuaSignatureBase64   },
+        ]
+        const active = all.filter((s) => (s.name ?? "").trim())
+        const signers = active.length > 0 ? active : [{ title: "Pimpinan", name: "_______________", sig: null }]
+        const w = signers.length === 1 ? "40%" : signers.length === 2 ? "44%" : "30%"
+        const justify = signers.length === 1 ? "flex-start" : "space-between"
+        return (
+          <View style={{ flexDirection: "row", justifyContent: justify as "flex-start" | "space-between", marginTop: 0 }}>
+            {signers.map((s, i) => (
+              <View key={i} style={{ width: w, alignItems: "flex-start" }}>
+                <Text style={{ fontSize: 8, color: DARK, marginBottom: 4 }}>{s.title || "_______________"}</Text>
+                {s.sig ? (
+                  <Image src={s.sig} style={{ width: "100%", height: 60, objectFit: "contain", marginBottom: 4 }} />
+                ) : (
+                  <View style={{ height: 60, marginBottom: 4 }} />
+                )}
+                <View style={{ borderTopWidth: 1, borderTopColor: DARK, width: "100%", marginBottom: 3 }} />
+                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold" }}>{s.name || "_______________"}</Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        )
+      })()}
     </Page>
   )
 }

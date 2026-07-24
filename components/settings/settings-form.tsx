@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { toast } from "sonner"
-import { Save, Upload, X, Building2, Calendar, UserCog, ImageIcon, PenLine, Loader2 } from "lucide-react"
+import { Save, Upload, X, Building2, Calendar, UserCog, ImageIcon, PenLine, Loader2, Plus, Trash2 } from "lucide-react"
 
 // ── Image compression via Canvas API ──────────────────────────────────────────
 
@@ -231,14 +231,30 @@ function SignatureUpload({
   )
 }
 
+const SIGNER_SLOTS = [
+  { nameKey: "kepalaSekolah" as const, titleKey: "kepalaTitle" as const, sigKey: "kepalaSignatureBase64" as const },
+  { nameKey: "signer2Name"  as const, titleKey: "signer2Title" as const, sigKey: "signer2SignatureBase64" as const },
+  { nameKey: "ketuaName"    as const, titleKey: "ketuaTitle"   as const, sigKey: "ketuaSignatureBase64"   as const },
+]
+
 export function SettingsForm({ initial, lembagaId = "alfakhir" }: { initial: OrgSettingsForm; lembagaId?: string }) {
   const [form, setForm] = useState<OrgSettingsForm>(initial)
   const [loading, setLoading] = useState(false)
   const [logoCompressing, setLogoCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const initVisible = [initial.kepalaSekolah, initial.signer2Name, initial.ketuaName]
+    .filter(Boolean).length
+  const [visibleSigners, setVisibleSigners] = useState(Math.max(initVisible, 1))
+
   function set(key: keyof OrgSettingsForm, value: string | null) {
     setForm((f) => ({ ...f, [key]: value }))
+  }
+
+  function removeSigner(idx: number) {
+    const slot = SIGNER_SLOTS[idx]
+    setForm((f) => ({ ...f, [slot.nameKey]: "", [slot.titleKey]: "", [slot.sigKey]: null }))
+    setVisibleSigners(idx)
   }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -330,56 +346,61 @@ export function SettingsForm({ initial, lembagaId = "alfakhir" }: { initial: Org
 
       {/* Pejabat Penandatangan */}
       <div className="card p-5">
-        <SectionHeader icon={UserCog} title="Pejabat Penandatangan" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-          {/* Signer 1 */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 1</p>
-            <Field label="Nama">
-              <Input value={form.kepalaSekolah} onChange={(v) => set("kepalaSekolah", v)} placeholder="Deny Rahmat, S.Sos.I" />
-            </Field>
-            <Field label="Jabatan">
-              <Input value={form.kepalaTitle} onChange={(v) => set("kepalaTitle", v)} placeholder="Kepala SMP Islam Modern Al Fakhir" />
-            </Field>
-            <SignatureUpload
-              label="Tanda Tangan (PNG, maks. 300 KB)"
-              value={form.kepalaSignatureBase64}
-              onChange={(v) => set("kepalaSignatureBase64", v)}
-            />
-          </div>
-          {/* Signer 2 */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 2</p>
-            <Field label="Nama">
-              <Input value={form.signer2Name} onChange={(v) => set("signer2Name", v)} placeholder="Anggraini, A.Md" />
-            </Field>
-            <Field label="Jabatan">
-              <Input value={form.signer2Title} onChange={(v) => set("signer2Title", v)} placeholder="Deputi Litbang & SDM Al Fakhir" />
-            </Field>
-            <SignatureUpload
-              label="Tanda Tangan (PNG, maks. 300 KB)"
-              value={form.signer2SignatureBase64}
-              onChange={(v) => set("signer2SignatureBase64", v)}
-            />
-          </div>
-          {/* Signer 3 */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>Penandatangan 3</p>
-            <Field label="Nama">
-              <Input value={form.ketuaName} onChange={(v) => set("ketuaName", v)} placeholder="Deni Irawan, M.Pd" />
-            </Field>
-            <Field label="Jabatan">
-              <Input value={form.ketuaTitle} onChange={(v) => set("ketuaTitle", v)} placeholder="Owner & Founder Al Fakhir" />
-            </Field>
-            <SignatureUpload
-              label="Tanda Tangan (PNG, maks. 300 KB)"
-              value={form.ketuaSignatureBase64}
-              onChange={(v) => set("ketuaSignatureBase64", v)}
-            />
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader icon={UserCog} title="Pejabat Penandatangan" />
+          {visibleSigners < 3 && (
+            <button
+              type="button"
+              onClick={() => setVisibleSigners((v) => v + 1)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: "#EDF2F7", color: "#1E3A5F" }}
+            >
+              <Plus size={11} /> Tambah Penandatangan
+            </button>
+          )}
+        </div>
+        <div className={`grid grid-cols-1 gap-x-6 gap-y-6 ${visibleSigners === 2 ? "md:grid-cols-2" : visibleSigners === 3 ? "md:grid-cols-3" : ""}`}>
+          {SIGNER_SLOTS.slice(0, visibleSigners).map((slot, idx) => (
+            <div key={idx} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1E3A5F" }}>
+                  Penandatangan {idx + 1}
+                </p>
+                {idx === visibleSigners - 1 && visibleSigners > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSigner(idx)}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold"
+                    style={{ backgroundColor: "#FEE2E2", color: "#DC2626" }}
+                  >
+                    <Trash2 size={9} /> Hapus
+                  </button>
+                )}
+              </div>
+              <Field label="Nama">
+                <Input
+                  value={(form[slot.nameKey] as string) || ""}
+                  onChange={(v) => set(slot.nameKey, v)}
+                  placeholder="Nama lengkap + gelar"
+                />
+              </Field>
+              <Field label="Jabatan">
+                <Input
+                  value={(form[slot.titleKey] as string) || ""}
+                  onChange={(v) => set(slot.titleKey, v)}
+                  placeholder="Jabatan / posisi"
+                />
+              </Field>
+              <SignatureUpload
+                label="Tanda Tangan (PNG, maks. 300 KB)"
+                value={form[slot.sigKey] as string | null}
+                onChange={(v) => set(slot.sigKey, v)}
+              />
+            </div>
+          ))}
         </div>
         <p className="mt-4 text-xs" style={{ color: "#94A3B8" }}>
-          Gambar tanda tangan akan muncul di atas garis tanda tangan pada laporan PDF. Gunakan PNG dengan latar belakang putih atau transparan.
+          Maks. 3 penandatangan. Layout posisi tanda tangan pada rapor PDF menyesuaikan jumlah data.
         </p>
       </div>
 
