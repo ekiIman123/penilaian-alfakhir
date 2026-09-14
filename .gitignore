@@ -46,3 +46,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Daftar kode akses hasil rotasi — kredensial, jangan pernah masuk repositori
+kode-akses-baru.txt
