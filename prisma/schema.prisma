@@ -8,14 +8,18 @@ datasource db {
 }
 
 model Employee {
-  id           String       @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
-  role         String       @default("guru")
-  lembaga      String       @default("alfakhir")
+  role         String         @default("guru")
+  lembaga      String         @default("alfakhir")
   divisi       String?
+  accessCode   String?        @unique
+  phone        String?
   finalCatatan String?
+  assignments  Assignment[]
   evaluations  Evaluation[]
-  createdAt    DateTime     @default(now())
+  results      PeriodResult[]
+  createdAt    DateTime       @default(now())
 
   @@unique([name, role, lembaga])
 }
@@ -27,26 +31,83 @@ model Evaluator {
   role        String       @default("evaluator")
   divisi      String?
   accessCode  String?      @unique
+  phone       String?
+  accountId   String?
+  account     Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  assignments Assignment[]
   evaluations Evaluation[]
   createdAt   DateTime     @default(now())
 
   @@unique([name, lembaga])
+  @@index([accountId])
+}
+
+/// Satu orang bisa memegang beberapa jabatan di lembaga berbeda — Kamal
+/// supervisor IYSA sekaligus CEO ICGI, Pak Deni manajemen di ketiganya.
+/// Account menyatukannya jadi satu kali masuk, bukan tiga.
+model Account {
+  id           String      @id @default(cuid())
+  name         String
+  accessCode   String?     @unique
+  isSuperadmin Boolean     @default(false)
+  evaluators   Evaluator[]
+  createdAt    DateTime    @default(now())
+}
+
+/// Siapa menilai siapa, sebagai data — bukan rangkaian if di dalam kode.
+/// Bobot mencerminkan kedekatan dengan pekerjaan harian orang yang dinilai.
+model Assignment {
+  id          String    @id @default(cuid())
+  evaluatorId String
+  employeeId  String
+  lembaga     String
+  weight      Float     @default(1)
+  activeFrom  DateTime  @default(now())
+  activeTo    DateTime?
+  evaluator   Evaluator @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([evaluatorId, employeeId])
+  @@index([lembaga])
+}
+
+/// Jejak tindakan yang tidak boleh hilang: membuka kunci periode, menerbitkan
+/// dan menarik rapor, mengubah nilai setelah periode ditutup.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actorName String
+  action    String
+  target    String
+  lembaga   String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([lembaga, createdAt])
+  @@index([target])
 }
 
 model Evaluation {
   id          String    @id @default(cuid())
   evaluatorId String
   employeeId  String
+  periodId    String
   lembaga     String    @default("alfakhir")
   rubricType  String    @default("standard")
+  status      String    @default("draf")
+  submittedAt DateTime?
   evaluator   Evaluator @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
   employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  period      Period    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores      String
   catatan     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@unique([evaluatorId, employeeId])
+  @@unique([periodId, evaluatorId, employeeId])
+  @@index([periodId, employeeId])
+  @@index([periodId, evaluatorId, status])
 }
 
 model OrgSettings {
@@ -69,4 +130,45 @@ model OrgSettings {
   ketuaSignatureBase64   String?
   logoBase64             String?
   updatedAt              DateTime @updatedAt
+}
+
+model Period {
+  id          String         @id
+  lembaga     String
+  year        Int
+  month       Int
+  label       String
+  status      String         @default("draf")
+  opensAt     DateTime
+  closesAt    DateTime
+  publishedAt DateTime?
+  evaluations Evaluation[]
+  results     PeriodResult[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([lembaga, year, month])
+  @@index([lembaga, status])
+}
+
+model PeriodResult {
+  id             String    @id @default(cuid())
+  periodId       String
+  employeeId     String
+  lembaga        String
+  rubricType     String
+  totalScore     Float
+  maxScore       Int
+  gradeLabel     String
+  sectionScores  String
+  evaluatorCount Int
+  finalCatatan   String?
+  publishedAt    DateTime  @default(now())
+  readAt         DateTime?
+  tanggapan      String?
+  period         Period    @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, employeeId])
+  @@index([employeeId])
 }

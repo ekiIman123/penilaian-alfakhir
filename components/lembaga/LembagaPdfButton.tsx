@@ -11,16 +11,19 @@ interface SingleProps {
   employeeId: string
   employeeName: string
   lembagaSlug: string
+  periodId: string
 }
 
-export function LembagaPdfButton({ employeeId, employeeName, lembagaSlug }: SingleProps) {
+export function LembagaPdfButton({ employeeId, employeeName, lembagaSlug, periodId }: SingleProps) {
   const [loading, setLoading] = useState(false)
 
   async function handleDownload() {
     if (loading) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/lembaga/${lembagaSlug}/reports/${employeeId}/pdf`)
+      const res = await fetch(
+        `/api/lembaga/${lembagaSlug}/reports/${employeeId}/pdf?periode=${encodeURIComponent(periodId)}`
+      )
       if (!res.ok) {
         toast.error("Gagal membuat laporan PDF. Coba lagi.")
         return
@@ -110,9 +113,10 @@ interface BulkProps {
   lembagaSlug: string
   lembagaLabel: string
   employees: { id: string; role: string }[]
+  periodId: string
 }
 
-export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel, employees }: BulkProps) {
+export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel, employees, periodId }: BulkProps) {
   const [loading, setLoading]           = useState(false)
   const [loadingLabel, setLoadingLabel] = useState("")
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -171,7 +175,8 @@ export function LembagaBulkPdfButton({ lembagaSlug, lembagaLabel, employees }: B
       }
 
       const res = await fetch(
-        `/api/lembaga/${lembagaSlug}/reports/bulk?format=${format}&ids=${ids.join(",")}`,
+        `/api/lembaga/${lembagaSlug}/reports/bulk?format=${format}` +
+          `&ids=${ids.join(",")}&periode=${encodeURIComponent(periodId)}`,
       )
       if (!res.ok) {
         toast.error("Gagal membuat laporan. Coba lagi.")

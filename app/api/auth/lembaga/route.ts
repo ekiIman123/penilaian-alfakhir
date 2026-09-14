@@ -7,12 +7,22 @@ export async function POST(req: Request) {
     if (typeof code !== "string" || !code.trim()) {
       return NextResponse.json({ error: "Kode akses wajib diisi" }, { status: 400 })
     }
-    const session = await verifyAccessCode(code)
-    if (!session) {
+    const akun = await verifyAccessCode(code)
+    if (!akun) {
       return NextResponse.json({ error: "Kode akses tidak valid" }, { status: 401 })
     }
-    await setSessionCookie(session)
-    return NextResponse.json({ ok: true, session })
+    await setSessionCookie(akun)
+
+    // Yang dikembalikan hanya yang dibutuhkan halaman masuk: nama dan daftar
+    // lembaga yang bisa dibuka. Kode akses tidak pernah dikirim balik.
+    return NextResponse.json({
+      ok: true,
+      name: akun.name,
+      isSuperadmin: akun.isSuperadmin,
+      lembagaList: akun.isSuperadmin ? "all" : akun.hats.map((h) => h.lembaga),
+      jumlahJabatan: akun.hats.length,
+      hats: akun.hats.map((h) => ({ lembaga: h.lembaga, role: h.role })),
+    })
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

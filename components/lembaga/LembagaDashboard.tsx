@@ -8,6 +8,7 @@ import {
 import { useMemo, useState, useRef, useEffect, useCallback } from "react"
 import type { EvaluateeRowData, EvalSummary } from "@/lib/lembaga-dashboard-data"
 import { LembagaEvalModal, type LembagaEditTarget } from "./LembagaEvalModal"
+import { PeriodBar, type PeriodBarInfo } from "./PeriodBar"
 import { LembagaDetailPanel } from "./LembagaDetailPanel"
 import { LembagaBulkPdfButton } from "./LembagaPdfButton"
 
@@ -29,6 +30,8 @@ interface Props {
   lembagaLabel: string
   session: { evaluatorId: string; name: string; role: string; divisi: string | null }
   evaluatees: EvaluateeRowData[]
+  period: PeriodBarInfo
+  periods: PeriodBarInfo[]
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -53,7 +56,7 @@ const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   superadmin:  { bg: "#E9D5FF", color: "#6B21A8" },
 }
 
-type StatusFilter = "all" | "done" | "pending"
+type StatusFilter = "all" | "done" | "draft" | "pending"
 type SortBy = "name-asc" | "name-desc" | "score-high" | "score-low" | "status-done" | "status-pending"
 
 function FilterDropdown<T extends string>({
@@ -383,16 +386,41 @@ function EvalRow({
           <div className="flex items-center gap-2.5">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{
-                backgroundColor: e.evaluated ? "#BBF7D0" : "#F3F4F6",
-                color: e.evaluated ? "#14532D" : "#9CA3AF",
-              }}
+              style={
+                e.myStatus === "terkirim"
+                  ? { backgroundColor: "#BBF7D0", color: "#14532D" }
+                  : e.myStatus === "draf"
+                    ? { backgroundColor: "#FEF3C7", color: "#92400E" }
+                    : { backgroundColor: "#F3F4F6", color: "#9CA3AF" }
+              }
+              title={
+                e.myStatus === "terkirim" ? "Penilaian Anda sudah terkirim"
+                : e.myStatus === "draf"   ? "Draf Anda belum dikirim"
+                : "Belum Anda nilai"
+              }
             >
               {e.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1">
                 <p className="font-semibold text-sm text-gray-800 truncate leading-tight">{e.name}</p>
+                <Link
+                  href={`/${lembagaSlug}/orang/${e.id}`}
+                  onClick={(ev) => ev.stopPropagation()}
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 hover:underline"
+                  style={{ backgroundColor: "#EEF2F7", color: "#64748B" }}
+                  title={`Tren bulanan ${e.name}`}
+                >
+                  TREN
+                </Link>
+                {e.myStatus === "draf" && (
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                    style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+                  >
+                    DRAF
+                  </span>
+                )}
                 <ChevronRight
                   size={12}
                   style={{
@@ -487,7 +515,9 @@ function EvalRow({
   )
 }
 
-export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatees }: Props) {
+export function LembagaDashboard({
+  lembagaSlug, lembagaLabel, session, evaluatees, period, periods,
+}: Props) {
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [sortBy, setSortBy]             = useState<SortBy>("name-asc")
@@ -506,8 +536,9 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
     router.refresh()
   }
 
-  const done    = evaluatees.filter((e) => e.evaluated).length
-  const pending = evaluatees.length - done
+  const done    = evaluatees.filter((e) => e.myStatus === "terkirim").length
+  const draft   = evaluatees.filter((e) => e.myStatus === "draf").length
+  const pending = evaluatees.length - done - draft
 
   let divisiTags: string[] = []
   if (session.divisi) {
@@ -536,8 +567,9 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
 
   const filtered = useMemo(() => {
     let list = [...evaluatees]
-    if (statusFilter === "done")    list = list.filter((e) => e.evaluated)
-    if (statusFilter === "pending") list = list.filter((e) => !e.evaluated)
+    if (statusFilter === "done")    list = list.filter((e) => e.myStatus === "terkirim")
+    if (statusFilter === "draft")   list = list.filter((e) => e.myStatus === "draf")
+    if (statusFilter === "pending") list = list.filter((e) => e.myStatus === "belum")
     if (divisiFilter !== "all")     list = list.filter((e) => e.divisi === divisiFilter)
     if (roleFilter !== "all")       list = list.filter((e) => e.role === roleFilter)
     if (searchQ.trim()) {
@@ -619,7 +651,8 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {[
                 { label: "Total Karyawan", value: evaluatees.length, color: "#C4972A" },
-                { label: "Selesai",        value: done,              color: "#16A34A" },
+                { label: "Terkirim",       value: done,              color: "#16A34A" },
+                { label: "Draf",           value: draft,             color: "#E8B84B" },
                 { label: "Belum Dinilai",  value: pending,           color: "#F59E0B" },
               ].map((s) => (
                 <div
@@ -634,6 +667,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
               <LembagaBulkPdfButton
                 lembagaSlug={lembagaSlug}
                 lembagaLabel={lembagaLabel}
+                periodId={period.id}
                 employees={evaluatees.map((e) => ({ id: e.id, role: e.role }))}
               />
               <button
@@ -649,6 +683,16 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
         </div>
         <div style={{ height: "2px", background: "linear-gradient(90deg, #B8860B, #C4972A, #E8B84B, #C4972A, #B8860B)" }} />
       </div>
+
+      <PeriodBar
+        lembagaSlug={lembagaSlug}
+        period={period}
+        periods={periods}
+        role={session.role}
+        terkirim={done}
+        draf={draft}
+        total={evaluatees.length}
+      />
 
       {evaluatees.length === 0 ? (
         <div className="card p-10 text-center">
@@ -696,9 +740,10 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
               <FilterDropdown
                 label="Status"
                 options={[
-                  { value: "all",     label: "Semua"   },
-                  { value: "done",    label: "Selesai" },
-                  { value: "pending", label: "Belum"   },
+                  { value: "all",     label: "Semua"    },
+                  { value: "done",    label: "Terkirim" },
+                  { value: "draft",   label: "Draf"     },
+                  { value: "pending", label: "Belum"    },
                 ] as { value: StatusFilter; label: string }[]}
                 value={statusFilter}
                 defaultValue="all"
@@ -783,6 +828,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
         </div>
         {selectedEmployee && (
           <LembagaDetailPanel
+            periodId={period.id}
             e={selectedEmployee}
             employees={filtered}
             lembagaSlug={lembagaSlug}
@@ -799,6 +845,7 @@ export function LembagaDashboard({ lembagaSlug, lembagaLabel, session, evaluatee
       {editTarget && (
         <LembagaEvalModal
           target={editTarget}
+          period={{ id: period.id, label: period.label, status: period.status, dapatDinilai: period.dapatDinilai }}
           onClose={() => setEditTarget(null)}
           onSaved={() => {
             setEditTarget(null)

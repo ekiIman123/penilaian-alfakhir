@@ -30,6 +30,7 @@ const ROLE_LABEL: Record<string, string> = {
 }
 
 interface Props {
+  periodId: string
   e: EvaluateeRowData
   employees: EvaluateeRowData[]
   lembagaSlug: string
@@ -39,7 +40,7 @@ interface Props {
   onNavigate: (e: EvaluateeRowData) => void
 }
 
-export function LembagaDetailPanel({ e, employees, lembagaSlug, sessionEvaluatorId, onClose, onEdit, onNavigate }: Props) {
+export function LembagaDetailPanel({ e, employees, lembagaSlug, periodId, sessionEvaluatorId, onClose, onEdit, onNavigate }: Props) {
   const currentIdx = employees.findIndex((emp) => emp.id === e.id)
   const hasPrev = currentIdx > 0
   const hasNext = currentIdx < employees.length - 1
@@ -114,7 +115,9 @@ export function LembagaDetailPanel({ e, employees, lembagaSlug, sessionEvaluator
   async function handleGenerateAI() {
     setLoadingAI(true)
     try {
-      const res = await fetch(`/api/lembaga/${lembagaSlug}/employees/${e.id}/summarize`)
+      const res = await fetch(
+        `/api/lembaga/${lembagaSlug}/employees/${e.id}/summarize?periode=${encodeURIComponent(periodId)}`
+      )
       if (!res.ok) throw new Error()
       const data = (await res.json()) as { summary: string | null }
       if (data.summary) {
@@ -794,6 +797,7 @@ export function LembagaDetailPanel({ e, employees, lembagaSlug, sessionEvaluator
             employeeId={e.id}
             employeeName={e.name}
             lembagaSlug={lembagaSlug}
+            periodId={periodId}
           />
         </div>
       </div>

@@ -35,12 +35,25 @@ export function CodeEntryForm({ lembagaSlug, lembagaLabel, lembagaTagline }: Pro
         setSubmitting(false)
         return
       }
-      if (data.session?.lembaga && data.session.lembaga !== "all" && data.session.lembaga !== lembagaSlug) {
-        setError(`Kode ini untuk lembaga ${String(data.session.lembaga).toUpperCase()}, bukan ${lembagaLabel}`)
+      const daftar = data.lembagaList
+      if (daftar !== "all" && Array.isArray(daftar) && !daftar.includes(lembagaSlug)) {
+        const punya = daftar.map((l: string) => l.toUpperCase()).join(", ")
+        setError(
+          daftar.length > 0
+            ? `Kode ini berlaku untuk ${punya}, bukan ${lembagaLabel}`
+            : `Kode ini belum punya jabatan di lembaga mana pun`
+        )
         setSubmitting(false)
         return
       }
-      router.push(`/${lembagaSlug}/dashboard`)
+      // Manajemen memantau tiga lembaga sekaligus, jadi layar pertamanya
+      // adalah peta — bukan dashboard satu lembaga.
+      const puncak = ["management", "founder", "superadmin"]
+      const keBeranda =
+        data.isSuperadmin ||
+        (Array.isArray(data.hats) && data.hats.some((h: { role: string }) => puncak.includes(h.role)))
+
+      router.push(keBeranda ? "/beranda" : `/${lembagaSlug}/dashboard`)
       router.refresh()
     } catch {
       setError("Terjadi kesalahan. Coba lagi.")

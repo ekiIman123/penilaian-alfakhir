@@ -202,16 +202,51 @@ const EVALUATIONS = [
   },
 ]
 
+
+/**
+ * Script impor lama ini berjalan sebelum siklus bulanan ada. Penilaiannya
+ * dinaungi satu periode Al Fakhir untuk bulan berjalan agar tetap punya induk.
+ */
+async function periodeAlFakhir(): Promise<string> {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const BULAN = ["Januari","Februari","Maret","April","Mei","Juni",
+                 "Juli","Agustus","September","Oktober","November","Desember"]
+  const id = `alfakhir-${year}-${String(month).padStart(2, "0")}`
+  await prisma.period.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id, lembaga: "alfakhir", year, month,
+      label: `${BULAN[month - 1]} ${year}`,
+      status: "dibuka",
+      opensAt: new Date(year, month - 1, 1),
+      closesAt: new Date(year, month, 0, 23, 59, 59),
+    },
+  })
+  return id
+}
+
 async function main() {
+  const periodId = await periodeAlFakhir()
   console.log("Mengimpor data dari spreadsheet...")
   console.log(`Total evaluasi: ${EVALUATIONS.length}`)
 
   let upserted = 0
   for (const ev of EVALUATIONS) {
     await prisma.evaluation.upsert({
-      where: { evaluatorId_employeeId: { evaluatorId: ev.evaluatorId, employeeId: ev.employeeId } },
+      where: {
+        periodId_evaluatorId_employeeId: {
+          periodId, evaluatorId: ev.evaluatorId, employeeId: ev.employeeId,
+        },
+      },
       update: { scores: ev.scores, catatan: ev.catatan ?? null },
-      create: { evaluatorId: ev.evaluatorId, employeeId: ev.employeeId, scores: ev.scores, catatan: ev.catatan ?? null },
+      create: {
+        periodId, evaluatorId: ev.evaluatorId, employeeId: ev.employeeId,
+        scores: ev.scores, catatan: ev.catatan ?? null,
+        status: "terkirim", submittedAt: new Date(),
+      },
     })
     upserted++
     process.stdout.write(`\r  ✓ ${upserted}/${EVALUATIONS.length} evaluasi`)

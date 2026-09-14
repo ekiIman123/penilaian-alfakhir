@@ -91,7 +91,34 @@ const ROWS: [string, string, number[], string | null][] = [
     "-"],
 ]
 
+
+/**
+ * Script impor lama ini berjalan sebelum siklus bulanan ada. Penilaiannya
+ * dinaungi satu periode Al Fakhir untuk bulan berjalan agar tetap punya induk.
+ */
+async function periodeAlFakhir(): Promise<string> {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const BULAN = ["Januari","Februari","Maret","April","Mei","Juni",
+                 "Juli","Agustus","September","Oktober","November","Desember"]
+  const id = `alfakhir-${year}-${String(month).padStart(2, "0")}`
+  await prisma.period.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id, lembaga: "alfakhir", year, month,
+      label: `${BULAN[month - 1]} ${year}`,
+      status: "dibuka",
+      opensAt: new Date(year, month - 1, 1),
+      closesAt: new Date(year, month, 0, 23, 59, 59),
+    },
+  })
+  return id
+}
+
 async function main() {
+  const periodId = await periodeAlFakhir()
   // Fetch all evaluators and teachers by name
   const evaluators = await prisma.evaluator.findMany()
   const teachers   = await prisma.employee.findMany()
@@ -119,8 +146,8 @@ async function main() {
     }
 
     const scores = JSON.stringify(toScores(scoreVals))
-    const existing = await prisma.evaluation.findUnique({
-      where: { evaluatorId_employeeId: { evaluatorId, employeeId } },
+    const existing = await prisma.evaluation.findFirst({
+      where: { periodId, evaluatorId, employeeId },
     })
 
     if (existing) {
@@ -133,10 +160,13 @@ async function main() {
     } else {
       await prisma.evaluation.create({
         data: {
+          periodId,
           evaluatorId,
           employeeId,
           scores,
           catatan: catatan === "-" ? null : catatan,
+          status: "terkirim",
+          submittedAt: new Date(),
         },
       })
       console.log(`✅ Inserted: ${evName.split(",")[0]} → ${tchName}`)

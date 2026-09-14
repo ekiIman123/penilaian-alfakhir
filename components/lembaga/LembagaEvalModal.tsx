@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X, Save, Loader2, Trash2, AlertTriangle } from "lucide-react"
+import { X, Save, Loader2, Trash2, AlertTriangle, Lock } from "lucide-react"
 import { getSectionsForRubric, getNewRubricGrade } from "@/lib/rubrics"
 import { calcSectionRaw } from "@/lib/calculations"
+import { periksaCatatan, pesanCatatanKurang } from "@/lib/eval-rules"
 import { toast } from "sonner"
 
 export type LembagaEditTarget = {
@@ -15,15 +16,25 @@ export type LembagaEditTarget = {
   rubricType: "ae" | "ag"
 }
 
+export type ModalPeriod = {
+  id: string
+  label: string
+  status: string
+  dapatDinilai: boolean
+}
+
 export function LembagaEvalModal({
   target,
+  period,
   onClose,
   onSaved,
 }: {
   target: LembagaEditTarget
+  period: ModalPeriod
   onClose: () => void
   onSaved: () => void
 }) {
+  const terkunci = !period.dapatDinilai
   const [mounted, setMounted] = useState(false)
   const [evaluationId, setEvaluationId] = useState<string | null>(null)
   const [scores, setScores] = useState<Record<string, number>>({})
@@ -43,7 +54,10 @@ export function LembagaEvalModal({
     setSectionCatatan({})
     setEvaluationId(null)
     setConfirmDelete(false)
-    fetch(`/api/evaluations?teacherId=${target.employeeId}&evaluatorId=${target.evaluatorId}`)
+    fetch(
+      `/api/evaluations?teacherId=${target.employeeId}` +
+      `&evaluatorId=${target.evaluatorId}&periodId=${encodeURIComponent(period.id)}`
+    )
       .then((r) => r.json())
       .then((data) => {
         if (data?.scores) setScores(data.scores)
@@ -57,7 +71,7 @@ export function LembagaEvalModal({
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [target.employeeId, target.evaluatorId])
+  }, [target.employeeId, target.evaluatorId, period.id])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -73,8 +87,19 @@ export function LembagaEvalModal({
     : null
   const maxScore = target.rubricType === "ae" ? 60 : 84
   const grade = totalScore !== null ? getNewRubricGrade(totalScore, target.rubricType) : null
+  const catatanKurang = periksaCatatan(scores, sectionCatatan, sections).kurang
 
   async function handleSave() {
+    if (terkunci) {
+      toast.error(`Periode ${period.label} sudah ditutup`)
+      return
+    }
+    // Aturan yang sama seperti di form penuh: nilai ekstrem butuh penjelasan.
+    // Hanya berlaku saat penilaian dikirim — draf boleh setengah jadi.
+    if (isComplete && catatanKurang.length > 0) {
+      toast.error(pesanCatatanKurang(catatanKurang))
+      return
+    }
     setSaving(true)
     try {
       const catatanEntries = Object.fromEntries(
@@ -87,16 +112,27 @@ export function LembagaEvalModal({
         body: JSON.stringify({
           teacherId: target.employeeId,
           evaluatorId: target.evaluatorId,
+          periodId: period.id,
           scores,
           catatan: catatanPayload,
           rubricType: target.rubricType,
+          // Penilaian yang belum lengkap disimpan sebagai draf: tersimpan aman,
+          // tapi belum ikut dirata-rata dan belum terlihat penilai lain.
+          status: isComplete ? "terkirim" : "draf",
         }),
       })
-      if (!res.ok) throw new Error()
-      toast.success("Penilaian berhasil disimpan")
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error ?? "")
+      }
+      toast.success(
+        isComplete
+          ? `Penilaian ${target.employeeName} terkirim untuk ${period.label}`
+          : `Tersimpan sebagai draf — ${allCriteria.length - filledCount} kriteria belum diisi`
+      )
       onSaved()
-    } catch {
-      toast.error("Gagal menyimpan penilaian")
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "Gagal menyimpan penilaian")
       setSaving(false)
     }
   }
@@ -132,8 +168,17 @@ export function LembagaEvalModal({
           style={{ background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)" }}
         >
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(196,151,42,0.85)" }}>
-              Edit Penilaian
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.85)" }}>
+                {terkunci ? "Lihat Penilaian" : "Edit Penilaian"}
+              </span>
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
+                style={{ backgroundColor: "rgba(255,255,255,0.14)", color: "rgba(255,255,255,0.85)" }}
+              >
+                {terkunci && <Lock size={8} />}
+                {period.label}
+              </span>
             </div>
             <div className="font-semibold text-white text-sm leading-snug truncate">{target.employeeName}</div>
             <div className="flex items-center gap-1.5 mt-1.5">
@@ -294,7 +339,16 @@ export function LembagaEvalModal({
             <span className="text-[11px]" style={{ color: "#94A3B8" }}>
               {filledCount}/{allCriteria.length} kriteria diisi
             </span>
-            {evaluationId && !confirmDelete && (
+            {isComplete && catatanKurang.length > 0 && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+                title={pesanCatatanKurang(catatanKurang)}
+              >
+                {catatanKurang.length} catatan wajib
+              </span>
+            )}
+            {evaluationId && !confirmDelete && !terkunci && (
               <button
                 onClick={() => setConfirmDelete(true)}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors"
@@ -314,12 +368,15 @@ export function LembagaEvalModal({
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || filledCount === 0}
+              disabled={saving || filledCount === 0 || terkunci}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40"
-              style={{ backgroundColor: "#1E3A5F" }}
+              style={{ backgroundColor: terkunci ? "#94A3B8" : "#1E3A5F" }}
+              title={terkunci ? `Periode ${period.label} sudah ${period.status}` : undefined}
             >
-              {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-              Simpan
+              {terkunci
+                ? <Lock size={12} />
+                : saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              {terkunci ? "Terkunci" : isComplete ? "Kirim" : "Simpan Draf"}
             </button>
           </div>
         </div>

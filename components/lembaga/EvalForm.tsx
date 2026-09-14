@@ -1,9 +1,10 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getSectionsForRubric, getNewRubricGrade, type Criterion, type Section } from "@/lib/rubrics"
-import { Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Lock, CalendarDays, CloudUpload, Eye } from "lucide-react"
+import { periksaCatatan, pesanCatatanKurang, cerminPenilaian } from "@/lib/eval-rules"
 
 interface Props {
   lembagaSlug: "iysa" | "icgi" | "iyora"
@@ -13,7 +14,15 @@ interface Props {
   employeeRole: string
   employeeDivisi: string | null
   rubricType: "ae" | "ag"
-  existing?: { scores: Record<string, number>; catatan: string | null } | null
+  period: {
+    id: string
+    label: string
+    status: string
+    dapatDinilai: boolean
+    sisaHari: number | null
+  }
+  sebelumnya?: { label: string; scores: Record<string, number> } | null
+  existing?: { scores: Record<string, number>; catatan: string | null; status: string } | null
 }
 
 const SCORE_LABELS: Record<number, string> = { 1: "Kurang", 2: "Cukup", 3: "Baik", 4: "Sangat Baik" }
@@ -233,7 +242,7 @@ function LeftSidebar({
 
 // ── Criterion Card ──────────────────────────────────────────────
 function CriterionCard({
-  criterion, value, index, sectionColor, onChange, onFocus,
+  criterion, value, index, sectionColor, onChange, onFocus, lalu, laluLabel,
 }: {
   criterion: Criterion
   value: number | null
@@ -241,8 +250,12 @@ function CriterionCard({
   sectionColor: string
   onChange: (score: number) => void
   onFocus: () => void
+  /** Nilai yang penilai ini berikan periode lalu — rujukan, bukan isian awal. */
+  lalu?: number | null
+  laluLabel?: string | null
 }) {
   const [hov, setHov] = useState<number | null>(null)
+  const beda = lalu != null && value != null ? value - Math.round(lalu) : 0
 
   return (
     <div
@@ -264,12 +277,26 @@ function CriterionCard({
           {index + 1}
         </span>
         <p className="flex-1 font-semibold text-sm text-gray-800 leading-snug">{criterion.label}</p>
+        {lalu != null && (
+          <span
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap"
+            style={{ color: "#94A3B8", backgroundColor: "#F1F5F9" }}
+            title={`Nilai yang Anda berikan pada ${laluLabel ?? "periode lalu"}`}
+          >
+            {laluLabel ?? "lalu"} {Math.round(lalu)}
+          </span>
+        )}
         {value && (
           <span
             className="text-xs font-black px-2 py-0.5 rounded-full shrink-0"
             style={{ color: sectionColor, backgroundColor: `${sectionColor}18` }}
           >
             {value}
+            {beda !== 0 && (
+              <span className="ml-0.5 font-bold" style={{ color: beda > 0 ? "#16A34A" : "#DC2626" }}>
+                {beda > 0 ? "▲" : "▼"}
+              </span>
+            )}
           </span>
         )}
       </div>
@@ -542,9 +569,12 @@ function RubricPanel({
 
 // ── Main Export ──────────────────────────────────────────────────
 export function EvalForm({
-  lembagaSlug, evaluatorId, employeeId, employeeName, employeeRole, employeeDivisi, rubricType, existing,
+  lembagaSlug, evaluatorId, employeeId, employeeName, employeeRole, employeeDivisi, rubricType,
+  period, sebelumnya, existing,
 }: Props) {
   const router = useRouter()
+  const terkunci = !period.dapatDinilai
+  const sudahTerkirim = existing?.status === "terkirim"
   const sections: Section[] = getSectionsForRubric(rubricType)
   const [step, setStep] = useState(0)
   const [scores, setScores] = useState<Record<string, number>>(existing?.scores ?? {})
@@ -558,6 +588,9 @@ export function EvalForm({
   })
   const [submitting, setSubmitting] = useState(false)
   const [focusedId, setFocusedId] = useState<string | null>(null)
+  const [cerminTampil, setCerminTampil] = useState(false)
+  const [drafState, setDrafState] = useState<"bersih" | "menyimpan" | "tersimpan">("bersih")
+  const [drafJam, setDrafJam] = useState<string | null>(null)
 
   const isFinalStep = step === sections.length
   const currentSection = isFinalStep ? null : sections[step]
@@ -567,10 +600,69 @@ export function EvalForm({
   const max = rubricType === "ae" ? 60 : 84
   const grade = getNewRubricGrade(totalRaw, rubricType)
   const effectiveFocusedId = focusedId ?? (currentSection?.criteria[0]?.id ?? null)
+  const cermin = cerminPenilaian(scores)
+  const catatanKurang = periksaCatatan(scores, sectionCatatan, sections).kurang
+
+  /** Menyusun badan permintaan; dipakai baik oleh draf maupun pengiriman. */
+  const buildPayload = useCallback(
+    (status: "draf" | "terkirim") => {
+      const catatanEntries = Object.fromEntries(
+        Object.entries(sectionCatatan).filter(([, v]) => v.trim())
+      )
+      return {
+        evaluatorId,
+        teacherId: employeeId,
+        periodId: period.id,
+        scores,
+        catatan: Object.keys(catatanEntries).length > 0 ? JSON.stringify(catatanEntries) : null,
+        rubricType,
+        status,
+      }
+    },
+    [scores, sectionCatatan, evaluatorId, employeeId, period.id, rubricType]
+  )
+
+  // Penyimpanan draf otomatis. Penilai bisa berhenti di tengah jalan dan
+  // melanjutkan dari ponsel tanpa kehilangan apa pun — penting untuk pengisian
+  // bulanan yang jarang selesai dalam sekali duduk.
+  const pertamaKali = useRef(true)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (pertamaKali.current) { pertamaKali.current = false; return }
+    if (terkunci || sudahTerkirim) return
+    if (Object.keys(scores).length === 0) return
+
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/evaluations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPayload("draf")),
+        })
+        if (!res.ok) throw new Error()
+        setDrafState("tersimpan")
+        setDrafJam(new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }))
+      } catch {
+        setDrafState("bersih")
+      }
+    }, 1200)
+
+    return () => { if (timer.current) clearTimeout(timer.current) }
+  }, [scores, sectionCatatan, buildPayload, terkunci, sudahTerkirim])
 
   function setScore(id: string, sc: number) {
+    if (terkunci) return
     setScores((p) => ({ ...p, [id]: sc }))
     setFocusedId(id)
+    if (!sudahTerkirim) setDrafState("menyimpan")
+  }
+
+  function setCatatanAspek(sectionId: string, teks: string) {
+    if (terkunci) return
+    setSectionCatatan((p) => ({ ...p, [sectionId]: teks }))
+    if (!sudahTerkirim) setDrafState("menyimpan")
   }
 
   function next() {
@@ -598,38 +690,55 @@ export function EvalForm({
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  async function submit() {
+  /** Pemeriksaan sebelum kirim; menampilkan cermin dulu bila ada pola mencolok. */
+  function mintaKirim() {
+    if (terkunci) {
+      toast.error(`Periode ${period.label} sudah ditutup`)
+      return
+    }
     const allIds = sections.flatMap((s) => s.criteria.map((c) => c.id))
     const missing = allIds.filter((id) => !scores[id])
     if (missing.length > 0) {
       toast.error(`Masih ada ${missing.length} kriteria yang belum dinilai`)
       return
     }
+    const cek = periksaCatatan(scores, sectionCatatan, sections)
+    if (!cek.ok) {
+      toast.error(pesanCatatanKurang(cek.kurang))
+      const idx = sections.findIndex((s) => s.id === cek.kurang[0].id)
+      if (idx >= 0) navigateTo(idx)
+      return
+    }
+    if (cermin && (cermin.seragam || cermin.menumpuk !== null)) {
+      setCerminTampil(true)
+      return
+    }
+    submit()
+  }
+
+  async function submit() {
+    setCerminTampil(false)
+    const allIds = sections.flatMap((s) => s.criteria.map((c) => c.id))
     const cleanScores: Record<string, number> = {}
     for (const id of allIds) cleanScores[id] = scores[id]
-    const catatanEntries = Object.fromEntries(
-      Object.entries(sectionCatatan).filter(([, v]) => v.trim())
-    )
-    const catatanPayload = Object.keys(catatanEntries).length > 0 ? JSON.stringify(catatanEntries) : null
+
+    if (timer.current) clearTimeout(timer.current)
     setSubmitting(true)
     try {
       const res = await fetch("/api/evaluations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          evaluatorId,
-          teacherId: employeeId,
-          scores: cleanScores,
-          catatan: catatanPayload,
-          rubricType,
-        }),
+        body: JSON.stringify({ ...buildPayload("terkirim"), scores: cleanScores }),
       })
-      if (!res.ok) throw new Error()
-      toast.success("Penilaian berhasil disimpan!")
-      router.push(`/${lembagaSlug}/dashboard`)
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error ?? "")
+      }
+      toast.success(`Penilaian ${employeeName} untuk ${period.label} terkirim`)
+      router.push(`/${lembagaSlug}/dashboard?periode=${encodeURIComponent(period.id)}`)
       router.refresh()
-    } catch {
-      toast.error("Gagal menyimpan penilaian. Coba lagi.")
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "Gagal menyimpan penilaian. Coba lagi.")
     } finally {
       setSubmitting(false)
     }
@@ -637,6 +746,52 @@ export function EvalForm({
 
   return (
     <div>
+      {/* Banner periode — konteks bulan yang sedang dinilai */}
+      <div
+        className="mb-4 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2"
+        style={{
+          backgroundColor: terkunci ? "#FEF3C7" : "#F8FAFC",
+          border: `1px solid ${terkunci ? "#FDE68A" : "#E2E8F0"}`,
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {terkunci ? <Lock size={14} color="#B45309" /> : <CalendarDays size={14} color="#64748B" />}
+          <span className="text-sm font-bold" style={{ color: terkunci ? "#92400E" : "#0F2540" }}>
+            {period.label}
+          </span>
+        </div>
+
+        {terkunci ? (
+          <span className="text-xs font-semibold" style={{ color: "#92400E" }}>
+            Periode sudah {period.status}. Penilaian hanya bisa dilihat, tidak bisa diubah.
+          </span>
+        ) : (
+          <>
+            {period.sisaHari !== null && (
+              <span
+                className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                style={
+                  period.sisaHari <= 2
+                    ? { backgroundColor: "#FEE2E2", color: "#991B1B" }
+                    : { backgroundColor: "#DCFCE7", color: "#15803D" }
+                }
+              >
+                {period.sisaHari > 0 ? `Sisa ${period.sisaHari} hari` : "Lewat tenggat"}
+              </span>
+            )}
+            {sudahTerkirim && (
+              <span className="text-xs font-semibold" style={{ color: "#15803D" }}>
+                Sudah terkirim — menyimpan lagi akan memperbarui penilaian.
+              </span>
+            )}
+            <span className="ml-auto flex items-center gap-1.5 text-[11px]" style={{ color: "#94A3B8" }}>
+              {drafState === "menyimpan" && (<><CloudUpload size={12} /> Menyimpan draf…</>)}
+              {drafState === "tersimpan" && (<><Check size={12} /> Draf tersimpan {drafJam}</>)}
+            </span>
+          </>
+        )}
+      </div>
+
       {/* Mobile progress header */}
       <div
         className="lg:hidden mb-5 rounded-2xl p-4"
@@ -735,6 +890,8 @@ export function EvalForm({
                     sectionColor={currentSection.color}
                     onChange={(sc) => setScore(c.id, sc)}
                     onFocus={() => setFocusedId(c.id)}
+                    lalu={sebelumnya?.scores[c.id] ?? null}
+                    laluLabel={sebelumnya?.label.split(" ")[0].slice(0, 3) ?? null}
                   />
                 ))}
               </div>
@@ -751,7 +908,7 @@ export function EvalForm({
                   </div>
                   <textarea
                     value={sectionCatatan[currentSection.id] ?? ""}
-                    onChange={(e) => setSectionCatatan((prev) => ({ ...prev, [currentSection.id]: e.target.value }))}
+                    onChange={(e) => setCatatanAspek(currentSection.id, e.target.value)}
                     placeholder="Tambahkan catatan untuk aspek ini (opsional)…"
                     rows={3}
                     className="w-full text-xs rounded-lg px-3 py-2.5 resize-none outline-none"
@@ -766,6 +923,21 @@ export function EvalForm({
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {isFinalStep && catatanKurang.length > 0 && (
+            <div
+              className="rounded-xl px-4 py-3 mb-4"
+              style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}
+            >
+              <p className="text-sm font-bold mb-1" style={{ color: "#92400E" }}>
+                Catatan belum lengkap
+              </p>
+              <p className="text-xs" style={{ color: "#92400E" }}>
+                {pesanCatatanKurang(catatanKurang)}. Nilai 1, 2, dan 4 paling berdampak
+                pada orangnya, jadi butuh penjelasan singkat.
+              </p>
             </div>
           )}
 
@@ -840,7 +1012,7 @@ export function EvalForm({
                       </div>
                       <textarea
                         value={sectionCatatan[s.id] ?? ""}
-                        onChange={(e) => setSectionCatatan((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                        onChange={(e) => setCatatanAspek(s.id, e.target.value)}
                         placeholder="Catatan untuk aspek ini (opsional)…"
                         rows={2}
                         className="w-full text-xs rounded-lg px-3 py-2.5 resize-none outline-none"
@@ -875,17 +1047,24 @@ export function EvalForm({
             {isFinalStep ? (
               <button
                 type="button"
-                onClick={submit}
-                disabled={submitting}
-                className="flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-black disabled:opacity-60"
+                onClick={mintaKirim}
+                disabled={submitting || terkunci}
+                className="flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-black disabled:opacity-50"
                 style={{
-                  background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
-                  color: "#1C1409",
-                  boxShadow: "0 3px 14px rgba(196,151,42,0.42)",
+                  background: terkunci ? "#E5E7EB" : "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)",
+                  color: terkunci ? "#9CA3AF" : "#1C1409",
+                  boxShadow: terkunci ? "none" : "0 3px 14px rgba(196,151,42,0.42)",
+                  cursor: terkunci ? "not-allowed" : "pointer",
                 }}
               >
-                <Check size={16} />
-                {submitting ? "Menyimpan..." : "Simpan Penilaian"}
+                {terkunci ? <Lock size={16} /> : <Check size={16} />}
+                {terkunci
+                  ? "Periode terkunci"
+                  : submitting
+                    ? "Mengirim…"
+                    : sudahTerkirim
+                      ? "Perbarui Penilaian"
+                      : "Kirim Penilaian"}
               </button>
             ) : (
               <button
@@ -903,6 +1082,87 @@ export function EvalForm({
             )}
           </div>
         </div>
+
+
+      {/* ── Cermin: sekali, sebelum dikunci ──────────────────────────────
+          Bukan penghalang dan tidak dilaporkan ke siapa pun. Hanya
+          menunjukkan kepada penilai bagaimana kebiasaannya terlihat dari luar. */}
+      {cerminTampil && cermin && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+          onClick={(ev) => { if (ev.target === ev.currentTarget) setCerminTampil(false) }}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white overflow-hidden"
+            style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.30)" }}
+          >
+            <div className="px-5 py-4" style={{ background: "linear-gradient(135deg, #0F2540 0%, #1E3A5F 100%)" }}>
+              <div className="flex items-center gap-2">
+                <Eye size={15} color="#E8B84B" />
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(196,151,42,0.9)" }}>
+                  Sebelum dikirim
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-white mt-1.5">
+                Sekilas pola penilaian Anda untuk {employeeName}
+              </p>
+            </div>
+
+            <div className="px-5 py-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm" style={{ color: "#64748B" }}>Rata-rata nilai Anda</span>
+                <span className="text-lg font-bold tabular-nums" style={{ color: "#0F2540" }}>
+                  {cermin.rataRata.toFixed(1)}<span className="text-xs font-normal" style={{ color: "#94A3B8" }}>/4</span>
+                </span>
+              </div>
+
+              {cermin.seragam && (
+                <p className="text-sm px-3 py-2.5 rounded-lg" style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>
+                  Semua {totalCriteria} kriteria Anda beri nilai yang sama persis.
+                </p>
+              )}
+              {!cermin.seragam && cermin.menumpuk !== null && (
+                <p className="text-sm px-3 py-2.5 rounded-lg" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                  Lebih dari 80% nilai Anda menumpuk di angka {cermin.menumpuk}.
+                </p>
+              )}
+              {cermin.tanpaEkstrem && (
+                <p className="text-xs" style={{ color: "#94A3B8" }}>
+                  Tidak ada satu pun nilai 1, 2, atau 4 — seluruhnya di tengah.
+                </p>
+              )}
+
+              <p className="text-xs" style={{ color: "#94A3B8" }}>
+                Ini tidak dilaporkan ke siapa pun. Anda boleh mengirim apa adanya.
+              </p>
+            </div>
+
+            <div
+              className="px-5 py-3 flex items-center justify-end gap-2"
+              style={{ borderTop: "1px solid #DDE3EC", backgroundColor: "#F8FAFC" }}
+            >
+              <button
+                type="button"
+                onClick={() => { setCerminTampil(false); navigateTo(0) }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={{ color: "#64748B", border: "1px solid #E2E8F0" }}
+              >
+                Tinjau kembali
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={submitting}
+                className="px-5 py-2 rounded-lg text-sm font-bold disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #C4972A 0%, #E8B84B 100%)", color: "#1C1409" }}
+              >
+                {submitting ? "Mengirim…" : "Kirim apa adanya"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Right: sticky rubric panel */}
         <aside className="hidden lg:block sticky top-20">

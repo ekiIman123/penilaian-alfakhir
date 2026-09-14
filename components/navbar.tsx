@@ -1,15 +1,24 @@
 "use client"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Database, Menu, Settings, X, ChevronDown } from "lucide-react"
+import {
+  LayoutDashboard, Database, Menu, Settings, X, ChevronDown, CalendarRange,
+  Gauge, Users, Scale, Map as MapIcon, FileText,
+} from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import { LEMBAGA, LEMBAGA_SLUGS, type LembagaSlug } from "@/lib/lembaga"
 
 type NavItem = {
   href: string
   label: string
   icon: React.ElementType
   exact: boolean
+  /** Peran yang boleh melihat menu ini; kosong berarti semua. */
+  peran?: readonly string[]
 }
+
+const PEMIMPIN = ["supervisor", "ceo", "pm", "founder", "management", "superadmin"] as const
+const PENGATUR = ["supervisor", "ceo", "pm", "founder", "management", "superadmin"] as const
 
 type LembagaConfig = {
   label: string
@@ -31,48 +40,56 @@ const CONFIGS: Record<string, LembagaConfig> = {
       { href: "/alfakhir/settings", label: "Pengaturan",  icon: Settings,        exact: false },
     ],
   },
-  iysa: {
-    label: "IYSA",
-    tagline: "Dashboard Penilaian",
-    homeHref: "/iysa/dashboard",
-    abbr: "IY",
-    navItems: [
-      { href: "/iysa/dashboard",  label: "Dashboard",  icon: LayoutDashboard, exact: false },
-      { href: "/iysa/settings",   label: "Pengaturan", icon: Settings,        exact: false },
-    ],
-  },
-  icgi: {
-    label: "ICGI",
-    tagline: "Dashboard Penilaian",
-    homeHref: "/icgi/dashboard",
-    abbr: "IC",
-    navItems: [
-      { href: "/icgi/dashboard",  label: "Dashboard",  icon: LayoutDashboard, exact: false },
-      { href: "/icgi/settings",   label: "Pengaturan", icon: Settings,        exact: false },
-    ],
-  },
-  iyora: {
-    label: "IYORA",
-    tagline: "Dashboard Penilaian",
-    homeHref: "/iyora/dashboard",
-    abbr: "IO",
-    navItems: [
-      { href: "/iyora/dashboard", label: "Dashboard",  icon: LayoutDashboard, exact: false },
-      { href: "/iyora/settings",  label: "Pengaturan", icon: Settings,        exact: false },
-    ],
-  },
+  // Ketiga lembaga dilayani satu pohon rute, jadi menunya diturunkan dari
+  // daftar lembaga — bukan ditulis ulang tiga kali seperti sebelumnya.
+  ...Object.fromEntries(
+    LEMBAGA_SLUGS.map((slug) => [
+      slug,
+      {
+        label: LEMBAGA[slug].label,
+        tagline: "Dashboard Penilaian",
+        homeHref: `/${slug}/dashboard`,
+        abbr: LEMBAGA[slug].abbr,
+        navItems: [
+          { href: `/${slug}/dashboard`,  label: "Dashboard",  icon: LayoutDashboard, exact: false },
+          { href: `/${slug}/progres`,    label: "Progres",    icon: Gauge,           exact: false, peran: PEMIMPIN },
+          { href: `/${slug}/kalibrasi`,  label: "Kalibrasi",  icon: Scale,           exact: false, peran: PEMIMPIN },
+          { href: `/${slug}/penugasan`,  label: "Penugasan",  icon: Users,           exact: false, peran: PENGATUR },
+          { href: `/${slug}/periode`,    label: "Periode",    icon: CalendarRange,   exact: false, peran: PEMIMPIN },
+          { href: `/${slug}/settings`,   label: "Pengaturan", icon: Settings,        exact: false, peran: PENGATUR },
+        ],
+      } satisfies LembagaConfig,
+    ])
+  ),
 }
 
-const LEMBAGA_GROUP = [
-  { key: "iysa",  label: "IYSA",  abbr: "IY", href: "/iysa/dashboard" },
-  { key: "icgi",  label: "ICGI",  abbr: "IC", href: "/icgi/dashboard" },
-  { key: "iyora", label: "IYORA", abbr: "IO", href: "/iyora/dashboard" },
-]
+CONFIGS.beranda = {
+  label: "Penilaian Kinerja",
+  tagline: "IYSA · ICGI · IYORA",
+  homeHref: "/beranda",
+  abbr: "PK",
+  navItems: [{ href: "/beranda", label: "Peta Lembaga", icon: MapIcon, exact: true }],
+}
+
+CONFIGS.saya = {
+  label: "Rapor Saya",
+  tagline: "Penilaian Kinerja",
+  homeHref: "/saya",
+  abbr: "RS",
+  navItems: [{ href: "/saya", label: "Rapor Saya", icon: FileText, exact: true }],
+}
+
+const LEMBAGA_GROUP = LEMBAGA_SLUGS.map((slug) => ({
+  key: slug,
+  label: LEMBAGA[slug].label,
+  abbr: LEMBAGA[slug].abbr,
+  href: `/${slug}/dashboard`,
+}))
 
 function detectLembaga(pathname: string): string {
-  if (pathname.startsWith("/iysa"))    return "iysa"
-  if (pathname.startsWith("/icgi"))    return "icgi"
-  if (pathname.startsWith("/iyora"))   return "iyora"
+  const seg = pathname.split("/")[1]
+  if (LEMBAGA_SLUGS.includes(seg as LembagaSlug)) return seg
+  if (seg === "beranda" || seg === "saya") return seg
   return "alfakhir"
 }
 
@@ -80,7 +97,7 @@ function isActive(pathname: string, href: string, exact: boolean) {
   return exact ? pathname === href : pathname.startsWith(href)
 }
 
-function LembagaSwitcher({ current }: { current: string }) {
+function LembagaSwitcher({ current, tersedia }: { current: string; tersedia: string[] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -94,7 +111,11 @@ function LembagaSwitcher({ current }: { current: string }) {
     return () => document.removeEventListener("mousedown", h)
   }, [open])
 
-  const currentItem = LEMBAGA_GROUP.find((l) => l.key === current)!
+  const pilihan = LEMBAGA_GROUP.filter((l) => tersedia.includes(l.key))
+  const currentItem = LEMBAGA_GROUP.find((l) => l.key === current)
+
+  // Kalau orang ini hanya memegang satu lembaga, tidak ada yang perlu dipilih.
+  if (!currentItem || pilihan.length < 2) return null
 
   return (
     <div ref={ref} className="relative">
@@ -122,7 +143,7 @@ function LembagaSwitcher({ current }: { current: string }) {
             boxShadow: "0 8px 32px rgba(0,0,0,0.40)",
           }}
         >
-          {LEMBAGA_GROUP.map((l) => (
+          {pilihan.map((l) => (
             <button
               key={l.key}
               onClick={() => { setOpen(false); router.push(l.href) }}
@@ -163,12 +184,41 @@ export function Navbar() {
   const path = usePathname()
   const [open, setOpen] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
+  const [tersedia, setTersedia] = useState<string[]>([])
+  const [hats, setHats] = useState<{ lembaga: string; role: string }[]>([])
 
   useEffect(() => { setOpen(false) }, [path])
 
+  useEffect(() => {
+    let batal = false
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (batal) return
+        setTersedia(Array.isArray(d?.lembagaList) ? d.lembagaList : [])
+        setHats(Array.isArray(d?.hats) ? d.hats : [])
+        if (d?.isSuperadmin) setHats([{ lembaga: "all", role: "superadmin" }])
+      })
+      .catch(() => {})
+    return () => { batal = true }
+  }, [path])
+
   const lembagaKey = detectLembaga(path)
   const config = CONFIGS[lembagaKey]
-  const isLembagaGroup = lembagaKey !== "alfakhir"
+  const isLembagaGroup = LEMBAGA_SLUGS.includes(lembagaKey as LembagaSlug) || lembagaKey === "beranda"
+
+  // Menu yang tidak bisa dibuka lebih baik tidak ditampilkan sama sekali,
+  // daripada ditampilkan lalu memantulkan orang kembali ke dashboard.
+  const peranDiSini =
+    hats.find((h) => h.lembaga === lembagaKey)?.role ??
+    (hats.some((h) => h.role === "superadmin") ? "superadmin" : null)
+
+  const punyaPeta =
+    hats.some((h) => ["management", "founder", "superadmin"].includes(h.role))
+
+  const navItems = config.navItems.filter(
+    (item) => !item.peran || (peranDiSini !== null && item.peran.includes(peranDiSini)),
+  )
 
   return (
     <nav
@@ -215,11 +265,22 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Lembaga switcher — only for iysa/icgi/iyora */}
+          {/* Pemilih lembaga — hanya untuk yang memegang lebih dari satu */}
           {isLembagaGroup && (
             <div className="hidden md:block ml-1">
-              <LembagaSwitcher current={lembagaKey} />
+              <LembagaSwitcher current={lembagaKey} tersedia={tersedia} />
             </div>
+          )}
+
+          {/* Manajemen selalu punya jalan kembali ke peta tiga lembaga */}
+          {punyaPeta && lembagaKey !== "beranda" && (
+            <Link
+              href="/beranda"
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold ml-1"
+              style={{ color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              <MapIcon size={12} /> Peta
+            </Link>
           )}
         </div>
 
@@ -228,7 +289,7 @@ export function Navbar() {
           className="hidden md:flex items-center gap-0.5 rounded-lg p-1"
           style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          {config.navItems.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(path, item.href, item.exact)
             const Icon = item.icon
             return (
@@ -283,13 +344,13 @@ export function Navbar() {
         >
           <div className="px-4 py-3 flex flex-col gap-1">
             {/* Lembaga switcher on mobile */}
-            {isLembagaGroup && (
+            {isLembagaGroup && tersedia.length > 1 && (
               <div className="mb-2 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="text-[9px] uppercase tracking-widest mb-1.5 px-1" style={{ color: "rgba(255,255,255,0.35)" }}>
                   Pilih Lembaga
                 </div>
                 <div className="flex gap-1.5">
-                  {LEMBAGA_GROUP.map((l) => (
+                  {LEMBAGA_GROUP.filter((l) => tersedia.includes(l.key)).map((l) => (
                     <Link
                       key={l.key}
                       href={l.href}
@@ -308,7 +369,7 @@ export function Navbar() {
               </div>
             )}
 
-            {config.navItems.map((item) => {
+            {navItems.map((item) => {
               const active = isActive(path, item.href, item.exact)
               const Icon = item.icon
               return (

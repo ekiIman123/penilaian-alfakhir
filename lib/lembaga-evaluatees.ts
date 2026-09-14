@@ -20,11 +20,45 @@ function parseDivisi(divisi: string | null): string[] {
   }
 }
 
+/**
+ * Siapa yang boleh dinilai seorang penilai.
+ *
+ * Penugasan di tabel `Assignment` adalah sumber kebenaran: menambah koordinator
+ * baru atau memindahkan seorang staff cukup dilakukan lewat layar Penugasan,
+ * tanpa mengubah kode. Aturan peran di bawah tetap dipertahankan sebagai
+ * jaring pengaman — kalau penugasan seseorang belum pernah dibuat, ia tidak
+ * mendadak kehilangan seluruh daftar bawahannya.
+ */
 export async function getEvaluatees(
   session: EvaluatorSession,
   currentLembaga?: string
 ): Promise<EvaluateeEmployee[]> {
   const { role, lembaga } = session
+
+  if (session.evaluatorId !== "superadmin") {
+    const target = currentLembaga && currentLembaga !== "all" ? currentLembaga : lembaga
+    const ditugaskan = await prisma.assignment.findMany({
+      where: {
+        evaluatorId: session.evaluatorId,
+        lembaga: target,
+        OR: [{ activeTo: null }, { activeTo: { gt: new Date() } }],
+      },
+      include: {
+        employee: {
+          select: { id: true, name: true, role: true, lembaga: true, divisi: true, finalCatatan: true },
+        },
+      },
+    })
+    if (ditugaskan.length > 0) {
+      const selfName = session.name.trim().toLowerCase()
+      return ditugaskan
+        .map((a) => a.employee)
+        .filter((e) => e.name.trim().toLowerCase() !== selfName)
+        .sort((a, b) =>
+          (a.divisi ?? "").localeCompare(b.divisi ?? "") || a.name.localeCompare(b.name)
+        )
+    }
+  }
 
   // Prevent self-evaluation: exclude employee whose name matches the evaluator (case-insensitive, trimmed)
   const selfName = session.name.trim().toLowerCase()
