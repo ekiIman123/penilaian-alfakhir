@@ -1,19 +1,33 @@
 import { prisma } from "@/lib/prisma"
 import Groq from "groq-sdk"
 import { getSectionsForRubric } from "@/lib/rubrics"
+import { resolvePeriod } from "@/lib/periods"
+import { jagaLembaga, jagaPengaturan } from "@/lib/api-guard"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: RouteContext<"/api/lembaga/[lembagaSlug]/employees/[employeeId]/summarize">,
 ) {
   const { lembagaSlug, employeeId } = await ctx.params
+  const { searchParams } = new URL(req.url)
+
+  const jaga = await jagaLembaga(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
+  // Ringkasan dibuat dari catatan satu bulan, bukan gabungan seluruh riwayat.
+  const period = await resolvePeriod(lembagaSlug, searchParams.get("periode"))
 
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, lembaga: lembagaSlug },
-    include: { evaluations: { include: { evaluator: true } } },
+    include: {
+      evaluations: {
+        where: { periodId: period.id, status: "terkirim" },
+        include: { evaluator: true },
+      },
+    },
   })
 
   if (!employee) return new Response("Not found", { status: 404 })

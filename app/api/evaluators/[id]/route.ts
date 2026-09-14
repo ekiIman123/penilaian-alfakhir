@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { jagaMasuk } from "@/lib/api-guard"
 
 export async function PUT(_req: Request, ctx: RouteContext<"/api/evaluators/[id]">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { id } = await ctx.params
   const { name } = await _req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
@@ -14,6 +18,9 @@ export async function PUT(_req: Request, ctx: RouteContext<"/api/evaluators/[id]
 }
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/evaluators/[id]">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { id } = await ctx.params
   try {
     await prisma.evaluation.deleteMany({ where: { evaluatorId: id } })

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { jagaLembaga, jagaPengaturan } from "@/lib/api-guard"
 
 export const dynamic = "force-dynamic"
 
@@ -9,13 +10,19 @@ export async function GET(
   ctx: RouteContext<"/api/lembaga/[lembagaSlug]/evaluators">,
 ) {
   const { lembagaSlug } = await ctx.params
+  const jaga = await jagaPengaturan(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
   if (!VALID.includes(lembagaSlug as (typeof VALID)[number]))
     return new Response("Not found", { status: 404 })
 
   const rows = await prisma.evaluator.findMany({
     where: { lembaga: lembagaSlug },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, role: true, divisi: true, accessCode: true, createdAt: true },
+    select: {
+      id: true, name: true, role: true, divisi: true,
+      accessCode: true, phone: true, createdAt: true,
+    },
   })
   return Response.json(rows)
 }
@@ -25,11 +32,14 @@ export async function POST(
   ctx: RouteContext<"/api/lembaga/[lembagaSlug]/evaluators">,
 ) {
   const { lembagaSlug } = await ctx.params
+  const jaga = await jagaPengaturan(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
   if (!VALID.includes(lembagaSlug as (typeof VALID)[number]))
     return new Response("Not found", { status: 404 })
 
-  const { name, role, divisi, accessCode } = (await req.json()) as {
-    name?: string; role?: string; divisi?: string; accessCode?: string
+  const { name, role, divisi, accessCode, phone } = (await req.json()) as {
+    name?: string; role?: string; divisi?: string; accessCode?: string; phone?: string
   }
   if (!name?.trim() || !role?.trim())
     return new Response("name dan role wajib diisi", { status: 400 })
@@ -41,6 +51,7 @@ export async function POST(
         role: role.trim(),
         divisi: divisi?.trim() || null,
         accessCode: accessCode?.trim() || null,
+        phone: phone?.trim() || null,
         lembaga: lembagaSlug,
       },
     })

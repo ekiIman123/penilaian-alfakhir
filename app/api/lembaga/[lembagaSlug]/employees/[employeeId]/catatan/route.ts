@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { jagaLembaga, jagaPengaturan } from "@/lib/api-guard"
 
 export const dynamic = "force-dynamic"
 
@@ -7,6 +8,10 @@ export async function PATCH(
   ctx: RouteContext<"/api/lembaga/[lembagaSlug]/employees/[employeeId]/catatan">,
 ) {
   const { lembagaSlug, employeeId } = await ctx.params
+
+  const jaga = await jagaLembaga(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
   const { finalCatatan } = (await req.json()) as { finalCatatan?: string | null }
 
   const existing = await prisma.employee.findFirst({ where: { id: employeeId, lembaga: lembagaSlug } })

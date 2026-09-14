@@ -5,11 +5,15 @@ import { prisma } from "@/lib/prisma"
 import { getSectionsForRole, getScoreGrade } from "@/lib/rubrics"
 import { parseScores, calcTotal } from "@/lib/calculations"
 import { BulkReportDocument, ReportDocument, type ReportData } from "@/components/pdf/report-document"
+import { jagaMasuk } from "@/lib/api-guard"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 export async function GET(req: Request) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { searchParams } = new URL(req.url)
   const role   = searchParams.get("role")   ?? "all"  // "all" | "guru" | "staff"
   const format = searchParams.get("format") ?? "pdf"  // "pdf" | "zip"

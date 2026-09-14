@@ -2,8 +2,12 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { SECTIONS, EVALUATOR_COLORS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, calcSectionPct, parseScores } from "@/lib/calculations"
+import { jagaMasuk } from "@/lib/api-guard"
 
 export async function PUT(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { id } = await ctx.params
   const { name, role } = await _req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
@@ -18,6 +22,9 @@ export async function PUT(_req: Request, ctx: RouteContext<"/api/teachers/[id]">
 }
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { id } = await ctx.params
   try {
     await prisma.evaluation.deleteMany({ where: { employeeId: id } })
@@ -29,6 +36,9 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/teachers/[id
 }
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/teachers/[id]">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { id } = await ctx.params
 
   const teacher = await prisma.employee.findUnique({

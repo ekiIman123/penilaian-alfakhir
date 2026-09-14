@@ -2,8 +2,12 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { SECTIONS, getScoreGrade } from "@/lib/rubrics"
 import { calcTotal, calcSectionRaw, parseScores } from "@/lib/calculations"
+import { jagaMasuk } from "@/lib/api-guard"
 
 export async function POST(req: Request) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { name, role } = await req.json()
   if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 })
   const validRole = role === "staff" ? "staff" : "guru"
@@ -16,6 +20,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const teachers = await prisma.employee.findMany({
     include: {
       evaluations: { include: { evaluator: true } },

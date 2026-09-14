@@ -1,9 +1,11 @@
+import { jagaLembaga } from "@/lib/api-guard"
 import { renderToBuffer } from "@react-pdf/renderer"
 import { createElement } from "react"
 import Groq from "groq-sdk"
 import { prisma } from "@/lib/prisma"
 import { getSectionsForRubric, getNewRubricGrade } from "@/lib/rubrics"
 import { parseScores } from "@/lib/calculations"
+import { resolvePeriod } from "@/lib/periods"
 import {
   LembagaReportDocument,
   type LembagaReportData,
@@ -84,10 +86,11 @@ function buildOrgFromDb(raw: {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: RouteContext<"/api/lembaga/[lembagaSlug]/reports/[employeeId]/pdf">,
 ) {
   const { lembagaSlug, employeeId } = await ctx.params
+  const { searchParams } = new URL(req.url)
 
   if (!VALID_LEMBAGA.includes(lembagaSlug as ValidLembaga)) {
     return new Response(JSON.stringify({ error: "Invalid lembaga" }), {
@@ -96,11 +99,19 @@ export async function GET(
     })
   }
 
+  // Rapor memuat seluruh nilai dan catatan seseorang — data pribadi.
+  const jaga = await jagaLembaga(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
+  // Rapor selalu untuk satu bulan tertentu, bukan gabungan semua bulan.
+  const period = await resolvePeriod(lembagaSlug, searchParams.get("periode"))
+
   const [employee, orgRaw] = await Promise.all([
     prisma.employee.findFirst({
       where: { id: employeeId, lembaga: lembagaSlug },
       include: {
         evaluations: {
+          where: { periodId: period.id, status: "terkirim" },
           include: { evaluator: true },
           orderBy: { updatedAt: "desc" },
         },
@@ -143,7 +154,7 @@ export async function GET(
   )
   const grade = rawTotal > 0 ? getNewRubricGrade(rawTotal, rubricType) : null
 
-  const org = buildOrgFromDb(orgRaw)
+  const org = { ...buildOrgFromDb(orgRaw), periodLabel: period.label }
 
   // Build catatan summary
   let catatanSummary: string | null = employee.finalCatatan ?? null

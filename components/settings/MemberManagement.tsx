@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import {
-  Lock, Eye, EyeOff, Plus, Pencil, Trash2, X,
-  Loader2, Users, ShieldCheck, RefreshCw, KeyRound,
+  Copy, Eye, EyeOff, KeyRound, Loader2, Lock, Pencil, Phone, Plus, RefreshCw, ShieldCheck, Trash2, Users, X,
 } from "lucide-react"
 import { createPortal } from "react-dom"
 import { toast } from "sonner"
 
-const ACCESS_CODE = "semogabahagia"
 
 const ROLE_OPTIONS = [
   { value: "staff",        label: "Staf" },
@@ -22,8 +20,8 @@ const ROLE_OPTIONS = [
 ]
 const ROLE_LABEL: Record<string, string> = Object.fromEntries(ROLE_OPTIONS.map((r) => [r.value, r.label]))
 
-interface Employee  { id: string; name: string; role: string; divisi: string | null; createdAt: string }
-interface Evaluator { id: string; name: string; role: string; divisi: string | null; accessCode: string | null; createdAt: string }
+interface Employee  { id: string; name: string; role: string; divisi: string | null; accessCode: string | null; phone: string | null; createdAt: string }
+interface Evaluator { id: string; name: string; role: string; divisi: string | null; accessCode: string | null; phone: string | null; createdAt: string }
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -101,7 +99,8 @@ function EmployeeTab({ slug }: { slug: string }) {
   const [deleting, setDeleting] = useState<Employee | null>(null)
   const [saving, setSaving]   = useState(false)
   const [delLoading, setDelLoading] = useState(false)
-  const [form, setForm]       = useState({ name: "", role: "staff", divisi: "" })
+  const [form, setForm]       = useState({ name: "", role: "staff", divisi: "", accessCode: "", phone: "" })
+  const [showCode, setShowCode] = useState<Record<string, boolean>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -113,8 +112,14 @@ function EmployeeTab({ slug }: { slug: string }) {
 
   useEffect(() => { load() }, [load])
 
-  function openAdd()         { setForm({ name: "", role: "staff", divisi: "" }); setAdding(true) }
-  function openEdit(e: Employee) { setForm({ name: e.name, role: e.role, divisi: e.divisi ?? "" }); setEditing(e) }
+  function openAdd()         { setForm({ name: "", role: "staff", divisi: "", accessCode: "", phone: "" }); setAdding(true) }
+  function openEdit(e: Employee) {
+    setForm({
+      name: e.name, role: e.role, divisi: e.divisi ?? "",
+      accessCode: e.accessCode ?? "", phone: e.phone ?? "",
+    })
+    setEditing(e)
+  }
   function closeForm()       { setAdding(false); setEditing(null) }
 
   async function save() {
@@ -187,7 +192,7 @@ function EmployeeTab({ slug }: { slug: string }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
-                {["#", "Nama", "Jabatan", "Divisi", ""].map((h, i) => (
+                {["#", "Nama", "Jabatan", "Divisi", "Kode Rapor", "WhatsApp", ""].map((h, i) => (
                   <th key={i} className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
                     {h}
                   </th>
@@ -205,6 +210,43 @@ function EmployeeTab({ slug }: { slug: string }) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">{e.divisi ?? <span className="text-gray-300">—</span>}</td>
+
+                  {/* Kode untuk membuka rapor sendiri di /saya — perlu terlihat
+                      supaya atasan bisa membagikannya ke orangnya. */}
+                  <td className="px-4 py-3">
+                    {e.accessCode ? (
+                      <div className="flex items-center gap-1.5">
+                        <code className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "#F1F5F9", color: "#334155" }}>
+                          {showCode[e.id] ? e.accessCode : "••••••••"}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => setShowCode((p) => ({ ...p, [e.id]: !p[e.id] }))}
+                          className="p-1 rounded text-gray-400 hover:text-gray-700"
+                          title={showCode[e.id] ? "Sembunyikan" : "Tampilkan"}
+                        >
+                          {showCode[e.id] ? <EyeOff size={12} /> : <Eye size={12} />}
+                        </button>
+                        {showCode[e.id] && (
+                          <button
+                            type="button"
+                            onClick={() => { navigator.clipboard?.writeText(e.accessCode!); toast.success(`Kode ${e.name} disalin`) }}
+                            className="p-1 rounded text-gray-400 hover:text-gray-700"
+                            title="Salin kode"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">belum ada</span>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {e.phone ?? <span className="text-gray-300">—</span>}
+                  </td>
+
                   <td className="px-3 py-3 text-right w-20">
                     <div className="flex items-center gap-1 justify-end">
                       <button
@@ -258,6 +300,25 @@ function EmployeeTab({ slug }: { slug: string }) {
                 placeholder="Contoh: Administrasi"
               />
             </Field>
+            <Field label="Kode akses rapor (opsional)">
+              <input
+                className={inp} style={inpStyle}
+                value={form.accessCode}
+                onChange={(e) => setForm((f) => ({ ...f, accessCode: e.target.value }))}
+                placeholder="Contoh: IY-MAUL"
+              />
+              <p className="text-[11px] mt-1" style={{ color: "#94A3B8" }}>
+                Dipakai karyawan untuk membuka rapornya sendiri di halaman /saya.
+              </p>
+            </Field>
+            <Field label="Nomor WhatsApp (opsional)">
+              <input
+                className={inp} style={inpStyle}
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="08xxxxxxxxxx"
+              />
+            </Field>
             <div className="flex gap-2 justify-end pt-1">
               <button onClick={closeForm} className="px-4 py-2 text-sm rounded-lg border text-gray-600" style={{ borderColor: "#DDE3EC" }}>
                 Batal
@@ -299,7 +360,7 @@ function EvaluatorTab({ slug }: { slug: string }) {
   const [saving, setSaving]     = useState(false)
   const [delLoading, setDelLoading] = useState(false)
   const [showCode, setShowCode] = useState<Record<string, boolean>>({})
-  const [form, setForm]         = useState({ name: "", role: "supervisor", divisi: "", accessCode: "" })
+  const [form, setForm]         = useState({ name: "", role: "supervisor", divisi: "", accessCode: "", phone: "" })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -312,10 +373,14 @@ function EvaluatorTab({ slug }: { slug: string }) {
   useEffect(() => { load() }, [load])
 
   function openAdd() {
-    setForm({ name: "", role: "supervisor", divisi: "", accessCode: "" }); setAdding(true)
+    setForm({ name: "", role: "supervisor", divisi: "", accessCode: "", phone: "" }); setAdding(true)
   }
   function openEdit(e: Evaluator) {
-    setForm({ name: e.name, role: e.role, divisi: e.divisi ?? "", accessCode: e.accessCode ?? "" }); setEditing(e)
+    setForm({
+      name: e.name, role: e.role, divisi: e.divisi ?? "",
+      accessCode: e.accessCode ?? "", phone: e.phone ?? "",
+    })
+    setEditing(e)
   }
   function closeForm() { setAdding(false); setEditing(null) }
 
@@ -393,7 +458,7 @@ function EvaluatorTab({ slug }: { slug: string }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
-                {["#", "Nama", "Jabatan", "Divisi", "Kode Akses", ""].map((h, i) => (
+                {["#", "Nama", "Jabatan", "Divisi", "Kode Akses", "WhatsApp", ""].map((h, i) => (
                   <th key={i} className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
                     {h}
                   </th>
@@ -427,6 +492,9 @@ function EvaluatorTab({ slug }: { slug: string }) {
                     ) : (
                       <span className="text-gray-300 text-xs">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {e.phone ?? <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-3 py-3 text-right w-20">
                     <div className="flex items-center gap-1 justify-end">
@@ -491,7 +559,25 @@ function EvaluatorTab({ slug }: { slug: string }) {
                   placeholder="Kode untuk login"
                 />
               </div>
-              <p className="text-[10px] text-gray-400 mt-1">Kode ini digunakan untuk masuk ke dashboard penilaian</p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Kode ini digunakan untuk masuk ke dashboard penilaian. Orang yang memegang
+                beberapa jabatan cukup memakai salah satu kodenya — semuanya mengantar ke
+                identitas yang sama.
+              </p>
+            </Field>
+            <Field label="Nomor WhatsApp (opsional)">
+              <div className="relative">
+                <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  className={inp} style={{ ...inpStyle, paddingLeft: "2rem" }}
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="08xxxxxxxxxx"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Mengaktifkan tombol pengingat WhatsApp di layar Progres.
+              </p>
             </Field>
             <div className="flex gap-2 justify-end pt-1">
               <button onClick={closeForm} className="px-4 py-2 text-sm rounded-lg border text-gray-600" style={{ borderColor: "#DDE3EC" }}>
@@ -523,70 +609,16 @@ function EvaluatorTab({ slug }: { slug: string }) {
   )
 }
 
-// ─── Password Gate ─────────────────────────────────────────────────────────────
-
-function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
-  const [pwd, setPwd]   = useState("")
-  const [show, setShow] = useState(false)
-  const [err, setErr]   = useState(false)
-
-  function tryUnlock() {
-    if (pwd === ACCESS_CODE) { onUnlock() }
-    else { setErr(true); setPwd("") }
-  }
-
-  return (
-    <div className="card p-14 flex flex-col items-center gap-5">
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center"
-        style={{ backgroundColor: "#F1F4F8" }}
-      >
-        <Lock size={22} style={{ color: "#64748B" }} />
-      </div>
-      <div className="text-center">
-        <p className="font-semibold text-gray-800">Area Terbatas</p>
-        <p className="text-sm mt-1 text-gray-500">Masukkan kunci akses untuk mengelola data anggota</p>
-      </div>
-      <div className="flex gap-2">
-        <div className="relative">
-          <input
-            type={show ? "text" : "password"}
-            value={pwd}
-            onChange={(e) => { setPwd(e.target.value); setErr(false) }}
-            onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
-            placeholder="Kunci akses…"
-            autoFocus
-            className="px-3 py-2.5 text-sm rounded-lg border pr-10 focus:outline-none"
-            style={{ borderColor: err ? "#EF4444" : "#DDE3EC", width: 220 }}
-          />
-          <button
-            type="button"
-            onClick={() => setShow((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-          >
-            {show ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-        </div>
-        <button
-          onClick={tryUnlock}
-          className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white"
-          style={{ background: "linear-gradient(135deg, #1E3A5F, #2A4F7A)" }}
-        >
-          Buka
-        </button>
-      </div>
-      {err && <p className="text-xs text-red-500 -mt-2">Kunci akses salah</p>}
-    </div>
-  )
-}
-
 // ─── Main Export ───────────────────────────────────────────────────────────────
 
+/**
+ * Akses ke layar ini sudah dijaga di server lewat pemeriksaan peran di
+ * app/[lembaga]/settings/page.tsx. Gerbang kata sandi yang dulu ada di sini
+ * tidak menambah keamanan apa pun — kodenya ikut terkirim ke setiap browser
+ * dan bisa dibaca siapa saja lewat devtools — jadi dihapus.
+ */
 export function MemberManagement({ lembagaSlug }: { lembagaSlug: string }) {
-  const [unlocked, setUnlocked] = useState(false)
-  const [subTab, setSubTab]     = useState<"karyawan" | "penilai">("karyawan")
-
-  if (!unlocked) return <PasswordGate onUnlock={() => setUnlocked(true)} />
+  const [subTab, setSubTab] = useState<"karyawan" | "penilai">("karyawan")
 
   return (
     <div className="card overflow-hidden">

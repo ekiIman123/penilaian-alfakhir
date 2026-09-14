@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getSectionsForRole, getScoreGrade } from "@/lib/rubrics"
 import { parseScores, calcTotal } from "@/lib/calculations"
 import { ReportDocument, type ReportData } from "@/components/pdf/report-document"
+import { jagaMasuk } from "@/lib/api-guard"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +37,9 @@ async function summarizeCatatan(
 }
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/reports/[teacherId]/pdf">) {
+  const jaga = await jagaMasuk()
+  if (!jaga.ok) return jaga.response
+
   const { teacherId } = await ctx.params
 
   const employee = await prisma.employee.findUnique({

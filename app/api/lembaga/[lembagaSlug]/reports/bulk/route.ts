@@ -1,9 +1,11 @@
+import { jagaLembaga } from "@/lib/api-guard"
 import { renderToBuffer } from "@react-pdf/renderer"
 import { createElement } from "react"
 import JSZip from "jszip"
 import { prisma } from "@/lib/prisma"
 import { getSectionsForRubric } from "@/lib/rubrics"
 import { parseScores } from "@/lib/calculations"
+import { resolvePeriod } from "@/lib/periods"
 import {
   LembagaBulkReportDocument,
   LembagaReportDocument,
@@ -74,6 +76,14 @@ export async function GET(
   const idsParam = searchParams.get("ids") ?? ""
   const ids      = idsParam ? idsParam.split(",").filter(Boolean) : []
 
+  // Unduhan massal membawa nilai seluruh karyawan sekaligus — paling perlu dijaga.
+  const jaga = await jagaLembaga(lembagaSlug)
+  if (!jaga.ok) return jaga.response
+
+  // Rapor selalu terikat pada satu bulan. Tanpa ini, penilaian dari beberapa
+  // periode akan tercampur dalam satu lembar.
+  const period = await resolvePeriod(lembagaSlug, searchParams.get("periode"))
+
   const [employees, orgRaw] = await Promise.all([
     prisma.employee.findMany({
       where: ids.length > 0
@@ -81,6 +91,7 @@ export async function GET(
         : { lembaga: lembagaSlug },
       include: {
         evaluations: {
+          where: { periodId: period.id, status: "terkirim" },
           include: { evaluator: true },
           orderBy: { updatedAt: "desc" },
         },
@@ -94,7 +105,9 @@ export async function GET(
     }),
   ])
 
-  const org = buildOrgFromDb(orgRaw)
+  // Label periode diambil dari periode yang dipilih, bukan teks bebas di
+  // pengaturan — supaya rapor Oktober tidak pernah terbit berlabel September.
+  const org = { ...buildOrgFromDb(orgRaw), periodLabel: period.label }
 
   const items: LembagaReportData[] = employees.map((emp) => {
     const rubricType = emp.role === "staff" ? "ae" : "ag"
@@ -147,7 +160,7 @@ export async function GET(
 
   // ── Single merged PDF ────────────────────────────────────────────────────────
   if (format === "pdf") {
-    const title   = `Laporan Penilaian Kinerja ${slug} — ${orgRaw.periodLabel}`
+    const title   = `Laporan Penilaian Kinerja ${slug} — ${period.label}`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const element = createElement(LembagaBulkReportDocument, { items, title }) as any
     const buffer  = await renderToBuffer(element)
