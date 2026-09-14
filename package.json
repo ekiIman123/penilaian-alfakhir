@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "tsx scripts/cek-penjaga-api.ts && prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cek:keamanan": "tsx scripts/cek-penjaga-api.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.114.0",

@@ -2,6 +2,7 @@ import { PrismaClient } from "../app/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import * as dotenv from "dotenv"
 import * as path from "path"
+import { randomInt } from "node:crypto"
 
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") })
 dotenv.config({ path: path.resolve(__dirname, "../.env") })
@@ -10,7 +11,29 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
 
 type EmpSeed = { name: string; lembaga: string; role: string; divisi?: string | null }
-type EvSeed = { name: string; lembaga: string; role: string; divisi?: string | null; accessCode: string }
+type EvSeed = { name: string; lembaga: string; role: string; divisi?: string | null }
+
+/**
+ * Kode akses TIDAK lagi ditulis di berkas ini.
+ *
+ * Sebelumnya ke-12 kode tertulis apa adanya di sini, dan repositori berstatus
+ * publik sejak 21 Juni 2026 — artinya siapa pun bisa membacanya lalu masuk.
+ * Celah itulah yang dipakai pada insiden 31 Agustus 2026.
+ *
+ * Sekarang kode dibuat acak saat seed dijalankan dan hanya ditampilkan sekali
+ * di layar. Catat dan bagikan lewat jalur pribadi.
+ */
+const ABJAD = "ACDEFGHJKMNPQRTUVWXY23467"
+
+function kodeAcak(awalan: string): string {
+  let s = ""
+  for (let i = 0; i < 8; i++) s += ABJAD[randomInt(ABJAD.length)]
+  return `${awalan}-${s.slice(0, 4)}-${s.slice(4)}`
+}
+
+function awalanUntuk(lembaga: string): string {
+  return ({ iysa: "IY", icgi: "IC", iyora: "IO" } as Record<string, string>)[lembaga] ?? "XX"
+}
 
 const EMPLOYEES: EmpSeed[] = [
   // IYSA — staff
@@ -54,22 +77,22 @@ const EMPLOYEES: EmpSeed[] = [
 
 const EVALUATORS: EvSeed[] = [
   // IYSA
-  { name: "Zaidan", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["IT", "Publikasi dan Promosi"]), accessCode: "KOR-ZAI" },
-  { name: "Eki", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["RnD"]), accessCode: "KOR-EKI" },
-  { name: "Astri", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["Administrasi"]), accessCode: "KOR-AST" },
-  { name: "Kamal Putra", lembaga: "iysa", role: "supervisor", accessCode: "SUP-KML" },
-  { name: "Deni Irawan", lembaga: "iysa", role: "management", accessCode: "MGT-DENI" },
-  { name: "Anggraini", lembaga: "iysa", role: "management", accessCode: "MGT-ANGG" },
+  { name: "Zaidan", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["IT", "Publikasi dan Promosi"]) },
+  { name: "Eki", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["RnD"]) },
+  { name: "Astri", lembaga: "iysa", role: "koordinator", divisi: JSON.stringify(["Administrasi"]) },
+  { name: "Kamal Putra", lembaga: "iysa", role: "supervisor" },
+  { name: "Deni Irawan", lembaga: "iysa", role: "management" },
+  { name: "Anggraini", lembaga: "iysa", role: "management" },
 
   // ICGI
-  { name: "Kamal Putra", lembaga: "icgi", role: "ceo", accessCode: "CEO-KML" },
-  { name: "Deni Irawan", lembaga: "icgi", role: "management", accessCode: "MGT-DENI-I" },
-  { name: "Anggraini", lembaga: "icgi", role: "management", accessCode: "MGT-ANGG-I" },
+  { name: "Kamal Putra", lembaga: "icgi", role: "ceo" },
+  { name: "Deni Irawan", lembaga: "icgi", role: "management" },
+  { name: "Anggraini", lembaga: "icgi", role: "management" },
 
   // IYORA
-  { name: "Eki Iman", lembaga: "iyora", role: "pm", accessCode: "PM-EKI" },
-  { name: "Deni Irawan", lembaga: "iyora", role: "management", accessCode: "MGT-DENI-O" },
-  { name: "Anggraini", lembaga: "iyora", role: "management", accessCode: "MGT-ANGG-O" },
+  { name: "Eki Iman", lembaga: "iyora", role: "pm" },
+  { name: "Deni Irawan", lembaga: "iyora", role: "management" },
+  { name: "Anggraini", lembaga: "iyora", role: "management" },
 ]
 
 async function main() {
@@ -103,7 +126,8 @@ async function main() {
     if (existing) {
       await prisma.evaluator.update({
         where: { id: existing.id },
-        data: { role: ev.role, divisi: ev.divisi ?? null, accessCode: ev.accessCode },
+        // Kode yang sudah ada dipertahankan; seed tidak mengganti kode aktif.
+        data: { role: ev.role, divisi: ev.divisi ?? null },
       })
       evUpd++
     } else {
@@ -113,7 +137,7 @@ async function main() {
           lembaga: ev.lembaga,
           role: ev.role,
           divisi: ev.divisi ?? null,
-          accessCode: ev.accessCode,
+          accessCode: kodeAcak(awalanUntuk(ev.lembaga)),
         },
       })
       evIns++
@@ -121,9 +145,17 @@ async function main() {
   }
   console.log(`Evaluators — inserted: ${evIns}, updated: ${evUpd}`)
 
-  console.log("\nAccess codes:")
-  for (const ev of EVALUATORS) {
-    console.log(`  ${ev.accessCode.padEnd(14)} → ${ev.name} (${ev.lembaga} · ${ev.role})`)
+  // Kode ditampilkan sekali di sini dan tidak disimpan di berkas mana pun.
+  // Catat sekarang, bagikan lewat jalur pribadi.
+  const terbit = await prisma.evaluator.findMany({
+    where: { lembaga: { in: ["iysa", "icgi", "iyora"] }, accessCode: { not: null } },
+    orderBy: [{ lembaga: "asc" }, { name: "asc" }],
+    select: { name: true, lembaga: true, role: true, accessCode: true },
+  })
+
+  console.log("\nKode akses — RAHASIA, catat sekarang, bagikan lewat jalur pribadi:")
+  for (const ev of terbit) {
+    console.log(`  ${(ev.accessCode ?? "").padEnd(14)} → ${ev.name} (${ev.lembaga} · ${ev.role})`)
   }
   console.log("\nSeeding complete.")
 }

@@ -34,8 +34,44 @@ dijalankan lewat script idempoten di `prisma/`, berurutan:
 ```bash
 npx tsx prisma/migrate-add-periods.ts            # dimensi periode (wajib duluan)
 npx tsx prisma/migrate-identity-and-weights.ts   # akun, penugasan, audit, kode karyawan
+npx tsx prisma/migrate-pembatasan-masuk.ts       # tabel percobaan masuk
 npx tsx prisma/seed-new-lembaga.ts               # data awal iysa/icgi/iyora
 ```
+
+## Keamanan — baca sebelum menambah endpoint
+
+Pada 31 Agustus 2026 seluruh data karyawan IYSA dihapus orang luar. Penyebabnya
+bukan satu berkas yang lupa dijaga, melainkan pola yang membuat pemeriksaan
+akses bersifat opsional. Tiga lapisan berikut ada supaya itu tidak terulang.
+
+**1. Middleware menolak lebih dulu** (`middleware.ts`). Seluruh `/api/*` wajib
+membawa cookie sesi yang tanda tangannya sah. Berkas route baru otomatis
+terlindungi tanpa penulisnya perlu ingat apa pun. Yang boleh terbuka disebut
+satu per satu di `TANPA_SESI` — menambah baris di sana adalah keputusan sadar.
+
+**2. Penjaga per route** (`lib/api-guard.ts`). Middleware hanya tahu "ada sesi
+yang sah"; wewenang per peran dan per lembaga butuh basis data, jadi diperiksa
+di route. Pilih penjaga sesuai kebutuhan: `jagaLembaga` (cukup sudah masuk),
+`jagaPengelola` (supervisor/CEO/PM/manajemen), `jagaPengaturan` (boleh mengubah
+anggota dan pengaturan), `jagaPuncak` (manajemen saja), `jagaMasuk` (alur lama).
+
+**3. Pemeriksa otomatis** (`npm run cek:keamanan`). Membaca seluruh `app/api`
+dan gagal bila ada handler tanpa pemeriksaan. **Ikut berjalan pada `npm run
+build`**, jadi endpoint tanpa penjaga tidak bisa ter-deploy.
+
+Aturan lain yang berlaku:
+
+- **Jangan pernah menulis kredensial di kode.** Git hook `.githooks/pre-commit`
+  menolaknya. Pasang sekali: `git config core.hooksPath .githooks`. Kode akses
+  dulu tertulis di `prisma/seed-new-lembaga.ts` pada repositori publik — itulah
+  yang bocor. Sekarang seed membuat kode acak dan menampilkannya sekali saja.
+- **Cookie sesi ditandatangani HMAC** (`lib/session-token.ts`, Web Crypto agar
+  bisa diperiksa di Edge maupun Node) dan `httpOnly`. Isinya hanya id; peran
+  selalu dibaca ulang dari basis data.
+- **Pintu masuk dibatasi** (`lib/rate-limit.ts`): 8 kegagalan per IP dalam 15
+  menit, lalu ditahan 15 menit.
+- **Tindakan yang mengubah kesepakatan dicatat** (`lib/audit.ts`): penghapusan
+  karyawan, perubahan pengaturan, pembukaan kembali periode, penarikan rapor.
 
 ## Dua sistem dalam satu basis kode
 

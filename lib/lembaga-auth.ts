@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
-import { createHmac, timingSafeEqual } from "node:crypto"
 import { prisma } from "./prisma"
+import { buatToken, bacaToken } from "./session-token"
 
 /** Satu jabatan yang dipegang seseorang di satu lembaga. */
 export type Hat = {
@@ -45,48 +45,8 @@ function superadminCode(): string {
   return process.env.SUPERADMIN_CODE?.trim() || "semogabahagia"
 }
 
-function secret(): string {
-  return (
-    process.env.SESSION_SECRET?.trim() ||
-    // Cadangan untuk pengembangan lokal. Di produksi, SESSION_SECRET wajib diisi
-    // — tanpa itu tanda tangan cookie bisa ditebak siapa pun yang membaca kode.
-    "pa-dev-secret-ganti-di-produksi"
-  )
-}
-
-// ── Cookie bertanda tangan ────────────────────────────────────────────────
-// Sebelumnya cookie hanya base64 dari JSON dan bisa dibaca skrip mana pun di
-// halaman. Artinya siapa pun bisa menyusun cookie atas nama penilai lain —
-// dan penguncian periode jadi tidak ada artinya. Sekarang isinya ditandatangani
-// dan cookie-nya httpOnly.
-
-function sign(payload: string): string {
-  return createHmac("sha256", secret()).update(payload).digest("base64url")
-}
-
-function encode(accountId: string): string {
-  const payload = Buffer.from(JSON.stringify({ accountId }), "utf8").toString("base64url")
-  return `${payload}.${sign(payload)}`
-}
-
-function decode(raw: string): string | null {
-  const titik = raw.lastIndexOf(".")
-  if (titik <= 0) return null
-  const payload = raw.slice(0, titik)
-  const tanda = raw.slice(titik + 1)
-
-  const diharapkan = Buffer.from(sign(payload), "utf8")
-  const diterima = Buffer.from(tanda, "utf8")
-  if (diharapkan.length !== diterima.length) return null
-  if (!timingSafeEqual(diharapkan, diterima)) return null
-
-  try {
-    const obj = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
-    return typeof obj?.accountId === "string" ? obj.accountId : null
-  } catch {
-    return null
-  }
-}
+// Penyandian token ada di lib/session-token.ts supaya middleware yang berjalan
+// di Edge Runtime dapat memeriksa tanda tangan yang sama tanpa Prisma.
 
 // ── Masuk ─────────────────────────────────────────────────────────────────
 
@@ -154,7 +114,7 @@ function toAccountSession(a: AkunDenganJabatan): AccountSession {
 
 export async function setSessionCookie(s: AccountSession): Promise<void> {
   const store = await cookies()
-  store.set(SESSION_COOKIE, encode(s.accountId), {
+  store.set(SESSION_COOKIE, await buatToken(s.accountId), {
     path: "/",
     sameSite: "lax",
     httpOnly: true,
@@ -176,7 +136,7 @@ export async function getAccountSession(): Promise<AccountSession | null> {
   const raw = store.get(SESSION_COOKIE)?.value
   if (!raw) return null
 
-  const accountId = decode(raw)
+  const accountId = await bacaToken(raw)
   if (!accountId) return null
 
   if (accountId === SUPERADMIN_ID) {
@@ -267,7 +227,7 @@ export async function verifyEmployeeCode(code: string): Promise<EmployeeSession 
 
 export async function setEmployeeCookie(s: EmployeeSession): Promise<void> {
   const store = await cookies()
-  store.set(EMPLOYEE_COOKIE, encode(s.employeeId), {
+  store.set(EMPLOYEE_COOKIE, await buatToken(s.employeeId), {
     path: "/",
     sameSite: "lax",
     httpOnly: true,
@@ -280,7 +240,7 @@ export async function getEmployeeSession(): Promise<EmployeeSession | null> {
   const store = await cookies()
   const raw = store.get(EMPLOYEE_COOKIE)?.value
   if (!raw) return null
-  const employeeId = decode(raw)
+  const employeeId = await bacaToken(raw)
   if (!employeeId) return null
   const emp = await prisma.employee.findUnique({ where: { id: employeeId } })
   if (!emp || !emp.accessCode) return null

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { verifyAccessCode, setSessionCookie, clearSessionCookie } from "@/lib/lembaga-auth"
+import { alamatIp, periksaBatas, catatPercobaan } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
   try {
@@ -7,10 +8,24 @@ export async function POST(req: Request) {
     if (typeof code !== "string" || !code.trim()) {
       return NextResponse.json({ error: "Kode akses wajib diisi" }, { status: 400 })
     }
+    // Pembatasan tebakan. Endpoint ini satu-satunya pintu yang terbuka tanpa
+    // sesi, jadi di sinilah percobaan menebak kode akan terjadi.
+    const ip = alamatIp(req)
+    const batas = await periksaBatas(ip)
+    if (!batas.boleh) {
+      return NextResponse.json(
+        { error: batas.pesan },
+        { status: 429, headers: { "Retry-After": String(batas.tungguDetik) } },
+      )
+    }
+
     const akun = await verifyAccessCode(code)
     if (!akun) {
+      await catatPercobaan(ip, false, "penilai")
       return NextResponse.json({ error: "Kode akses tidak valid" }, { status: 401 })
     }
+
+    await catatPercobaan(ip, true, "penilai")
     await setSessionCookie(akun)
 
     // Yang dikembalikan hanya yang dibutuhkan halaman masuk: nama dan daftar

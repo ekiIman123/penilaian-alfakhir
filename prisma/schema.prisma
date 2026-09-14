@@ -172,3 +172,17 @@ model PeriodResult {
   @@unique([periodId, employeeId])
   @@index([employeeId])
 }
+
+/// Catatan percobaan masuk, untuk membatasi tebakan kode akses secara massal.
+/// Kode akses hanya sepanjang beberapa karakter dan tidak punya kata sandi
+/// pendamping, sehingga tanpa pembatasan ini seluruh ruang kode bisa dicoba.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  berhasil  Boolean  @default(false)
+  jenis     String   @default("penilai")
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+  @@index([createdAt])
+}
