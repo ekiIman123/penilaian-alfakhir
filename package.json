@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/cek-penjaga-api.ts && prisma generate && next build",
+    "build": "tsx scripts/cek-penjaga-api.ts && prisma generate && tsx scripts/deploy-migrate.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "cek:keamanan": "tsx scripts/cek-penjaga-api.ts"
