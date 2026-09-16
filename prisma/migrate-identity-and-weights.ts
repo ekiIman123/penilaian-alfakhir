@@ -96,6 +96,8 @@ async function main() {
   await run(`Employee."accessCode"`,   `ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "accessCode" TEXT`)
   await run(`indeks kode karyawan`, `
     CREATE UNIQUE INDEX IF NOT EXISTS "Employee_accessCode_key" ON "Employee"("accessCode")`)
+  await run(`Evaluator."phone"`,        `ALTER TABLE "Evaluator" ADD COLUMN IF NOT EXISTS "phone" TEXT`)
+  await run(`Employee."phone"`,         `ALTER TABLE "Employee" ADD COLUMN IF NOT EXISTS "phone" TEXT`)
   await run(`PeriodResult."readAt"`,    `ALTER TABLE "PeriodResult" ADD COLUMN IF NOT EXISTS "readAt" TIMESTAMP(3)`)
   await run(`PeriodResult."tanggapan"`, `ALTER TABLE "PeriodResult" ADD COLUMN IF NOT EXISTS "tanggapan" TEXT`)
   await run(`indeks akun evaluator`, `
