@@ -143,7 +143,15 @@ async function main() {
   }
 
   await run(`periodId wajib diisi`, `ALTER TABLE "Evaluation" ALTER COLUMN "periodId" SET NOT NULL`)
-  await run(`lepas kunci lama`,     `DROP INDEX IF EXISTS "Evaluation_evaluatorId_employeeId_key"`)
+  // Kunci unik lama bisa berwujud CONSTRAINT (dibuat Prisma lewat migrate/db push)
+  // atau INDEX biasa, tergantung bagaimana skema pertama kali diterapkan.
+  // DROP INDEX ditolak bila ada constraint yang memilikinya, jadi constraint
+  // dilepas lebih dulu — itu sekaligus melepas index-nya.
+  await run(`lepas constraint lama`, `
+    ALTER TABLE "Evaluation"
+      DROP CONSTRAINT IF EXISTS "Evaluation_evaluatorId_employeeId_key"`)
+  await run(`lepas index lama`, `
+    DROP INDEX IF EXISTS "Evaluation_evaluatorId_employeeId_key"`)
   await run(`pasang kunci baru`, `
     CREATE UNIQUE INDEX IF NOT EXISTS "Evaluation_periodId_evaluatorId_employeeId_key"
       ON "Evaluation"("periodId", "evaluatorId", "employeeId")`)
