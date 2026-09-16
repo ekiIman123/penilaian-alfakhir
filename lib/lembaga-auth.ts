@@ -41,8 +41,18 @@ export const EMPLOYEE_COOKIE = "pa-emp-session"
 
 const SUPERADMIN_ID = "superadmin"
 
-function superadminCode(): string {
-  return process.env.SUPERADMIN_CODE?.trim() || "semogabahagia"
+/**
+ * Kode superadmin.
+ *
+ * Nilai lama "semogabahagia" tertulis di kode sumber pada repositori publik,
+ * jadi tidak boleh lagi dipakai sebagai nilai bawaan. Bila SUPERADMIN_CODE
+ * belum diisi, jalur superadmin dimatikan sepenuhnya — bukan jatuh ke nilai
+ * yang sudah diketahui orang.
+ */
+function superadminCode(): string | null {
+  const kode = process.env.SUPERADMIN_CODE?.trim()
+  if (!kode || kode.length < 12) return null
+  return kode
 }
 
 // Penyandian token ada di lib/session-token.ts supaya middleware yang berjalan
@@ -61,7 +71,8 @@ export async function verifyAccessCode(code: string): Promise<AccountSession | n
   const trimmed = code.trim()
   if (!trimmed) return null
 
-  if (trimmed.toLowerCase() === superadminCode().toLowerCase()) {
+  const kodeSuper = superadminCode()
+  if (kodeSuper && trimmed.toLowerCase() === kodeSuper.toLowerCase()) {
     return { accountId: SUPERADMIN_ID, name: "Super Admin", isSuperadmin: true, hats: [] }
   }
 

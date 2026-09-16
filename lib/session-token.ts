@@ -9,13 +9,23 @@
 
 const enc = new TextEncoder()
 
+const CADANGAN_PENGEMBANGAN = "pa-dev-secret-hanya-untuk-lokal"
+
 function rahasia(): string {
-  return (
-    process.env.SESSION_SECRET?.trim() ||
-    // Cadangan untuk pengembangan lokal. Di produksi SESSION_SECRET wajib diisi;
-    // tanpa itu tanda tangan bisa ditebak siapa pun yang membaca kode sumber.
-    "pa-dev-secret-ganti-di-produksi"
-  )
+  const dariEnv = process.env.SESSION_SECRET?.trim()
+  if (dariEnv && dariEnv.length >= 24) return dariEnv
+
+  // Di produksi, berjalan dengan nilai cadangan berarti tanda tangan sesi bisa
+  // disusun siapa pun yang membaca kode sumber. Lebih baik menolak melayani
+  // daripada melayani dengan pengamanan yang hanya tampak ada.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET belum diisi (minimal 24 karakter). " +
+      "Isi di Environment Variables sebelum aplikasi dijalankan di produksi."
+    )
+  }
+
+  return CADANGAN_PENGEMBANGAN
 }
 
 function base64url(buf: ArrayBuffer): string {

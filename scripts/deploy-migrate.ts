@@ -42,6 +42,24 @@ function main() {
     return
   }
 
+  // Nilai cadangan SESSION_SECRET tertulis di kode sumber. Bila dipakai di
+  // produksi, siapa pun yang bisa membaca kode sumber dapat menyusun sendiri
+  // cookie sesi yang tanda tangannya sah. Lebih baik build gagal sekarang
+  // daripada situs berjalan dengan tanda tangan yang bisa ditebak.
+  const rahasia = process.env.SESSION_SECRET?.trim()
+  if (!rahasia || rahasia.length < 24 || rahasia.includes("ganti-di-produksi")) {
+    console.error(
+      "\n✗ SESSION_SECRET belum diisi dengan benar.\n\n" +
+      "  Tanpa ini, cookie sesi ditandatangani memakai nilai cadangan yang\n" +
+      "  tertulis di kode sumber — siapa pun yang membaca kode bisa memalsukan\n" +
+      "  sesi superadmin.\n\n" +
+      "  Vercel → Settings → Environment Variables → tambahkan SESSION_SECRET\n" +
+      "  (Production), minimal 24 karakter. Membuat nilainya:\n\n" +
+      "      openssl rand -base64 32\n"
+    )
+    process.exit(1)
+  }
+
   if (!process.env.DATABASE_URL) {
     console.error(
       "\n✗ DATABASE_URL tidak tersedia saat build.\n" +
