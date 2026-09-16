@@ -13,14 +13,20 @@
  * supaya cabang percobaan tidak ikut mengubah struktur basis data produksi.
  */
 import { execFileSync } from "node:child_process"
-import * as dotenv from "dotenv"
 import * as path from "path"
 
-// Di Vercel, DATABASE_URL adalah variabel lingkungan sungguhan. Di komputer
-// pengembang ia ada di .env.local — dibaca di sini juga supaya jalur produksi
-// bisa diuji secara lokal tanpa mengubah perilakunya.
-dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") })
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") })
+// Di Vercel, DATABASE_URL dan SESSION_SECRET adalah variabel lingkungan
+// sungguhan. Di komputer pengembang keduanya ada di .env.local. Pembacaan
+// .env.local sengaja dibungkus try/catch: script ini berdiri di jalur kritis
+// build, dan tidak boleh gagal hanya karena sebuah pustaka pembantu.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dotenv = require("dotenv")
+  dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") })
+  dotenv.config({ path: path.resolve(__dirname, "..", ".env") })
+} catch {
+  // Tidak apa-apa — di Vercel variabelnya memang sudah ada di lingkungan.
+}
 
 const MIGRASI = [
   "migrate-add-periods.ts",
@@ -29,6 +35,14 @@ const MIGRASI = [
 ]
 
 function main() {
+  console.log("\n┌─ Pemeriksaan sebelum build ─────────────────────")
+  console.log(`│  VERCEL       : ${process.env.VERCEL ?? "(tidak di Vercel)"}`)
+  console.log(`│  VERCEL_ENV   : ${process.env.VERCEL_ENV ?? "(kosong)"}`)
+  console.log(`│  DATABASE_URL : ${process.env.DATABASE_URL ? "terisi" : "KOSONG"}`)
+  console.log(`│  SESSION_SECRET: ${process.env.SESSION_SECRET ? `terisi (${process.env.SESSION_SECRET.trim().length} karakter)` : "KOSONG"}`)
+  console.log(`│  SUPERADMIN_CODE: ${process.env.SUPERADMIN_CODE ? "terisi" : "KOSONG"}`)
+  console.log("└─────────────────────────────────────────────────\n")
+
   const env = process.env.VERCEL_ENV
 
   // Build lokal: migrasi dijalankan sendiri oleh pengembang, bukan oleh build.
