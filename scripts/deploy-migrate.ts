@@ -32,6 +32,7 @@ const MIGRASI = [
   "migrate-add-periods.ts",
   "migrate-identity-and-weights.ts",
   "migrate-pembatasan-masuk.ts",
+  "migrate-jendela-bulan-penuh.ts",
 ]
 
 function main() {

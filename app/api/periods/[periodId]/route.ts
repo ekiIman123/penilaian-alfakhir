@@ -87,15 +87,37 @@ export async function PATCH(
         pesan = `Rapor ${period.label} ditarik kembali (${dibuang} rapor dibatalkan)`
       }
 
+      const now = new Date()
+
       if (ke === "dibuka") {
         pesan = dari === "ditutup"
           ? `Periode ${period.label} dibuka kembali`
           : `Periode ${period.label} dibuka`
+
+        // Jadwal ikut digeser supaya penegak jadwal tidak membatalkan keputusan
+        // ini. Tanpa ini, periode yang dibuka kembali setelah tenggatnya lewat
+        // langsung ditutup lagi pada putaran berikutnya.
+        if (!data.opensAt && period.opensAt > now) data.opensAt = now
+        const tenggat = data.closesAt ?? period.closesAt
+        if (tenggat <= now) {
+          const baru = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+          data.closesAt = baru
+          pesan += ` sampai ${baru.toLocaleDateString("id-ID", {
+            day: "numeric", month: "long", timeZone: "Asia/Jakarta",
+          })}`
+        }
       }
+
       if (ke === "ditutup" && dari === "dibuka") {
         const draf = await prisma.evaluation.count({ where: { periodId, status: "draf" } })
         pesan = `Periode ${period.label} ditutup`
         if (draf > 0) pesan += ` — ${draf} penilaian masih berstatus draf dan tidak ikut dihitung`
+        // Ditutup lebih awal dari jadwal: tenggat disamakan dengan saat ini.
+        if (period.closesAt > now) data.closesAt = now
+      }
+
+      if (ke === "draf") {
+        pesan = `Periode ${period.label} dikembalikan ke draf — tidak akan dibuka otomatis`
       }
 
       data.status = ke
@@ -103,6 +125,7 @@ export async function PATCH(
         ke === "final"                        ? "periode.terbitkan"
         : dari === "final" && ke === "ditutup" ? "periode.tarik"
         : ke === "ditutup"                     ? "periode.tutup"
+        : ke === "draf"                        ? "periode.draf"
         : dari === "ditutup" && ke === "dibuka" ? "periode.buka-kembali"
         : "periode.buka"
     }

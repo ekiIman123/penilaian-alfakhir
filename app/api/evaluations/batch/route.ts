@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { getSession } from "@/lib/lembaga-auth"
 import { getPeriod } from "@/lib/periods"
-import { rubricTypeFor } from "@/lib/lembaga-evaluatees"
+import { rubricTypeFor, getEvaluatees } from "@/lib/lembaga-evaluatees"
 
 export const dynamic = "force-dynamic"
 
@@ -61,6 +61,20 @@ export async function POST(req: Request) {
       { error: `${tidakDikenal.length} karyawan tidak ada di ${period.lembaga.toUpperCase()}` },
       { status: 400 },
     )
+  }
+
+  // Penilai hanya boleh menilai orang yang memang menjadi tugasnya. Tanpa ini,
+  // koordinator IT bisa mengisi nilai staf Administrasi dan ikut menggeser
+  // rata-rata orang yang bukan bawahannya.
+  if (session.evaluatorId !== "superadmin") {
+    const bolehDinilai = new Set((await getEvaluatees(session, period.lembaga)).map((e) => e.id))
+    const bukanTugas = employeeIds.filter((id) => !bolehDinilai.has(id))
+    if (bukanTugas.length > 0) {
+      return NextResponse.json(
+        { error: `${bukanTugas.length} orang bukan tugas penilaian Anda di ${period.lembaga.toUpperCase()}` },
+        { status: 403 },
+      )
+    }
   }
 
   const evaluatorId = session.evaluatorId

@@ -18,6 +18,7 @@ export type JejakRow = {
 
 const LABEL_AKSI: Record<string, string> = {
   "periode.buka":         "membuka periode",
+  "periode.draf":         "mengembalikan periode ke draf",
   "periode.tutup":        "menutup pengisian",
   "periode.buka-kembali": "membuka kembali periode yang sudah ditutup",
   "periode.terbitkan":    "menerbitkan rapor",
@@ -26,6 +27,8 @@ const LABEL_AKSI: Record<string, string> = {
   "penugasan.ubah":       "mengubah penugasan",
   "penugasan.hapus":      "menghapus penugasan",
   "penilaian.hapus":      "menghapus penilaian",
+  "karyawan.hapus":       "menghapus karyawan",
+  "pengaturan.ubah":      "mengubah pengaturan lembaga",
 }
 
 /** Tindakan yang mengubah kesepakatan, layak ditandai lebih tegas. */
@@ -56,7 +59,9 @@ const AKSI: Record<PeriodStatus, { ke: PeriodStatus; label: string; icon: React.
 }
 
 function tanggal(d: string | Date) {
-  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+  return new Date(d).toLocaleDateString("id-ID", {
+    day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta",
+  })
 }
 
 export function PeriodManager({
@@ -109,11 +114,11 @@ export function PeriodManager({
       const res = await fetch("/api/periods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lembaga: lembagaSlug, year: tahun, month: bulan, status: "draf" }),
+        body: JSON.stringify({ lembaga: lembagaSlug, year: tahun, month: bulan }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error ?? "Gagal membuat periode")
-      toast.success(`Periode ${BULAN[bulan - 1]} ${tahun} dibuat sebagai draf`)
+      toast.success(`Periode ${BULAN[bulan - 1]} ${tahun} dibuat (${data.status})`)
       router.refresh()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal membuat periode")
@@ -138,9 +143,9 @@ export function PeriodManager({
         </p>
         <h1 className="text-lg font-bold text-white">Siklus penilaian bulanan</h1>
         <p className="text-xs mt-1.5 max-w-xl" style={{ color: "rgba(255,255,255,0.6)" }}>
-          Periode berjalan maju: draf → dibuka → ditutup → final. Hanya periode yang
-          sedang dibuka yang menerima penilaian. Saat rapor diterbitkan, angkanya
-          dibekukan sebagai salinan tersendiri.
+          Setiap bulan punya periodenya sendiri, dibuka dan ditutup otomatis.
+          Hanya periode yang sedang dibuka yang menerima penilaian. Penerbitan rapor
+          tetap keputusan Anda — saat diterbitkan, angkanya dibekukan.
         </p>
       </div>
 
@@ -184,7 +189,8 @@ export function PeriodManager({
           Buat periode
         </button>
         <p className="text-xs ml-auto max-w-[280px]" style={{ color: "#94A3B8" }}>
-          Jendela pengisian baku: tanggal 25 sampai tanggal 3 bulan berikutnya.
+          Periode dibuka dan ditutup otomatis sepanjang bulannya: tanggal 1 sampai
+          hari terakhir, WIB. Periode bulan berjalan dibuat sendiri oleh sistem.
         </p>
       </div>
 

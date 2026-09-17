@@ -63,15 +63,59 @@ export function shortLabel(year: number, month: number): string {
 }
 
 /**
- * Jendela pengisian baku: tanggal 25 bulan berjalan sampai tanggal 3 bulan
- * berikutnya — mengambil momen akhir bulan saat pekerjaan masih segar diingat.
- * Tanggalnya bisa digeser lewat layar Kelola Periode.
+ * Semua tanggal periode dihitung dalam WIB (UTC+7), bukan zona waktu server.
+ *
+ * Sebelumnya tanggal dibentuk dengan `new Date(tahun, bulan, tanggal)`, yang
+ * mengikuti zona waktu proses: di Vercel (UTC) dan di laptop pengembang (WIB)
+ * hasilnya berselisih tujuh jam — periode yang dibuat di Vercel baru terbuka
+ * pukul 07:00 WIB dan tenggatnya molor sampai 06:59 WIB keesokan harinya.
+ * Indonesia tidak memakai waktu musim panas, jadi selisih tetap tujuh jam.
+ */
+const SELISIH_WIB_JAM = 7
+
+/** Membentuk satu titik waktu dari tanggal dan jam dalam WIB. */
+export function waktuWIB(
+  year: number, month: number, day: number,
+  jam = 0, menit = 0, detik = 0,
+): Date {
+  return new Date(Date.UTC(year, month - 1, day, jam - SELISIH_WIB_JAM, menit, detik))
+}
+
+/** Tahun dan bulan yang sedang berjalan menurut WIB. */
+export function bulanWIB(now: Date = new Date()): { year: number; month: number } {
+  const geser = new Date(now.getTime() + SELISIH_WIB_JAM * 3_600_000)
+  return { year: geser.getUTCFullYear(), month: geser.getUTCMonth() + 1 }
+}
+
+/** Nomor tanggal (1–31) sebuah titik waktu menurut WIB. */
+export function tanggalWIB(t: Date): number {
+  return new Date(t.getTime() + SELISIH_WIB_JAM * 3_600_000).getUTCDate()
+}
+
+/**
+ * Jendela pengisian baku: sepanjang bulan periodenya, tanggal 1 pukul 00:00
+ * sampai hari terakhir pukul 23:59:59 WIB.
+ *
+ * Tidak ada celah antar bulan dan tidak ada tumpang tindih: setiap saat, tepat
+ * satu periode bulan berjalan yang terbuka. Penilai bisa mencicil sepanjang
+ * bulan — draf tersimpan otomatis — dan penilaian yang terlambat ditangani
+ * lewat "Buka kembali" di layar Kelola Periode.
  */
 export function defaultWindow(year: number, month: number): { opensAt: Date; closesAt: Date } {
+  const hariTerakhir = new Date(Date.UTC(year, month, 0)).getUTCDate()
   return {
-    opensAt:  new Date(year, month - 1, 25, 0, 0, 0),
-    closesAt: new Date(year, month, 3, 23, 59, 59),
+    opensAt:  waktuWIB(year, month, 1, 0, 0, 0),
+    closesAt: waktuWIB(year, month, hariTerakhir, 23, 59, 59),
   }
+}
+
+/** Status yang semestinya menurut jadwal, pada saat tertentu. */
+export function statusMenurutJadwal(
+  opensAt: Date, closesAt: Date, now: Date = new Date(),
+): "draf" | "dibuka" | "ditutup" {
+  if (now < opensAt) return "draf"
+  if (now > closesAt) return "ditutup"
+  return "dibuka"
 }
 
 /** Menambahkan ?periode=... ke sebuah alamat, kecuali periodenya sudah aktif. */

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getSession } from "@/lib/lembaga-auth"
 import {
-  listPeriods, monthLabel, periodIdFor, defaultWindow, isPeriodStatus,
+  listPeriods, monthLabel, periodIdFor, defaultWindow, isPeriodStatus, statusMenurutJadwal,
 } from "@/lib/periods"
 import { catatAudit } from "@/lib/audit"
 import { PENGELOLA_PERIODE as PERAN_PENGELOLA } from "@/lib/lembaga"
@@ -61,7 +61,9 @@ export async function POST(req: Request) {
     data: {
       id, lembaga, year, month,
       label: monthLabel(year, month),
-      status: status && isPeriodStatus(status) ? status : "draf",
+      // Tanpa status eksplisit, periode mengikuti jadwalnya: bulan berjalan
+      // langsung terbuka, bulan depan menunggu sebagai draf.
+      status: status && isPeriodStatus(status) ? status : statusMenurutJadwal(win.opensAt, win.closesAt),
       opensAt: win.opensAt,
       closesAt: win.closesAt,
     },

@@ -22,9 +22,8 @@ Perlu `.env.local` berisi `DATABASE_URL` (PostgreSQL). Opsional:
 `GROQ_API_KEY` (ringkasan catatan AI), `SESSION_SECRET` (tanda tangan cookie —
 **wajib di produksi**), `SUPERADMIN_CODE`, `CRON_SECRET`.
 
-`vercel.json` menjadwalkan `/api/cron/periode` harian: membuka periode saat
-jendelanya tiba dan menutup yang lewat tenggat. Penerbitan rapor sengaja tidak
-otomatis — itu membekukan angka permanen dan mendahului kalibrasi.
+`vercel.json` menjadwalkan `/api/cron/periode` harian. Penerbitan rapor sengaja
+tidak otomatis — itu membekukan angka permanen dan mendahului kalibrasi.
 
 ### Migrasi
 
@@ -35,6 +34,7 @@ dijalankan lewat script idempoten di `prisma/`, berurutan:
 npx tsx prisma/migrate-add-periods.ts            # dimensi periode (wajib duluan)
 npx tsx prisma/migrate-identity-and-weights.ts   # akun, penugasan, audit, kode karyawan
 npx tsx prisma/migrate-pembatasan-masuk.ts       # tabel percobaan masuk
+npx tsx prisma/migrate-jendela-bulan-penuh.ts    # jendela periode lama 25–3 → sebulan penuh
 npx tsx prisma/seed-new-lembaga.ts               # data awal iysa/icgi/iyora
 ```
 
@@ -95,6 +95,22 @@ diminta, tapi juga jangan menyalin polanya.
 `periodId` — tanpa itu, bulan-bulan tercampur. Ini berlaku juga untuk PDF,
 ringkasan AI, dan agregat dashboard.
 
+**Jadwal periode ditegakkan di satu tempat** (`lib/period-schedule.ts`).
+Setiap lembaga punya satu periode per bulan, terbuka sepanjang bulannya
+(tanggal 1 sampai hari terakhir, **WIB**). `sinkronkanJadwal()` memastikan
+periode bulan berjalan ada, membuka draf yang jadwalnya tiba, dan menutup yang
+lewat tenggat. Dipanggil cron harian **dan** `resolvePeriod()` saat halaman
+dibuka, jadi siklus tetap jalan meski cron terlewat. Jangan membuat periode
+lewat jalur lain — dulu dua jalur yang tidak sepakat membuat ICGI dan IYORA
+terkunci sebagai draf. Keputusan manusia menang: "Kembalikan ke draf" tidak
+dibuka otomatis, dan "Buka kembali" menggeser tenggat supaya tidak ditutup
+ulang. Bentuk tanggal selalu lewat `waktuWIB()` / `bulanWIB()`, jangan
+`new Date(tahun, bulan, tanggal)` — hasilnya bergantung zona waktu server.
+
+**Penilai hanya boleh menilai tugasnya.** `/api/evaluations` dan
+`/api/evaluations/batch` menolak (403) orang yang tidak ada di
+`getEvaluatees()` penilai itu.
+
 **Rapor dibekukan, bukan dihitung ulang.** Saat periode jadi `final`,
 `lib/period-publish.ts` menyimpan salinan ke `PeriodResult`. Rapor bulan lalu
 tidak berubah meski orangnya pindah divisi atau koordinatornya diganti.
@@ -106,8 +122,11 @@ perhitungan. Draf hanya terlihat oleh penilainya sendiri.
 rata-rata, tidak dihitung sebagai nilai terendah. Lihat `rataTertimbang()`.
 
 **Satu orang, banyak jabatan.** `Account` menyatukan beberapa baris `Evaluator`
-(Kamal: supervisor IYSA + CEO ICGI; Pak Deni & Bu Anggraini: manajemen di
-ketiganya). Semua kode akses lama tetap berlaku dan mengantar ke akun yang sama.
+(Kamal: supervisor IYSA + CEO ICGI). Penilai berlembaga `"all"` — di produksi:
+Pak Deni, Bu Anggraini, General Manager sebagai `founder` — dibentangkan
+menjadi satu jabatan per lembaga oleh `bentangkanJabatan()` di
+`lib/lembaga-auth.ts`. Jangan memeriksa `lembaga === "all"` di tempat lain;
+tanpa pembentangan itu mereka terkunci dari ketiga lembaga.
 
 **`getSession(lembaga)` selalu diberi lembaga.** Tanpa argumen ia
 mengembalikan jabatan pertama, yang salah untuk pemegang banyak jabatan. Di
@@ -129,8 +148,9 @@ modules (request: node:module)"*. Pasangan yang sudah dipisah:
 | Berkas | Isi |
 |---|---|
 | `lib/rubrics.ts` | Semua rubrik. AE = 5 aspek/15 kriteria/maks 60 (staff); AG = + Leadership & Manajemen Tim, 21 kriteria/maks 84 (pemimpin) |
-| `lib/periods.ts` | Siklus periode (butuh DB); status `draf → dibuka → ditutup → final` |
-| `lib/period-format.ts` | Label, ambang, jendela pengisian baku (tgl 25–3). Aman untuk klien |
+| `lib/periods.ts` | Membaca periode (butuh DB); status `draf → dibuka → ditutup → final` |
+| `lib/period-schedule.ts` | Satu-satunya penegak jadwal bulanan |
+| `lib/period-format.ts` | Label, status, jendela sebulan penuh dalam WIB. Aman untuk klien |
 | `lib/weights.ts` | Bobot penilai menurut kedekatan dengan kerja harian; `rataTertimbang()` |
 | `lib/eval-rules.ts` | Nilai ekstrem (1, 2, 4) wajib bercatatan; deteksi pola untuk layar cermin |
 | `lib/lembaga.ts` | Daftar lembaga, label peran, siapa boleh apa |

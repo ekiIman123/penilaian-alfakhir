@@ -27,7 +27,9 @@ function statusMeta(status: string) {
 }
 
 function tanggal(d: string | Date) {
-  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short" })
+  return new Date(d).toLocaleDateString("id-ID", {
+    day: "numeric", month: "short", timeZone: "Asia/Jakarta",
+  })
 }
 
 /**
@@ -155,6 +157,10 @@ export function PeriodBar({
               : period.sisaHari > 0
                 ? `Tutup ${tanggal(period.closesAt)} · sisa ${period.sisaHari} hari`
                 : `Lewat tenggat ${tanggal(period.closesAt)}`}
+          </span>
+        ) : period.status === "draf" ? (
+          <span className="text-xs" style={{ color: "#64748B" }}>
+            Dibuka {tanggal(period.opensAt)}
           </span>
         ) : (
           <span className="text-xs" style={{ color: "#64748B" }}>{meta.desc}</span>

@@ -10,6 +10,7 @@ import { prisma } from "./prisma"
  */
 export type AksiAudit =
   | "periode.buka"
+  | "periode.draf"
   | "periode.tutup"
   | "periode.buka-kembali"
   | "periode.terbitkan"
@@ -24,6 +25,7 @@ export type AksiAudit =
 
 export const LABEL_AKSI: Record<AksiAudit, string> = {
   "periode.buka":         "membuka periode",
+  "periode.draf":         "mengembalikan periode ke draf",
   "periode.tutup":        "menutup pengisian",
   "periode.buka-kembali": "membuka kembali periode yang sudah ditutup",
   "periode.terbitkan":    "menerbitkan rapor",

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { getSession } from "@/lib/lembaga-auth"
 import { ensurePeriod, getPeriod, PERIOD_STATUS, isPeriodStatus } from "@/lib/periods"
+import { getEvaluatees } from "@/lib/lembaga-evaluatees"
+import { isLembaga } from "@/lib/lembaga"
 
 /**
  * Periode untuk alur lama Al Fakhir, yang belum mengenal siklus bulanan.
@@ -70,6 +72,17 @@ export async function POST(req: Request) {
         { error: "Anda hanya bisa menyimpan penilaian atas nama sendiri" },
         { status: 403 },
       )
+    }
+
+    // Untuk alur lembaga, orang yang dinilai harus memang tugas penilai ini.
+    if (session && session.evaluatorId !== "superadmin" && isLembaga(lb)) {
+      const bolehDinilai = await getEvaluatees(session, lb)
+      if (!bolehDinilai.some((e) => e.id === teacherId)) {
+        return NextResponse.json(
+          { error: "Orang ini bukan tugas penilaian Anda" },
+          { status: 403 },
+        )
+      }
     }
 
     // Periode: dari badan permintaan, atau periode berjalan untuk alur lama.

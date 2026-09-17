@@ -2,8 +2,10 @@ import { prisma } from "./prisma"
 import { parseScores } from "./calculations"
 import {
   monthLabel, periodIdFor, defaultWindow, isPeriodStatus, PERIOD_STATUS,
-  type PeriodStatus,
+  statusMenurutJadwal, bulanWIB, type PeriodStatus,
 } from "./period-format"
+import { sinkronkanJadwal } from "./period-schedule"
+import { isLembaga } from "./lembaga"
 
 export * from "./period-format"
 
@@ -40,15 +42,19 @@ function toInfo(p: {
   }
 }
 
-/** Membuat periode bila belum ada. Tidak mengubah yang sudah ada. */
+/**
+ * Membuat periode bila belum ada. Tidak mengubah yang sudah ada.
+ * Tanpa status eksplisit, status mengikuti jadwal — bukan selalu "dibuka".
+ */
 export async function ensurePeriod(
   lembaga: string,
   year: number,
   month: number,
-  status: PeriodStatus = "dibuka",
+  statusEksplisit?: PeriodStatus,
 ): Promise<PeriodInfo> {
   const id = periodIdFor(lembaga, year, month)
   const win = defaultWindow(year, month)
+  const status = statusEksplisit ?? statusMenurutJadwal(win.opensAt, win.closesAt)
   const row = await prisma.period.upsert({
     where: { id },
     update: {},
@@ -98,13 +104,25 @@ export async function getActivePeriod(lembaga: string): Promise<PeriodInfo | nul
 /**
  * Menentukan periode yang sedang dilihat. Pilihan dari URL menang, asalkan
  * periode itu memang milik lembaga yang sedang dibuka; kalau tidak, jatuh ke
- * periode aktif. Bila lembaga sama sekali belum punya periode, satu periode
- * untuk bulan berjalan dibuatkan otomatis agar aplikasi tidak pernah kosong.
+ * periode aktif.
+ *
+ * Sebelum itu jadwal ditegakkan lebih dulu: periode bulan berjalan dipastikan
+ * ada dan statusnya benar. Dengan begitu, siklus bulanan tidak bergantung
+ * sepenuhnya pada cron.
  */
 export async function resolvePeriod(
   lembaga: string,
   requestedId?: string | null,
 ): Promise<PeriodInfo> {
+  if (isLembaga(lembaga)) {
+    try {
+      await sinkronkanJadwal([lembaga])
+    } catch (e) {
+      // Kegagalan menegakkan jadwal tidak boleh membuat halaman ikut gagal.
+      console.error("[periode] sinkronisasi jadwal gagal:", e)
+    }
+  }
+
   if (requestedId) {
     const p = await getPeriod(requestedId)
     if (p && p.lembaga === lembaga) return p
@@ -112,8 +130,8 @@ export async function resolvePeriod(
   const aktif = await getActivePeriod(lembaga)
   if (aktif) return aktif
 
-  const now = new Date()
-  return ensurePeriod(lembaga, now.getFullYear(), now.getMonth() + 1, "dibuka")
+  const { year, month } = bulanWIB()
+  return ensurePeriod(lembaga, year, month)
 }
 
 /**

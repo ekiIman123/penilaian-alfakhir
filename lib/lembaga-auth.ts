@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { prisma } from "./prisma"
 import { buatToken, bacaToken } from "./session-token"
+import { LEMBAGA_SLUGS } from "./lembaga"
 
 /** Satu jabatan yang dipegang seseorang di satu lembaga. */
 export type Hat = {
@@ -96,8 +97,34 @@ export async function verifyAccessCode(code: string): Promise<AccountSession | n
     accountId: `ev:${ev.id}`,
     name: ev.name,
     isSuperadmin: false,
-    hats: [{ evaluatorId: ev.id, lembaga: ev.lembaga, role: ev.role, divisi: ev.divisi }],
+    hats: bentangkanJabatan([{ evaluatorId: ev.id, lembaga: ev.lembaga, role: ev.role, divisi: ev.divisi }]),
   }
+}
+
+/**
+ * Jabatan berlembaga "all" dibentangkan menjadi satu jabatan per lembaga.
+ *
+ * Di produksi, Pak Deni, Bu Anggraini, dan General Manager tercatat sebagai
+ * founder dengan lembaga "all" — satu baris untuk ketiga lembaga. Tanpa
+ * pembentangan ini, setiap pemeriksaan "apakah orang ini punya jabatan di
+ * IYSA?" menjawab tidak, dan mereka terkunci dari ketiga lembaga sekaligus.
+ *
+ * Dilakukan di satu tempat ini supaya seluruh pemakai sesi — form masuk,
+ * navigasi, beranda, penjaga API — otomatis benar tanpa perlu tahu soal "all".
+ */
+function bentangkanJabatan(hats: Hat[]): Hat[] {
+  const out: Hat[] = []
+  const sudah = new Set<string>()
+  for (const h of hats) {
+    const daftar = h.lembaga === "all" ? LEMBAGA_SLUGS : [h.lembaga]
+    for (const lembaga of daftar) {
+      const kunci = `${lembaga}:${h.evaluatorId}`
+      if (sudah.has(kunci)) continue
+      sudah.add(kunci)
+      out.push({ ...h, lembaga })
+    }
+  }
+  return out
 }
 
 type AkunDenganJabatan = {
@@ -112,12 +139,12 @@ function toAccountSession(a: AkunDenganJabatan): AccountSession {
     accountId: a.id,
     name: a.name,
     isSuperadmin: a.isSuperadmin,
-    hats: a.evaluators.map((e) => ({
+    hats: bentangkanJabatan(a.evaluators.map((e) => ({
       evaluatorId: e.id,
       lembaga: e.lembaga,
       role: e.role,
       divisi: e.divisi,
-    })),
+    }))),
   }
 }
 
@@ -162,7 +189,7 @@ export async function getAccountSession(): Promise<AccountSession | null> {
       accountId,
       name: ev.name,
       isSuperadmin: false,
-      hats: [{ evaluatorId: ev.id, lembaga: ev.lembaga, role: ev.role, divisi: ev.divisi }],
+      hats: bentangkanJabatan([{ evaluatorId: ev.id, lembaga: ev.lembaga, role: ev.role, divisi: ev.divisi }]),
     }
   }
 
