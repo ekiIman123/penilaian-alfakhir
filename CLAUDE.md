@@ -73,6 +73,42 @@ Aturan lain yang berlaku:
 - **Tindakan yang mengubah kesepakatan dicatat** (`lib/audit.ts`): penghapusan
   karyawan, perubahan pengaturan, pembukaan kembali periode, penarikan rapor.
 
+## Kecepatan — tiga jebakan yang sudah pernah kena
+
+Halaman masuk yang bahkan tidak menyentuh basis data pernah butuh 3,1 detik.
+Penyebabnya bukan query penilaian, melainkan biaya tetap yang dibayar ulang di
+setiap halaman. Ketiganya mudah terpasang kembali tanpa sengaja.
+
+**Ikon aplikasi tidak boleh `force-dynamic`** (`app/icon.tsx`). Ikon di Next
+di-cache secara bawaan *kecuali* memakai dynamic config. Dengan itu terpasang,
+membuka halaman mana pun memanggil satu fungsi server, dan dulu juga menulis ke
+basis data lewat `upsert`, lalu merender PNG — terukur 1,4–1,9 detik per
+halaman. Sekarang `revalidate = 3600` dan hanya membaca.
+
+**Aturan `no-store` di `next.config.ts` berlaku untuk `/api/*` kecuali
+`/api/logo`.** Itu benar untuk data pribadi, tapi logo adalah gambar publik
+yang memang dilayani tanpa sesi. Jawaban "belum ada logo" pun ikut di-cache:
+tanpa itu, lembaga yang belum mengunggah logo justru membayar satu perjalanan
+ke server di setiap halaman untuk kabar yang sama. Kalau menambah endpoint
+publik lain yang boleh di-cache, pola pengecualiannya
+`"/api/:path((?!logo$).*)"` perlu ikut disesuaikan.
+
+**Setiap pohon rute butuh `loading.tsx`.** Rute dinamis **tidak di-prefetch
+sama sekali** tanpa berkas ini — mengklik menu membuat layar diam di halaman
+lama tanpa tanda apa pun sampai seluruh data tiba, dan orang menekan menunya
+lagi. Yang sudah ada: `app/[lembaga]/`, `app/beranda/`, `app/saya/`, memakai
+`KerangkaHalaman` di `components/memuat.tsx`.
+
+Dua kebiasaan lain yang menjaga ini tetap cepat:
+
+- **Jangan memanggil API dari komponen navigasi pada tiap perpindahan
+  halaman.** Navbar dulu memanggil `/api/me` setiap kali alamat berubah.
+  Sekarang jawabannya disimpan di memori halaman; yang membatalkannya hanya
+  masuk dan keluar, lewat `lupakanIdentitas()`.
+- **Query yang tidak saling bergantung dijalankan bersamaan.** `await`
+  berurutan pada dua query yang tidak berhubungan adalah waktu tunggu yang
+  dibayar percuma.
+
 ## Dua sistem dalam satu basis kode
 
 Aplikasi ini lahir sebagai penilaian guru **SMP Al Fakhir**, lalu diperluas
