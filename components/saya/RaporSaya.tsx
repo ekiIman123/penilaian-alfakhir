@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { lupakanIdentitas } from "@/components/navbar"
 import { toast } from "sonner"
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -76,6 +77,7 @@ export function RaporSaya({
 
   async function keluar() {
     await fetch("/api/auth/karyawan", { method: "DELETE" })
+    lupakanIdentitas()
     router.push("/saya")
     router.refresh()
   }

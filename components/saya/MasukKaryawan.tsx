@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { lupakanIdentitas } from "@/components/navbar"
 import { useRouter } from "next/navigation"
 import { KeyRound, ArrowRight, FileText } from "lucide-react"
 
@@ -33,6 +34,8 @@ export function MasukKaryawan() {
         setSubmitting(false)
         return
       }
+      // Identitas berubah — navbar harus bertanya lagi.
+      lupakanIdentitas()
       router.refresh()
     } catch {
       setError("Terjadi kesalahan. Coba lagi.")

@@ -70,7 +70,23 @@ export async function sinkronkanJadwal(
     const id = periodIdFor(lembaga, year, month)
     const win = defaultWindow(year, month)
 
-    const ada = await prisma.period.findUnique({ where: { id }, select: { id: true } })
+    // Ketiga pemeriksaan di bawah dijawab satu query. Fungsi ini berjalan pada
+    // setiap pembukaan halaman, dan pada bulan yang tenang jawabannya selalu
+    // "tidak ada yang perlu dikerjakan" — itu tidak pantas dibayar tiga
+    // perjalanan ke basis data.
+    const periode = await prisma.period.findMany({
+      where: {
+        lembaga,
+        OR: [
+          { id },
+          { status: "draf", opensAt: { lte: now }, closesAt: { gt: now } },
+          { status: "dibuka", closesAt: { lt: now } },
+        ],
+      },
+      select: { id: true, label: true, status: true, opensAt: true, closesAt: true },
+    })
+
+    const ada = periode.some((p) => p.id === id)
     if (!ada) {
       const status = statusMenurutJadwal(win.opensAt, win.closesAt, now)
       try {
@@ -95,10 +111,9 @@ export async function sinkronkanJadwal(
     }
 
     // ── 2. Draf yang jadwalnya sudah tiba → dibuka ───────────────────────
-    const siapDibuka = await prisma.period.findMany({
-      where: { lembaga, status: "draf", opensAt: { lte: now }, closesAt: { gt: now } },
-      select: { id: true, label: true },
-    })
+    const siapDibuka = periode.filter(
+      (p) => p.status === "draf" && p.opensAt <= now && p.closesAt > now,
+    )
     for (const p of siapDibuka) {
       if (await dikembalikanKeDrafOlehManusia(p.id)) continue
       await prisma.period.update({ where: { id: p.id }, data: { status: "dibuka" } })
@@ -111,10 +126,7 @@ export async function sinkronkanJadwal(
     }
 
     // ── 3. Terbuka tapi tenggat lewat → ditutup ──────────────────────────
-    const lewat = await prisma.period.findMany({
-      where: { lembaga, status: "dibuka", closesAt: { lt: now } },
-      select: { id: true, label: true },
-    })
+    const lewat = periode.filter((p) => p.status === "dibuka" && p.closesAt < now)
     for (const p of lewat) {
       const draf = await prisma.evaluation.count({ where: { periodId: p.id, status: "draf" } })
       await prisma.period.update({ where: { id: p.id }, data: { status: "ditutup" } })

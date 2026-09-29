@@ -86,6 +86,42 @@ const LEMBAGA_GROUP = LEMBAGA_SLUGS.map((slug) => ({
   href: `/${slug}/dashboard`,
 }))
 
+type Identitas = {
+  lembagaList?: string[]
+  hats?: { lembaga: string; role: string }[]
+  isSuperadmin?: boolean
+}
+
+/**
+ * Jawaban /api/me disimpan di memori halaman.
+ *
+ * Navbar dulu memanggilnya setiap kali alamat berubah, jadi tiap perpindahan
+ * halaman menambah satu perjalanan ke server — dan menu baru muncul setelah
+ * jawaban itu tiba, sehingga menunya berkedip tiap pindah halaman. Isinya
+ * hanya berubah ketika orang masuk atau keluar, dan kedua tindakan itu
+ * memanggil lupakanIdentitas().
+ */
+let identitas: Promise<Identitas> | null = null
+
+function ambilIdentitas(): Promise<Identitas> {
+  if (!identitas) {
+    identitas = fetch("/api/me")
+      .then((r) => r.json() as Promise<Identitas>)
+      .catch(() => {
+        // Kegagalan tidak boleh ikut tersimpan — percobaan berikutnya harus
+        // benar-benar bertanya lagi.
+        identitas = null
+        return {}
+      })
+  }
+  return identitas
+}
+
+/** Dipanggil setelah masuk atau keluar: jabatan orangnya berubah. */
+export function lupakanIdentitas(): void {
+  identitas = null
+}
+
 function detectLembaga(pathname: string): string {
   const seg = pathname.split("/")[1]
   if (LEMBAGA_SLUGS.includes(seg as LembagaSlug)) return seg
@@ -191,15 +227,12 @@ export function Navbar() {
 
   useEffect(() => {
     let batal = false
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (batal) return
-        setTersedia(Array.isArray(d?.lembagaList) ? d.lembagaList : [])
-        setHats(Array.isArray(d?.hats) ? d.hats : [])
-        if (d?.isSuperadmin) setHats([{ lembaga: "all", role: "superadmin" }])
-      })
-      .catch(() => {})
+    ambilIdentitas().then((d) => {
+      if (batal) return
+      setTersedia(Array.isArray(d?.lembagaList) ? d.lembagaList : [])
+      if (d?.isSuperadmin) setHats([{ lembaga: "all", role: "superadmin" }])
+      else setHats(Array.isArray(d?.hats) ? d.hats : [])
+    })
     return () => { batal = true }
   }, [path])
 

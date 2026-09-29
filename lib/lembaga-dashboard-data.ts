@@ -63,24 +63,24 @@ export async function buildDashboardRows(
   })
 
   const evaluatorIds = [...new Set(allEvaluations.map((ev) => ev.evaluatorId))]
-  const evaluatorsInfo =
-    evaluatorIds.length > 0
-      ? await prisma.evaluator.findMany({
+
+  // Nama penilai dan bobot penugasan sama-sama hanya butuh evaluatorIds —
+  // tidak ada alasan yang satu menunggu yang lain selesai.
+  const [evaluatorsInfo, penugasan] = evaluatorIds.length > 0
+    ? await Promise.all([
+        prisma.evaluator.findMany({
           where: { id: { in: evaluatorIds } },
           select: { id: true, name: true, role: true },
-        })
-      : []
+        }),
+        prisma.assignment.findMany({
+          where: { evaluatorId: { in: evaluatorIds }, employeeId: { in: employeeIds } },
+          select: { evaluatorId: true, employeeId: true, weight: true },
+        }),
+      ])
+    : [[], []]
 
   const evaluatorNameMap = new Map(evaluatorsInfo.map((ev) => [ev.id, ev.name]))
   evaluatorNameMap.set("superadmin", "Super Admin")
-
-  // Bobot: dari penugasan bila ada, kalau tidak dari peran penilainya.
-  const penugasan = evaluatorIds.length > 0
-    ? await prisma.assignment.findMany({
-        where: { evaluatorId: { in: evaluatorIds }, employeeId: { in: employeeIds } },
-        select: { evaluatorId: true, employeeId: true, weight: true },
-      })
-    : []
   const bobotKhusus = new Map(penugasan.map((a) => [`${a.evaluatorId}:${a.employeeId}`, a.weight]))
   const peranPenilai = new Map(evaluatorsInfo.map((ev) => [ev.id, ev.role]))
 

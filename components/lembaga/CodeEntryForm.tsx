@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { lupakanIdentitas } from "@/components/navbar"
 import { useRouter } from "next/navigation"
 import { KeyRound, ArrowRight } from "lucide-react"
 
@@ -53,6 +54,8 @@ export function CodeEntryForm({ lembagaSlug, lembagaLabel, lembagaTagline }: Pro
         data.isSuperadmin ||
         (Array.isArray(data.hats) && data.hats.some((h: { role: string }) => puncak.includes(h.role)))
 
+      // Jabatan orang ini baru saja berubah — navbar harus bertanya lagi.
+      lupakanIdentitas()
       router.push(keBeranda ? "/beranda" : `/${lembagaSlug}/dashboard`)
       router.refresh()
     } catch {

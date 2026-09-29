@@ -1,5 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
+import { lupakanIdentitas } from "@/components/navbar"
 import Link from "next/link"
 import {
   CheckCircle2, PenLine, LogOut, User2,
@@ -532,6 +533,7 @@ export function LembagaDashboard({
 
   async function logout() {
     await fetch("/api/auth/lembaga", { method: "DELETE" })
+    lupakanIdentitas()
     router.push(`/${lembagaSlug}`)
     router.refresh()
   }

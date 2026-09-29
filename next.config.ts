@@ -35,9 +35,22 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: HEADER_KEAMANAN },
       {
-        // Jawaban API tidak boleh tersimpan di cache mana pun: isinya data
-        // pribadi dan bergantung pada siapa yang sedang masuk.
-        source: "/api/:path*",
+        // Satu-satunya jawaban /api/* yang boleh disimpan di cache. Logo
+        // lembaga adalah gambar publik — tidak bergantung pada siapa yang
+        // masuk, dan memang dilayani tanpa sesi (lihat TANPA_SESI di
+        // middleware.ts). Aturan Cache-Control-nya ditentukan oleh route-nya
+        // sendiri; di sini cukup tidak dipaksa "no-store".
+        //
+        // Tanpa pengecualian ini, setiap perpindahan halaman mengambil ulang
+        // logo dari server: terukur ±0,5 detik per halaman, untuk gambar yang
+        // sama persis.
+        source: "/api/logo",
+        headers: HEADER_KEAMANAN,
+      },
+      {
+        // Sisa jawaban API tidak boleh tersimpan di cache mana pun: isinya
+        // data pribadi dan bergantung pada siapa yang sedang masuk.
+        source: "/api/:path((?!logo$).*)",
         headers: [
           ...HEADER_KEAMANAN,
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },

@@ -22,12 +22,16 @@ export default async function DashboardPage({
   if (!session) redirect(`/${lembaga}`)
 
   const { periode } = await searchParams
-  const [period, periods] = await Promise.all([
+
+  // Daftar orang yang dinilai tidak bergantung pada periode, jadi ketiganya
+  // ditanyakan bersamaan. Sebelumnya ia menunggu giliran di belakang periode
+  // tanpa alasan.
+  const [period, periods, evaluatees] = await Promise.all([
     resolvePeriod(lembaga, periode),
     listPeriods(lembaga),
+    getEvaluatees(session, lembaga),
   ])
 
-  const evaluatees = await getEvaluatees(session, lembaga)
   const rows = await buildDashboardRows(evaluatees, session.evaluatorId, period.id)
 
   return (
