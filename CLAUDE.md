@@ -164,7 +164,21 @@ dari satu lembaga — kalau seseorang harus keluar-masuk dengan dua kode,
 jabatannya tersangkut di dua `Account`, dan itu data yang salah, bukan fitur
 yang kurang. Perbaikannya `prisma/gabungkan-akun-satu-orang.ts`; nama yang
 berbeda untuk orang yang sama tidak bisa disimpulkan dari data, jadi
-daftarnya ditulis tangan di `SATU_ORANG`. Penilai berlembaga `"all"` — di produksi:
+daftarnya ditulis tangan di `SATU_ORANG`.
+
+**Peran tidak terikat pada satu lembaga.** Aturan peran di
+`lib/lembaga-evaluatees.ts` dulu menulis lembaganya kaku — supervisor→iysa,
+ceo→icgi, pm→iyora — dan `jagaPengaturan` di `lib/api-guard.ts` membandingkan
+lagi `role === "ceo" && lembagaSlug === "icgi"`. Itu benar selama tiap peran
+hanya hidup di satu lembaga, dan diam-diam salah begitu tidak: Kamal sebagai
+CEO IYORA akan mendapat daftar karyawan ICGI. Sesi sudah diarahkan ke satu
+lembaga oleh `getSession(lembaga)`, jadi perannya memang peran **di** lembaga
+itu — jangan membandingkan nama lembaga lagi setelahnya.
+
+**Satu orang, satu kode.** Pemegang lebih dari satu lembaga hanya punya kode
+akun; kode per jabatan dicabut (`prisma/rapikan-jabatan-dan-kode.ts`). Yang
+hanya di satu lembaga tidak disentuh. Saat menambah jabatan untuk orang yang
+sudah ada, tempelkan ke `Account`-nya dan **jangan** beri `accessCode` baru. Penilai berlembaga `"all"` — di produksi:
 Pak Deni, Bu Anggraini, General Manager sebagai `founder` — dibentangkan
 menjadi satu jabatan per lembaga oleh `bentangkanJabatan()` di
 `lib/lembaga-auth.ts`. Jangan memeriksa `lembaga === "all"` di tempat lain;

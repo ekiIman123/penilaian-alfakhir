@@ -84,24 +84,20 @@ export async function getEvaluatees(
     }))
   }
 
-  if (role === "supervisor") {
+  // Pemimpin tunggal sebuah lembaga menilai seluruh isi lembaga ITU — lembaga
+  // yang sedang dibuka, bukan lembaga yang kebetulan biasa dipegang perannya.
+  //
+  // Dulu ketiga peran ini menulis lembaganya kaku: supervisor→iysa, ceo→icgi,
+  // pm→iyora. Itu benar selama setiap peran hanya hidup di satu lembaga, dan
+  // diam-diam salah begitu tidak. Seorang CEO di IYORA akan mendapat daftar
+  // karyawan ICGI — bukan cuma tidak berguna, tapi memperlihatkan lembaga yang
+  // tidak sedang dibuka. Sesi sudah diarahkan ke satu lembaga oleh
+  // getSession(lembaga), jadi perannya memang peran DI lembaga itu.
+  if (role === "supervisor" || role === "ceo" || role === "pm") {
+    const target = currentLembaga && currentLembaga !== "all" ? currentLembaga : lembaga
     return excludeSelf(await prisma.employee.findMany({
-      where: { lembaga: "iysa" },
+      where: { lembaga: target },
       orderBy: [{ divisi: "asc" }, { name: "asc" }],
-    }))
-  }
-
-  if (role === "ceo") {
-    return excludeSelf(await prisma.employee.findMany({
-      where: { lembaga: "icgi" },
-      orderBy: { name: "asc" },
-    }))
-  }
-
-  if (role === "pm") {
-    return excludeSelf(await prisma.employee.findMany({
-      where: { lembaga: "iyora" },
-      orderBy: { name: "asc" },
     }))
   }
 

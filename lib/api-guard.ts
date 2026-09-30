@@ -52,11 +52,14 @@ export async function jagaPengaturan(lembagaSlug: string): Promise<HasilJaga> {
   const hasil = await jagaLembaga(lembagaSlug)
   if (!hasil.ok) return hasil
 
+  // `hasil.session` sudah diarahkan ke lembagaSlug oleh jagaLembaga, jadi
+  // `role` adalah peran orang ini DI lembaga itu. Dulu di sini masih
+  // dibandingkan lagi dengan nama lembaganya ("ceo" hanya di icgi, "pm" hanya
+  // di iyora) — perbandingan yang tidak menambah keamanan apa pun, tapi
+  // mengunci anggapan bahwa tiap peran cuma hidup di satu lembaga. Begitu
+  // seseorang menjabat CEO di lembaga lain, ia tertolak di lembaganya sendiri.
   const { role } = hasil.session
-  const boleh =
-    bolehKelolaLembaga(role) ||
-    (role === "ceo" && lembagaSlug === "icgi") ||
-    (role === "pm" && lembagaSlug === "iyora")
+  const boleh = bolehKelolaLembaga(role) || role === "ceo" || role === "pm"
 
   if (!boleh) return tolak("Peran Anda tidak bisa mengubah data ini", 403)
   return hasil
