@@ -158,7 +158,13 @@ perhitungan. Draf hanya terlihat oleh penilainya sendiri.
 rata-rata, tidak dihitung sebagai nilai terendah. Lihat `rataTertimbang()`.
 
 **Satu orang, banyak jabatan.** `Account` menyatukan beberapa baris `Evaluator`
-(Kamal: supervisor IYSA + CEO ICGI). Penilai berlembaga `"all"` — di produksi:
+(Kamal: supervisor IYSA + CEO ICGI; Eki Iman: koordinator RnD IYSA + PM IYORA).
+Pemilih lembaga di navigasi muncul sendiri begitu satu akun memegang lebih
+dari satu lembaga — kalau seseorang harus keluar-masuk dengan dua kode,
+jabatannya tersangkut di dua `Account`, dan itu data yang salah, bukan fitur
+yang kurang. Perbaikannya `prisma/gabungkan-akun-satu-orang.ts`; nama yang
+berbeda untuk orang yang sama tidak bisa disimpulkan dari data, jadi
+daftarnya ditulis tangan di `SATU_ORANG`. Penilai berlembaga `"all"` — di produksi:
 Pak Deni, Bu Anggraini, General Manager sebagai `founder` — dibentangkan
 menjadi satu jabatan per lembaga oleh `bentangkanJabatan()` di
 `lib/lembaga-auth.ts`. Jangan memeriksa `lembaga === "all"` di tempat lain;

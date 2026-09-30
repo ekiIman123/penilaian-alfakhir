@@ -22,6 +22,7 @@ export type AksiAudit =
   | "karyawan.hapus"
   | "penilai.hapus"
   | "pengaturan.ubah"
+  | "akun.gabung"
 
 export const LABEL_AKSI: Record<AksiAudit, string> = {
   "periode.buka":         "membuka periode",
@@ -37,6 +38,7 @@ export const LABEL_AKSI: Record<AksiAudit, string> = {
   "karyawan.hapus":       "menghapus karyawan",
   "penilai.hapus":        "menghapus penilai",
   "pengaturan.ubah":      "mengubah pengaturan lembaga",
+  "akun.gabung":          "menggabungkan akun satu orang",
 }
 
 export async function catatAudit(input: {

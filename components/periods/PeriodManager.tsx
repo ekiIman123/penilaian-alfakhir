@@ -29,6 +29,7 @@ const LABEL_AKSI: Record<string, string> = {
   "penilaian.hapus":      "menghapus penilaian",
   "karyawan.hapus":       "menghapus karyawan",
   "pengaturan.ubah":      "mengubah pengaturan lembaga",
+  "akun.gabung":          "menggabungkan akun satu orang",
 }
 
 /** Tindakan yang mengubah kesepakatan, layak ditandai lebih tegas. */
